@@ -1,4 +1,4 @@
-module Cornelis.InfoWin where
+module Cornelis.InfoWin (closeInfoWindows, showInfoWindow, buildInfoBuffer) where
 
 import qualified Data.Map as M
 import Data.Map (Map)
@@ -52,8 +52,8 @@ windowsForBuffer b = do
       False -> Nothing
       True -> Just w
 
-showInfo :: Buffer -> [String] -> Neovim CornelisEnv ()
-showInfo b s = withBufferStuff b $ \bs -> do
+showInfoWindow :: Buffer -> [String] -> Neovim CornelisEnv ()
+showInfoWindow b s = withBufferStuff b $ \bs -> do
   let ib = bs_info_win bs
   closeInfoWindowForBuffer bs
   writeInfoBuffer ib s
@@ -86,7 +86,6 @@ buildInfoWindow (InfoBuffer split_buf) w = saveCurrentWindow $ do
   vim_command "split"
   split_win <- nvim_get_current_win
   nvim_win_set_buf split_win split_buf
-
 
   -- Setup things in the window
   buffer_set_var split_buf cornelisWindowVar $ ObjectBool True

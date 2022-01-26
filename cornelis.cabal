@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Cornelis.Agda
+      Cornelis.Highlighting
       Cornelis.Types
       Cornelis.Types.Agda
       Cornelis.Utils
@@ -89,6 +90,7 @@ library
     , containers
     , directory
     , filepath
+    , fingertree
     , generic-lens
     , lens
     , mtl
@@ -163,6 +165,7 @@ executable cornelis
     , cornelis
     , directory
     , filepath
+    , fingertree
     , generic-lens
     , lens
     , mtl
@@ -238,6 +241,7 @@ test-suite cornelis-test
     , cornelis
     , directory
     , filepath
+    , fingertree
     , generic-lens
     , lens
     , mtl

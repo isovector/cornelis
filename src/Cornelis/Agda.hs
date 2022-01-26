@@ -57,13 +57,14 @@ dropPrefix pref msg
 runIOTCM :: Interaction -> Agda -> Neovim env ()
 runIOTCM i agda = do
   iotcm <- buildIOTCM i $ a_buffer agda
+  vim_report_error $ show iotcm
   liftIO $ hPrint (a_req agda) iotcm
 
 
 buildIOTCM :: Interaction -> Buffer -> Neovim env IOTCM
 buildIOTCM i buffer = do
   fp <- buffer_get_name buffer
-  pure $ IOTCM fp None Direct i
+  pure $ IOTCM fp NonInteractive Direct i
 
 withCurrentBuffer :: (Buffer -> Neovim env a) -> Neovim env a
 withCurrentBuffer f = vim_get_current_buffer >>= f

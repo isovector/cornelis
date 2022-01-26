@@ -18,7 +18,7 @@ import Control.Monad.Reader.Class (local)
 import Neovim.Context.Internal (Neovim(..), retypeConfig)
 import Control.Monad.Trans.Resource (transResourceT)
 import Control.Monad.Reader (mapReaderT, withReaderT)
-import Neovim.API.String (vim_err_write, vim_report_error, Buffer, nvim_buf_set_text)
+import Neovim.API.String (vim_err_write, vim_report_error, Buffer, nvim_buf_set_text, nvim_create_namespace, nvim_buf_clear_namespace)
 import Cornelis.Utils
 import Data.ByteString.Lazy.Char8 (unpack)
 import Control.Monad.State.Class (modify', gets)
@@ -27,6 +27,7 @@ import Control.Arrow ((&&&))
 import Data.Foldable (for_)
 import Cornelis.Types.Agda
 import qualified Data.Map.Strict as M
+import Cornelis.Highlighting (highlightBuffer)
 
 
 main :: IO ()
@@ -48,30 +49,36 @@ respond b (InteractionPoints ips) = do
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) -> do
     getInteractionPoint b i >>= \case
-       Nothing -> vim_report_error $ "Can't find interaction point " <> show i
-       Just ip -> replaceInterval b (ip_interval ip) ex
+      Nothing -> vim_report_error $ "Can't find interaction point " <> show i
+      Just ip -> replaceInterval b (ip_interval ip) ex
+respond b ClearHighlighting = do
+  ns <- asks ce_namespace
+  nvim_buf_clear_namespace b ns 0 (-1)
+respond b (HighlightingInfo _remove hl) =
+  highlightBuffer b hl
 respond _ (Unknown k _) = vim_report_error k
 respond _ (RunningInfo _ x) = vim_report_error x
 respond _ x = pure ()
 
 
 replaceInterval :: Buffer -> IntervalWithoutFile -> String -> Neovim CornelisEnv ()
-replaceInterval buffer (Interval start end) =
-  nvim_buf_set_text
-    buffer
-    (fromIntegral $ posLine start - 1)
-    (fromIntegral $ posCol start - 1)
-    (fromIntegral $ posLine end - 1)
-    (fromIntegral $ posCol end - 1)
-    . lines
+replaceInterval buffer (Interval start end)
+  = nvim_buf_set_text
+      buffer
+      (fromIntegral $ posLine start - 1)
+      (fromIntegral $ posCol start - 1)
+      (fromIntegral $ posLine end - 1)
+      (fromIntegral $ posCol end - 1)
+  . lines
 
 
 cornelis :: Neovim () NeovimPlugin
 cornelis = do
   (inchan, outchan) <- liftIO newChan
+  ns <- nvim_create_namespace "cornelis"
   mvar <- liftIO $ newMVar $ CornelisState mempty mempty
 
-  let env = CornelisEnv mvar inchan
+  let env = CornelisEnv mvar inchan ns
   withLocalEnv env $
     neovimAsync $ do
       forever $ do

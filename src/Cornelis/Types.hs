@@ -5,7 +5,10 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 
-module Cornelis.Types where
+module Cornelis.Types
+  ( module Cornelis.Types
+  , Buffer
+  ) where
 
 import qualified Data.Map as M
 import Data.Map (Map)
@@ -38,6 +41,7 @@ data CornelisState = CornelisState
 data CornelisEnv = CornelisEnv
   { ce_state :: MVar CornelisState
   , ce_stream :: InChan AgdaResp
+  , ce_namespace :: Int64
   }
 
 data AgdaResp = AgdaResp
@@ -94,6 +98,7 @@ data Response
   | Error
   | DisplayInfo
   | ClearHighlighting -- TokenBased
+  | HighlightingInfo Bool [Highlight]
   | DoneAborting
   | DoneExiting
   | ClearRunningInfo
@@ -109,6 +114,14 @@ data Response
   | MakeCase
   | SolveAll [Solution]
   | Unknown String Value
+  deriving (Eq, Ord, Show)
+
+data Highlight = Highlight
+  { hl_atoms :: [String]
+  -- , hl_definitionSite :: (FilePath, Position')
+  , hl_start :: Int
+  , hl_end :: Int
+  }
   deriving (Eq, Ord, Show)
 
 data Solution = Solution
@@ -139,11 +152,18 @@ instance FromJSON Solution where
   parseJSON = withObject "Solution" $ \obj ->
     Solution <$> obj .: "interactionPoint" <*> obj .: "expression"
 
+instance FromJSON Highlight where
+  parseJSON = withObject "Highlight" $ \obj ->
+    Highlight <$> obj .: "atoms" <*> fmap (!! 0) (obj .: "range") <*> fmap (!! 1) (obj .: "range")
+
 instance FromJSON Response where
   parseJSON v = flip (withObject "Response") v $ \obj -> do
     obj .: "kind" >>= \case
       "ClearRunningInfo" ->
         pure ClearRunningInfo
+      "HighlightingInfo" ->
+        (obj .: "info") >>= \info ->
+          HighlightingInfo <$> info .: "remove" <*> info .: "payload"
       "ClearHighlighting" ->
         pure ClearHighlighting
       "RunningInfo" ->

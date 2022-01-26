@@ -37,6 +37,7 @@ dependencies:
 - resourcet
 - text
 - bytestring
+- fingertree
 
 default-extensions:
   - BangPatterns

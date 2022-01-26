@@ -21,11 +21,12 @@ implementations.
 
 ## Features
 
-It supports highlighting, solving, and case splitting. These are exposed via the
-vim commands:
+It supports highlighting, goal listing, solving, and case splitting. These are
+exposed via the vim commands:
 
 ```
 :CornelisLoad
+:CornelisGoals
 :CornelisSolve
 :CornelisMakeCase
 ```

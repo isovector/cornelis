@@ -9,6 +9,7 @@ import Data.Foldable (for_)
 import Data.Maybe
 import Data.Traversable (for)
 import Control.Monad.State.Class
+import Cornelis.Utils (withBufferStuff)
 
 
 cornelisWindowVar :: String
@@ -35,12 +36,6 @@ closeInfoWindowForBuffer bs = do
   ws <- windowsForBuffer ib
   for_ ws $ flip nvim_win_close True
 
-
-withBufferStuff :: Buffer -> (BufferStuff -> Neovim CornelisEnv ()) -> Neovim CornelisEnv ()
-withBufferStuff b f =
-  gets (M.lookup b . cs_buffers) >>= \case
-    Nothing -> vim_report_error "no buffer stuff!"
-    Just bs -> f bs
 
 
 windowsForBuffer :: Buffer -> Neovim env [Window]

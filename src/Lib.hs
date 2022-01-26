@@ -76,37 +76,6 @@ respond _ (Unknown k _) = vim_report_error k
 respond _ x = pure ()
 
 
-
-
-
-goalWindow :: Buffer -> DisplayInfo ->  Neovim CornelisEnv ()
-goalWindow b = showInfoWindow b . showGoals
-
-showGoals :: DisplayInfo -> [String]
-showGoals (AllGoalsWarnings vis invis) = lines $ intercalate "\n" $ concat
-  [ [ unlines
-      [ "Visible Goals:"
-      , unlines $ fmap showGoal vis
-      ]
-    | not $ null vis
-    ]
-  , [ unlines
-      [ "Invisible Goals:"
-      , unlines $ fmap showGoal vis
-      ]
-    | not $ null invis
-    ]
-  ]
-showGoals (UnknownDisplayInfo _) = []
-
-showGoal :: GoalInfo -> String
-showGoal (GoalInfo ip ty) = unwords
-  [ "?" <> show (ip_id ip)
-  , " : "
-  , ty
-  ]
-
-
 replaceInterval :: Buffer -> IntervalWithoutFile -> String -> Neovim CornelisEnv ()
 replaceInterval buffer (Interval start end)
   = nvim_buf_set_text
@@ -140,6 +109,7 @@ cornelis = do
     { environment = env
     , exports =
         [ $(command "CornelisLoad" 'load) [CmdSync Async]
+        , $(command "CornelisGoals" 'allGoals) [CmdSync Async]
         , $(command "CornelisSolve" 'solveOne) [CmdSync Async]
         , $(command "CornelisMakeCase" 'caseSplit) [CmdSync Async]
         ]

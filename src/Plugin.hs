@@ -19,7 +19,9 @@ import Data.Generics.Labels
 import Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
 import Cornelis.Types.Agda
 import Data.Traversable (for)
-import Cornelis.InfoWin (buildInfoBuffer)
+import Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
+import Data.List
+import Cornelis.Utils
 
 
 
@@ -75,6 +77,13 @@ load _ = withAgda $ do
   name <- buffer_get_name $ a_buffer agda
   flip runIOTCM agda $ Cmd_load name []
 
+allGoals :: CommandArguments -> Neovim CornelisEnv ()
+allGoals _ =
+  withAgda $ withCurrentBuffer $ \b ->
+    withBufferStuff b $ \bs -> do
+      goalWindow b $ bs_goals bs
+
+
 solveOne :: CommandArguments -> Neovim CornelisEnv ()
 solveOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
@@ -85,4 +94,34 @@ caseSplit _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   thing <- input @String "Split on what?" Nothing Nothing
   agda <- getAgda b
   flip runIOTCM agda $ Cmd_make_case (InteractionId $ ip_id goal) noRange thing
+
+goalWindow :: Buffer -> DisplayInfo ->  Neovim CornelisEnv ()
+goalWindow b = showInfoWindow b . showGoals
+
+
+
+
+showGoals :: DisplayInfo -> [String]
+showGoals (AllGoalsWarnings vis invis) = lines $ intercalate "\n" $ concat
+  [ [ unlines
+      [ "Visible Goals:"
+      , unlines $ fmap showGoal vis
+      ]
+    | not $ null vis
+    ]
+  , [ unlines
+      [ "Invisible Goals:"
+      , unlines $ fmap showGoal vis
+      ]
+    | not $ null invis
+    ]
+  ]
+showGoals (UnknownDisplayInfo _) = []
+
+showGoal :: GoalInfo -> String
+showGoal (GoalInfo ip ty) = unwords
+  [ "?" <> show (ip_id ip)
+  , " : "
+  , ty
+  ]
 

@@ -44,14 +44,14 @@ respond :: Buffer -> Response -> Neovim CornelisEnv ()
 -- Update the buffer's interaction points map
 respond b (InteractionPoints ips) = do
   modify' $ #cs_ips %~ M.insert b (IM.fromList $ fmap (ip_id &&& id) ips)
+-- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) -> do
     getInteractionPoint b i >>= \case
        Nothing -> vim_report_error $ "Can't find interaction point " <> show i
-       Just (ip_interval -> interval) -> replaceInterval b interval ex
-
+       Just ip -> replaceInterval b (ip_interval ip) ex
 respond _ (Unknown k _) = vim_report_error k
-respond _ (RunningInfo _ x) = vim_report_error $ x
+respond _ (RunningInfo _ x) = vim_report_error x
 respond _ x = pure ()
 
 

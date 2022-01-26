@@ -34,6 +34,7 @@ vim commands:
 ## Installation
 
 ```
+Plug 'neovimhaskell/nvim-hs.vim'
 Plug 'isovector/cornelis'
 ```
 

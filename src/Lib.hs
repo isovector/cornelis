@@ -87,6 +87,7 @@ goalWindow b = do
 
     vim_command "set norelativenumber"
     vim_command "set nonumber"
+    vim_command "set nomodifiable"
 
     -- restore window
     nvim_set_current_win buffer_win

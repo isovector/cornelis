@@ -22,18 +22,20 @@ import Data.Traversable (for)
 
 
 
+------------------------------------------------------------------------------
+-- | Ensure we have a 'BufferStuff' attached to the current buffer.
 withAgda :: Neovim CornelisEnv a -> Neovim CornelisEnv a
 withAgda m = do
   buffer <- vim_get_current_buffer
-  gets (M.lookup buffer . cs_procs) >>= \case
+  gets (M.lookup buffer . cs_buffers) >>= \case
     Just _ -> m
     Nothing -> do
       agda <- spawnAgda buffer
-      modify' $ #cs_procs %~ M.insert buffer agda
+      modify' $ #cs_buffers %~ M.insert buffer (BufferStuff agda mempty (AllGoalsWarnings [] []) Nothing)
       m
 
 getAgda :: Buffer -> Neovim CornelisEnv Agda
-getAgda buffer = gets $ (M.! buffer) . cs_procs
+getAgda buffer = gets $ bs_agda_proc . (M.! buffer) . cs_buffers
 
 
 getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe InteractionPoint)
@@ -42,7 +44,7 @@ getGoalAtCursor = do
   b <- window_get_buffer w
   -- TODO(sandy): stupid off-by-one in vim? or agda?
   (r, (+1) -> c) <- window_get_cursor w
-  ips <- M.lookup b <$> gets cs_ips
+  ips <- fmap bs_ips . M.lookup b <$> gets cs_buffers
   pure (b, flip lookupGoal (r, c) =<< ips)
 
 

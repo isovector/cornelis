@@ -8,11 +8,12 @@
 module Cornelis.Types
   ( module Cornelis.Types
   , Buffer
+  , Window
   ) where
 
 import qualified Data.Map as M
 import Data.Map (Map)
-import Neovim.API.String (Buffer(..))
+import Neovim.API.String (Buffer(..), Window)
 import Control.Concurrent
 import Neovim
 import Control.Monad.State.Class
@@ -31,11 +32,24 @@ data Agda = Agda
   { a_buffer :: Buffer
   , a_req  :: Handle
   }
+  deriving Generic
+
+data BufferStuff = BufferStuff
+  { bs_agda_proc :: Agda
+  , bs_ips       :: IntMap InteractionPoint
+  , bs_goals     :: DisplayInfo
+  , bs_info_win  :: Maybe InfoWin
+  }
+  deriving Generic
+
+data InfoWin = InfoWin
+  { iw_window :: Window
+  , iw_buffer :: Buffer
+  }
+  deriving Generic
 
 data CornelisState = CornelisState
-  { cs_procs :: Map Buffer Agda
-  , cs_ips   :: Map Buffer (IntMap InteractionPoint)
-  , cs_goals :: Map Buffer DisplayInfo
+  { cs_buffers :: Map Buffer BufferStuff
   }
   deriving Generic
 
@@ -44,11 +58,13 @@ data CornelisEnv = CornelisEnv
   , ce_stream :: InChan AgdaResp
   , ce_namespace :: Int64
   }
+  deriving Generic
 
 data AgdaResp = AgdaResp
   { ar_buffer :: Buffer
   , ar_message :: Response
   }
+  deriving Generic
 
 instance MonadState CornelisState (Neovim CornelisEnv) where
   state f = do

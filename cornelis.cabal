@@ -27,6 +27,7 @@ library
   exposed-modules:
       Cornelis.Agda
       Cornelis.Highlighting
+      Cornelis.InfoWin
       Cornelis.Types
       Cornelis.Types.Agda
       Cornelis.Utils

@@ -16,6 +16,9 @@ import Cornelis.Types
 import Cornelis.Utils
 import Control.Monad (forever)
 import Control.Concurrent.Chan.Unagi (writeChan)
+import Data.List (isPrefixOf)
+import Data.ByteString.Lazy.Char8 (pack)
+import Data.Foldable (for_)
 
 spawnAgda :: Buffer -> Neovim CornelisEnv Agda
 spawnAgda buffer = do
@@ -32,10 +35,16 @@ spawnAgda buffer = do
       neovimAsync $ forever $ do
         resp <- liftIO $ hGetLine hout
         chan <- asks ce_stream
-        liftIO $ writeChan chan $ AgdaResp buffer resp
+        for_ (decode $ pack $ (dropPrefix "JSON> ") resp) $ liftIO . writeChan chan . AgdaResp buffer
 
       pure $ Agda buffer hin
     (_, _) -> error "can't start agda"
+
+
+dropPrefix :: String -> String -> String
+dropPrefix pref msg
+  | isPrefixOf pref msg = drop (length pref) msg
+  | otherwise = msg
 
 
 runIOTCM :: Interaction -> Agda -> Neovim env ()

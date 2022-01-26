@@ -17,6 +17,7 @@ import Control.Monad.Trans.Resource (transResourceT)
 import Control.Monad.Reader (mapReaderT, withReaderT)
 import Neovim.API.String (vim_err_write, vim_report_error)
 import Cornelis.Utils
+import Data.ByteString.Lazy.Char8 (unpack)
 
 
 main :: IO ()
@@ -28,7 +29,7 @@ withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (rety
 
 
 respond :: AgdaResp -> Neovim CornelisEnv ()
-respond = vim_report_error . ar_message
+respond = vim_report_error . show . ar_message
 
 
 cornelis :: Neovim () NeovimPlugin

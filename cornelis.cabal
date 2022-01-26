@@ -85,6 +85,7 @@ library
       aeson
     , async
     , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , filepath
@@ -94,6 +95,7 @@ library
     , nvim-hs
     , process
     , resourcet
+    , text
     , transformers
     , unagi-chan
     , unliftio-core
@@ -156,6 +158,7 @@ executable cornelis
       aeson
     , async
     , base >=4.7 && <5
+    , bytestring
     , containers
     , cornelis
     , directory
@@ -166,6 +169,7 @@ executable cornelis
     , nvim-hs
     , process
     , resourcet
+    , text
     , transformers
     , unagi-chan
     , unliftio-core
@@ -229,6 +233,7 @@ test-suite cornelis-test
       aeson
     , async
     , base >=4.7 && <5
+    , bytestring
     , containers
     , cornelis
     , directory
@@ -239,6 +244,7 @@ test-suite cornelis-test
     , nvim-hs
     , process
     , resourcet
+    , text
     , transformers
     , unagi-chan
     , unliftio-core

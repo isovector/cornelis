@@ -35,6 +35,8 @@ dependencies:
 - unliftio-core
 - unagi-chan
 - resourcet
+- text
+- bytestring
 
 default-extensions:
   - BangPatterns

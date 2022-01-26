@@ -31,6 +31,7 @@ withAgda m = do
 getAgda :: Buffer -> Neovim CornelisEnv Agda
 getAgda buffer = gets $ (M.! buffer) . cs_procs
 
+
 load :: CommandArguments -> Neovim CornelisEnv ()
 load _ = withAgda $ do
   agda <- withCurrentBuffer getAgda

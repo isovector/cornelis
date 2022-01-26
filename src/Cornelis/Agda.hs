@@ -19,8 +19,10 @@ import Control.Concurrent.Chan.Unagi (writeChan)
 
 spawnAgda :: Buffer -> Neovim CornelisEnv Agda
 spawnAgda buffer = do
-  (min, mout, _, _) <- liftIO $ createProcess $ (proc "agda" ["--interaction-json"])
-      { std_in = CreatePipe , std_out = CreatePipe }
+  (min, mout, _, _) <-
+    liftIO $ createProcess $
+      (proc "agda" ["--interaction-json"])
+        { std_in = CreatePipe , std_out = CreatePipe }
   case (min, mout) of
     (Just hin, Just hout) -> do
       liftIO $ do
@@ -39,7 +41,7 @@ spawnAgda buffer = do
 runIOTCM :: Interaction -> Agda -> Neovim env ()
 runIOTCM i agda = do
   iotcm <- buildIOTCM i $ a_buffer agda
-  vim_err_write $ show iotcm
+  vim_report_error $ show iotcm
   liftIO $ hPrint (a_req agda) iotcm
 
 

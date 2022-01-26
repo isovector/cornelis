@@ -15,17 +15,21 @@ import Control.Monad.Reader.Class (local)
 import Neovim.Context.Internal (Neovim(..), retypeConfig)
 import Control.Monad.Trans.Resource (transResourceT)
 import Control.Monad.Reader (mapReaderT, withReaderT)
-import Neovim.API.String (vim_err_write)
+import Neovim.API.String (vim_err_write, vim_report_error)
 import Cornelis.Utils
+
 
 main :: IO ()
 main = neovim defaultConfig { plugins = [cornelis] }
 
+
 withLocalEnv :: env -> Neovim env a -> Neovim env' a
 withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (retypeConfig env)
 
+
 respond :: AgdaResp -> Neovim CornelisEnv ()
-respond = vim_err_write . ar_message
+respond = vim_report_error . ar_message
+
 
 cornelis :: Neovim () NeovimPlugin
 cornelis = do
@@ -33,17 +37,14 @@ cornelis = do
   mvar <- liftIO $ newMVar $ CornelisState mempty
 
   let env = CornelisEnv mvar inchan
-
-  vim_err_write "hello from the main thread"
   withLocalEnv env $
     neovimAsync $ do
-      vim_err_write "hello from the consumer thread"
       forever $ do
         next <- liftIO $ readChan outchan
         respond next
 
   wrapPlugin $ Plugin
     { environment = env
-    , exports = [ $(command "Cornelis" 'load) [CmdSync Async] ]
+    , exports = pure $ $(command "Cornelis" 'load) [CmdSync Async]
     }
 

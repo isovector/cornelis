@@ -14,16 +14,29 @@ import Neovim
 import Control.Monad.State.Class
 import Data.Tuple (swap)
 import GHC.Generics
+import Control.Concurrent.Chan.Unagi (InChan)
+import System.IO (Handle)
 
 deriving stock instance Ord Buffer
 
+data Agda = Agda
+  { a_buffer :: Buffer
+  , a_req  :: Handle
+  }
+
 data CornelisState = CornelisState
-  { cs_procs :: Map Buffer (IO ())
+  { cs_procs :: Map Buffer Agda
   }
   deriving Generic
 
-newtype CornelisEnv = CornelisEnv
+data CornelisEnv = CornelisEnv
   { ce_state :: MVar CornelisState
+  , ce_stream :: InChan AgdaResp
+  }
+
+data AgdaResp = AgdaResp
+  { ar_buffer :: Buffer
+  , ar_message :: String
   }
 
 instance MonadState CornelisState (Neovim CornelisEnv) where

@@ -23,6 +23,7 @@ dependencies:
 - base >= 4.7 && < 5
 - nvim-hs
 - containers
+- async
 - process
 - mtl
 - lens
@@ -30,6 +31,10 @@ dependencies:
 - transformers
 - filepath
 - directory
+- aeson
+- unliftio-core
+- unagi-chan
+- resourcet
 
 default-extensions:
   - BangPatterns

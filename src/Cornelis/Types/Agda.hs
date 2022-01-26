@@ -299,6 +299,8 @@ data Interaction' range
     -- ^ Exit the program.
         deriving (Show, Read, Functor, Foldable, Traversable)
 
+type Interaction = Interaction' Range
+
 data HighlightingLevel
   = None
   | NonInteractive

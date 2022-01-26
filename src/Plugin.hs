@@ -38,3 +38,8 @@ load _ = withAgda $ do
   name <- buffer_get_name $ a_buffer agda
   flip runIOTCM agda $ Cmd_load name []
 
+solveOne :: CommandArguments -> Neovim CornelisEnv ()
+solveOne _ = withAgda $ do
+  agda <- withCurrentBuffer getAgda
+  flip runIOTCM agda $ Cmd_solveOne Simplified 0 noRange ""
+

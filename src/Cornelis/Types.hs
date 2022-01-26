@@ -19,6 +19,8 @@ import GHC.Generics
 import Control.Concurrent.Chan.Unagi (InChan)
 import System.IO (Handle)
 import Data.Aeson
+import Data.IntMap.Strict (IntMap)
+import qualified Data.IntMap.Strict as IM
 
 deriving stock instance Ord Buffer
 
@@ -29,6 +31,7 @@ data Agda = Agda
 
 data CornelisState = CornelisState
   { cs_procs :: Map Buffer Agda
+  , cs_ips :: Map Buffer (IntMap InteractionPoint)
   }
   deriving Generic
 
@@ -104,7 +107,14 @@ data Response
   | InteractionPoints [InteractionPoint]
   | GiveAction
   | MakeCase
-  | SolveAll
+  | SolveAll [Solution]
+  | Unknown String Value
+  deriving (Eq, Ord, Show)
+
+data Solution = Solution
+  { s_ip :: Int
+  , s_expression :: String
+  }
   deriving (Eq, Ord, Show)
 
 data InteractionPoint = InteractionPoint
@@ -125,8 +135,12 @@ instance FromJSON (Position' ()) where
   parseJSON = withObject "Position" $ \obj -> do
     Pn <$> pure () <*> obj .: "pos" <*> obj .: "line" <*> obj .: "col"
 
+instance FromJSON Solution where
+  parseJSON = withObject "Solution" $ \obj ->
+    Solution <$> obj .: "interactionPoint" <*> obj .: "expression"
+
 instance FromJSON Response where
-  parseJSON = withObject "Response" $ \obj -> do
+  parseJSON v = flip (withObject "Response") v $ \obj -> do
     obj .: "kind" >>= \case
       "ClearRunningInfo" ->
         pure ClearRunningInfo
@@ -136,8 +150,10 @@ instance FromJSON Response where
         RunningInfo <$> obj .: "debugLevel" <*> obj .: "message"
       "InteractionPoints" ->
         InteractionPoints <$> obj .: "interactionPoints"
+      "SolveAll" ->
+        SolveAll <$> obj .: "solutions"
       "Status" -> do
         (obj .: "status" >>=) $ withObject "Status" $ \s ->
           Status <$> s .: "checked" <*> s .: "showIrrelevantArguments" <*> s .: "showImplicitArguments"
-      (_ :: String) -> empty
+      (_ :: String) -> Unknown <$> obj .: "kind" <*> pure v
 

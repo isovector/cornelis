@@ -1,11 +1,12 @@
-{-# LANGUAGE NumDecimals #-}
+{-# LANGUAGE NumDecimals       #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Cornelis.Agda where
 
 import qualified Data.Map as M
 import Data.Map (Map)
 import Data.Aeson
-import System.IO
+import System.IO hiding (hGetLine)
 import Control.Monad.IO.Class
 import System.Process
 import Cornelis.Types.Agda
@@ -19,6 +20,10 @@ import Control.Concurrent.Chan.Unagi (writeChan)
 import Data.List (isPrefixOf)
 import Data.ByteString.Lazy.Char8 (pack)
 import Data.Foldable (for_)
+import Data.Text.Lazy.IO (hGetLine)
+import qualified Data.Text.Lazy as T
+import Data.Text.Lazy (Text)
+import Data.Text.Lazy.Encoding (encodeUtf8)
 
 spawnAgda :: Buffer -> Neovim CornelisEnv Agda
 spawnAgda buffer = do
@@ -35,22 +40,23 @@ spawnAgda buffer = do
       neovimAsync $ forever $ do
         resp <- liftIO $ hGetLine hout
         chan <- asks ce_stream
-        for_ (decode $ pack $ (dropPrefix "JSON> ") resp) $ liftIO . writeChan chan . AgdaResp buffer
+        case eitherDecode @Response $ encodeUtf8 $ (dropPrefix "JSON> ") resp of
+          Left err -> vim_report_error err
+          Right re -> liftIO $ writeChan chan $ AgdaResp buffer re
 
       pure $ Agda buffer hin
     (_, _) -> error "can't start agda"
 
 
-dropPrefix :: String -> String -> String
+dropPrefix :: Text -> Text -> Text
 dropPrefix pref msg
-  | isPrefixOf pref msg = drop (length pref) msg
+  | T.isPrefixOf pref msg = T.drop (T.length pref) msg
   | otherwise = msg
 
 
 runIOTCM :: Interaction -> Agda -> Neovim env ()
 runIOTCM i agda = do
   iotcm <- buildIOTCM i $ a_buffer agda
-  vim_report_error $ show iotcm
   liftIO $ hPrint (a_req agda) iotcm
 
 

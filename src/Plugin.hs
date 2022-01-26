@@ -19,6 +19,7 @@ import Data.Generics.Labels
 import Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
 import Cornelis.Types.Agda
 import Data.Traversable (for)
+import Cornelis.InfoWin (buildInfoBuffer)
 
 
 
@@ -31,7 +32,8 @@ withAgda m = do
     Just _ -> m
     Nothing -> do
       agda <- spawnAgda buffer
-      modify' $ #cs_buffers %~ M.insert buffer (BufferStuff agda mempty (AllGoalsWarnings [] []) Nothing)
+      iw <- buildInfoBuffer
+      modify' $ #cs_buffers %~ M.insert buffer (BufferStuff agda mempty (AllGoalsWarnings [] []) iw)
       m
 
 getAgda :: Buffer -> Neovim CornelisEnv Agda

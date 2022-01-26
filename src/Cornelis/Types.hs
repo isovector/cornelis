@@ -38,13 +38,12 @@ data BufferStuff = BufferStuff
   { bs_agda_proc :: Agda
   , bs_ips       :: IntMap InteractionPoint
   , bs_goals     :: DisplayInfo
-  , bs_info_win  :: Maybe InfoWin
+  , bs_info_win  :: InfoBuffer
   }
   deriving Generic
 
-data InfoWin = InfoWin
-  { iw_window :: Window
-  , iw_buffer :: Buffer
+newtype InfoBuffer = InfoBuffer
+  { iw_buffer :: Buffer
   }
   deriving Generic
 

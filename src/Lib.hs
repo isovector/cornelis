@@ -80,10 +80,7 @@ respond _ x = pure ()
 
 
 goalWindow :: Buffer -> DisplayInfo ->  Neovim CornelisEnv ()
-goalWindow b gs = do
-  w <- head <$> windowsForBuffer b
-  iw <- buildInfoWindow w
-  writeInfoWindow iw $ showGoals gs
+goalWindow b = showInfo b . showGoals
 
 showGoals :: DisplayInfo -> [String]
 showGoals (AllGoalsWarnings vis invis) = lines $ intercalate "\n" $ concat

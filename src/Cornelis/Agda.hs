@@ -15,7 +15,7 @@ import Neovim.API.String
 import Control.Concurrent (threadDelay)
 import Cornelis.Types
 import Cornelis.Utils
-import Control.Monad (forever)
+import Control.Monad (forever, when)
 import Control.Concurrent.Chan.Unagi (writeChan)
 import Data.List (isPrefixOf)
 import Data.ByteString.Lazy.Char8 (pack)
@@ -24,6 +24,10 @@ import Data.Text.Lazy.IO (hGetLine)
 import qualified Data.Text.Lazy as T
 import Data.Text.Lazy (Text)
 import Data.Text.Lazy.Encoding (encodeUtf8)
+import Data.Bool (bool)
+
+debugJson :: Bool
+debugJson = False
 
 spawnAgda :: Buffer -> Neovim CornelisEnv Agda
 spawnAgda buffer = do
@@ -40,6 +44,7 @@ spawnAgda buffer = do
       neovimAsync $ forever $ do
         resp <- liftIO $ hGetLine hout
         chan <- asks ce_stream
+        when debugJson $ vim_report_error $ show resp
         case eitherDecode @Response $ encodeUtf8 $ (dropPrefix "JSON> ") resp of
           Left err -> vim_report_error err
           Right re -> liftIO $ writeChan chan $ AgdaResp buffer re
@@ -60,10 +65,13 @@ runIOTCM i agda = do
   liftIO $ hPrint (a_req agda) iotcm
 
 
+enableHighlighting :: HighlightingLevel
+enableHighlighting = bool NonInteractive None debugJson
+
 buildIOTCM :: Interaction -> Buffer -> Neovim env IOTCM
 buildIOTCM i buffer = do
   fp <- buffer_get_name buffer
-  pure $ IOTCM fp NonInteractive Direct i
+  pure $ IOTCM fp enableHighlighting Direct i
 
 withCurrentBuffer :: (Buffer -> Neovim env a) -> Neovim env a
 withCurrentBuffer f = vim_get_current_buffer >>= f

@@ -34,7 +34,8 @@ data Agda = Agda
 
 data CornelisState = CornelisState
   { cs_procs :: Map Buffer Agda
-  , cs_ips :: Map Buffer (IntMap InteractionPoint)
+  , cs_ips   :: Map Buffer (IntMap InteractionPoint)
+  , cs_goals :: Map Buffer DisplayInfo
   }
   deriving Generic
 
@@ -76,7 +77,6 @@ data Response
   | UnblockOnAny
   | CompilationOk
   | Constraints
-  | AllGoalsWarnings
   | Time
   | IntroNotFound
   | IntroConstructorUnknown
@@ -96,7 +96,7 @@ data Response
   | GoalType
   | CurrentGoal
   | Error
-  | DisplayInfo
+  | DisplayInfo DisplayInfo
   | ClearHighlighting -- TokenBased
   | HighlightingInfo Bool [Highlight]
   | DoneAborting
@@ -165,6 +165,33 @@ instance FromJSON Highlight where
   parseJSON = withObject "Highlight" $ \obj ->
     Highlight <$> obj .: "atoms" <*> fmap (!! 0) (obj .: "range") <*> fmap (!! 1) (obj .: "range")
 
+data GoalInfo = GoalInfo
+  { gi_ip :: InteractionPoint
+  , gi_type :: String
+  }
+  deriving (Eq, Ord, Show)
+
+instance FromJSON GoalInfo where
+  parseJSON = withObject "GoalInfo" $ \obj ->
+    -- TODO(sandy): This thing also has a kind, that always looks like it is
+    -- "OfType", but who knows
+    GoalInfo <$> obj .: "constraintObj" <*> obj .: "type"
+
+data DisplayInfo
+  = AllGoalsWarnings
+      { di_all_visible :: [GoalInfo]
+      , di_all_invisible :: [GoalInfo]
+      }
+  | UnknownDisplayInfo Value
+  deriving (Eq, Ord, Show)
+
+instance FromJSON DisplayInfo where
+  parseJSON v = flip (withObject "DisplayInfo") v $ \obj ->
+    obj .: "kind" >>= \case
+      "AllGoalsWarnings" ->
+        AllGoalsWarnings <$> obj .: "visibleGoals" <*> obj .: "invisibleGoals"
+      (_ :: String) -> pure $ UnknownDisplayInfo v
+
 instance FromJSON Response where
   parseJSON v = flip (withObject "Response") v $ \obj -> do
     obj .: "kind" >>= \case
@@ -183,6 +210,8 @@ instance FromJSON Response where
         InteractionPoints <$> obj .: "interactionPoints"
       "SolveAll" ->
         SolveAll <$> obj .: "solutions"
+      "DisplayInfo" ->
+        DisplayInfo <$> obj .: "info"
       "Status" -> do
         (obj .: "status" >>=) $ withObject "Status" $ \s ->
           Status <$> s .: "checked" <*> s .: "showIrrelevantArguments" <*> s .: "showImplicitArguments"

@@ -95,6 +95,7 @@ library
     , lens
     , mtl
     , nvim-hs
+    , nvim-hs-contrib
     , process
     , resourcet
     , text
@@ -170,6 +171,7 @@ executable cornelis
     , lens
     , mtl
     , nvim-hs
+    , nvim-hs-contrib
     , process
     , resourcet
     , text
@@ -246,6 +248,7 @@ test-suite cornelis-test
     , lens
     , mtl
     , nvim-hs
+    , nvim-hs-contrib
     , process
     , resourcet
     , text

@@ -90,6 +90,7 @@ cornelis = do
     , exports =
         [ $(command "CornelisLoad" 'load) [CmdSync Async]
         , $(command "CornelisSolve" 'solveOne) [CmdSync Async]
+        , $(command "CornelisMakeCase" 'caseSplit) [CmdSync Async]
         ]
     }
 

@@ -22,6 +22,7 @@ description:         Please see the README on GitHub at <https://github.com/isov
 dependencies:
 - base >= 4.7 && < 5
 - nvim-hs
+- nvim-hs-contrib
 - containers
 - async
 - process

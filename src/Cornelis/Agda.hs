@@ -57,7 +57,6 @@ dropPrefix pref msg
 runIOTCM :: Interaction -> Agda -> Neovim env ()
 runIOTCM i agda = do
   iotcm <- buildIOTCM i $ a_buffer agda
-  vim_report_error $ show iotcm
   liftIO $ hPrint (a_req agda) iotcm
 
 

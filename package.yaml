@@ -1,0 +1,105 @@
+name:                cornelis
+version:             0.1.0.0
+github:              "isovector/cornelis"
+license:             BSD3
+author:              "Sandy Maguire"
+maintainer:          "sandy@sandymaguire.me"
+copyright:           "Sandy Maguire"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/isovector/cornelis#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- nvim-hs
+- containers
+- process
+- mtl
+- lens
+- generic-lens
+- transformers
+- filepath
+- directory
+
+default-extensions:
+  - BangPatterns
+  - BinaryLiterals
+  - ConstrainedClassMethods
+  - ConstraintKinds
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveLift
+  - DeriveTraversable
+  - DoAndIfThenElse
+  - EmptyCase
+  - EmptyDataDecls
+  - EmptyDataDeriving
+  - ExistentialQuantification
+  - ExplicitForAll
+  - FlexibleContexts
+  - FlexibleInstances
+  - ForeignFunctionInterface
+  - GADTSyntax
+  - GeneralisedNewtypeDeriving
+  - HexFloatLiterals
+  - ImplicitPrelude
+  - ImportQualifiedPost
+  - InstanceSigs
+  - LambdaCase
+  - KindSignatures
+  - MonomorphismRestriction
+  - MultiParamTypeClasses
+  - NamedFieldPuns
+  # - NamedWildCards
+  - NumericUnderscores
+  - PatternGuards
+  - PolyKinds
+  - PostfixOperators
+  - RankNTypes
+  - RelaxedPolyRec
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - StandaloneKindSignatures
+  - StarIsType
+  - TraditionalRecordSyntax
+  - TupleSections
+  - TypeApplications
+  - TypeOperators
+  - TypeSynonymInstances
+
+library:
+  source-dirs: src
+
+executables:
+  cornelis:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - cornelis
+
+tests:
+  cornelis-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - cornelis

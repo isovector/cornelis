@@ -1,0 +1,229 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           cornelis
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/isovector/cornelis#readme>
+homepage:       https://github.com/isovector/cornelis#readme
+bug-reports:    https://github.com/isovector/cornelis/issues
+author:         Sandy Maguire
+maintainer:     sandy@sandymaguire.me
+copyright:      Sandy Maguire
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/isovector/cornelis
+
+library
+  exposed-modules:
+      Cornelis.Agda
+      Cornelis.Types
+      Cornelis.Types.Agda
+      Lib
+      Plugin
+  other-modules:
+      Paths_cornelis
+  hs-source-dirs:
+      src
+  default-extensions:
+      BangPatterns
+      BinaryLiterals
+      ConstrainedClassMethods
+      ConstraintKinds
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DoAndIfThenElse
+      EmptyCase
+      EmptyDataDecls
+      EmptyDataDeriving
+      ExistentialQuantification
+      ExplicitForAll
+      FlexibleContexts
+      FlexibleInstances
+      ForeignFunctionInterface
+      GADTSyntax
+      GeneralisedNewtypeDeriving
+      HexFloatLiterals
+      ImplicitPrelude
+      ImportQualifiedPost
+      InstanceSigs
+      LambdaCase
+      KindSignatures
+      MonomorphismRestriction
+      MultiParamTypeClasses
+      NamedFieldPuns
+      NumericUnderscores
+      PatternGuards
+      PolyKinds
+      PostfixOperators
+      RankNTypes
+      RelaxedPolyRec
+      ScopedTypeVariables
+      StandaloneDeriving
+      StandaloneKindSignatures
+      StarIsType
+      TraditionalRecordSyntax
+      TupleSections
+      TypeApplications
+      TypeOperators
+      TypeSynonymInstances
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , directory
+    , filepath
+    , generic-lens
+    , lens
+    , mtl
+    , nvim-hs
+    , process
+    , transformers
+  default-language: Haskell2010
+
+executable cornelis
+  main-is: Main.hs
+  other-modules:
+      Paths_cornelis
+  hs-source-dirs:
+      app
+  default-extensions:
+      BangPatterns
+      BinaryLiterals
+      ConstrainedClassMethods
+      ConstraintKinds
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DoAndIfThenElse
+      EmptyCase
+      EmptyDataDecls
+      EmptyDataDeriving
+      ExistentialQuantification
+      ExplicitForAll
+      FlexibleContexts
+      FlexibleInstances
+      ForeignFunctionInterface
+      GADTSyntax
+      GeneralisedNewtypeDeriving
+      HexFloatLiterals
+      ImplicitPrelude
+      ImportQualifiedPost
+      InstanceSigs
+      LambdaCase
+      KindSignatures
+      MonomorphismRestriction
+      MultiParamTypeClasses
+      NamedFieldPuns
+      NumericUnderscores
+      PatternGuards
+      PolyKinds
+      PostfixOperators
+      RankNTypes
+      RelaxedPolyRec
+      ScopedTypeVariables
+      StandaloneDeriving
+      StandaloneKindSignatures
+      StarIsType
+      TraditionalRecordSyntax
+      TupleSections
+      TypeApplications
+      TypeOperators
+      TypeSynonymInstances
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , cornelis
+    , directory
+    , filepath
+    , generic-lens
+    , lens
+    , mtl
+    , nvim-hs
+    , process
+    , transformers
+  default-language: Haskell2010
+
+test-suite cornelis-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_cornelis
+  hs-source-dirs:
+      test
+  default-extensions:
+      BangPatterns
+      BinaryLiterals
+      ConstrainedClassMethods
+      ConstraintKinds
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DoAndIfThenElse
+      EmptyCase
+      EmptyDataDecls
+      EmptyDataDeriving
+      ExistentialQuantification
+      ExplicitForAll
+      FlexibleContexts
+      FlexibleInstances
+      ForeignFunctionInterface
+      GADTSyntax
+      GeneralisedNewtypeDeriving
+      HexFloatLiterals
+      ImplicitPrelude
+      ImportQualifiedPost
+      InstanceSigs
+      LambdaCase
+      KindSignatures
+      MonomorphismRestriction
+      MultiParamTypeClasses
+      NamedFieldPuns
+      NumericUnderscores
+      PatternGuards
+      PolyKinds
+      PostfixOperators
+      RankNTypes
+      RelaxedPolyRec
+      ScopedTypeVariables
+      StandaloneDeriving
+      StandaloneKindSignatures
+      StarIsType
+      TraditionalRecordSyntax
+      TupleSections
+      TypeApplications
+      TypeOperators
+      TypeSynonymInstances
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , cornelis
+    , directory
+    , filepath
+    , generic-lens
+    , lens
+    , mtl
+    , nvim-hs
+    , process
+    , transformers
+  default-language: Haskell2010

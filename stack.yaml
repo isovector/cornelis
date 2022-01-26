@@ -1,0 +1,9 @@
+resolver: lts-18.16
+
+packages:
+- .
+
+extra-deps:
+- nvim-hs-2.1.0.7
+
+

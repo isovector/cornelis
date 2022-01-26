@@ -111,7 +111,7 @@ data Response
   | JumpToError
   | InteractionPoints [InteractionPoint]
   | GiveAction
-  | MakeCase
+  | MakeCase MakeCase
   | SolveAll [Solution]
   | Unknown String Value
   deriving (Eq, Ord, Show)
@@ -123,6 +123,15 @@ data Highlight = Highlight
   , hl_end :: Int
   }
   deriving (Eq, Ord, Show)
+
+data MakeCase
+  = MakeFunctionCase [String] InteractionPoint
+  deriving (Eq, Ord, Show)
+
+instance FromJSON MakeCase where
+  parseJSON = withObject "MakeCase" $ \obj ->
+    MakeFunctionCase <$> obj .: "clauses" <*> obj .: "interactionPoint"
+
 
 data Solution = Solution
   { s_ip :: Int
@@ -159,6 +168,8 @@ instance FromJSON Highlight where
 instance FromJSON Response where
   parseJSON v = flip (withObject "Response") v $ \obj -> do
     obj .: "kind" >>= \case
+      "MakeCase" ->
+        MakeCase <$> parseJSON v
       "ClearRunningInfo" ->
         pure ClearRunningInfo
       "HighlightingInfo" ->

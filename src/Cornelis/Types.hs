@@ -143,7 +143,7 @@ data MakeCase
   = RegularCase MakeCaseVariant [String] InteractionPoint
   deriving (Eq, Ord, Show)
 
-data MakeCaseVariant = MakeFunctionCase | ExtendedLambda
+data MakeCaseVariant = Function | ExtendedLambda
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromJSON)
 

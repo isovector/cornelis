@@ -100,7 +100,7 @@ getSurroundingMotion w b motion p = do
       pure (start, end)
 
 doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
-doMakeCase b (RegularCase MakeFunctionCase clauses ip) =
+doMakeCase b (RegularCase Function clauses ip) =
   replaceInterval b (ip_interval ip & #iStart . #posCol .~ 1) $ unlines clauses
 -- TODO(sandy): It would be nice if Agda just gave us the bounds we're supposed to replace...
 doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
@@ -111,13 +111,13 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a bug in cornelis."
     Just w -> do
       ((sl, sc), (el, ec)) <- getSurroundingMotion w b "i}" $ iStart $ ip_interval ip
-      nvim_buf_set_text b (sl - 1) sc (el - 1) ec $
+      nvim_buf_set_text b (sl - 1) (sc + 1) (el - 1) ec $
         clauses & _tail %~ fmap (indent $ fromIntegral sc)
 
 ------------------------------------------------------------------------------
 -- | Indent a string with the given offset.
 indent :: Int -> String -> String
-indent n s = replicate n ' ' ++ s
+indent n s = replicate (n - 1) ' ' <> "; " <> s
 
 
 positionToVim :: Position' a -> (Int64, Int64)

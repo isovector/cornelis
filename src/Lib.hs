@@ -20,7 +20,7 @@ import Control.Monad.Reader.Class (local)
 import Neovim.Context.Internal (Neovim(..), retypeConfig)
 import Control.Monad.Trans.Resource (transResourceT)
 import Control.Monad.Reader (mapReaderT, withReaderT)
-import Neovim.API.String (vim_err_write, vim_report_error, Buffer, nvim_buf_set_text, nvim_create_namespace, nvim_buf_clear_namespace, vim_command_output, vim_out_write, nvim_open_win, nvim_get_current_win, vim_command, nvim_create_buf, nvim_win_set_buf, buffer_set_lines, window_set_height, nvim_set_current_win, nvim_win_set_var, vim_get_windows, nvim_win_get_var, nvim_win_close)
+import Neovim.API.String
 import Cornelis.Utils
 import Data.ByteString.Lazy.Char8 (unpack)
 import Control.Monad.State.Class (modify', gets)
@@ -33,6 +33,7 @@ import Cornelis.Highlighting (highlightBuffer)
 import Data.List (intercalate)
 import Cornelis.InfoWin
 import Control.Monad (when)
+import Data.Maybe
 
 
 main :: IO ()
@@ -60,8 +61,8 @@ respond b (DisplayInfo dp) = do
 respond b (InteractionPoints ips) = do
   modifyBufferStuff b $ #bs_ips .~ (IM.fromList $ fmap (ip_id &&& id) ips)
 -- Replace a function clause
-respond b (MakeCase (MakeFunctionCase clauses ip)) = do
-  replaceInterval b (ip_interval ip & #iStart . #posCol .~ 1) $ unlines clauses
+respond b (MakeCase mkcase) = do
+  doMakeCase b mkcase
 -- Replace the interaction point with a result
 respond b (GiveAction result ip) = do
   replaceInterval b (ip_interval ip) result
@@ -80,15 +81,56 @@ respond _ (RunningInfo _ x) = vim_out_write x
 respond _ (Unknown k _) = vim_report_error k
 respond _ x = pure ()
 
+------------------------------------------------------------------------------
+-- | Awful function that does the motion in visual mode and gives you back
+-- where vim thinks the @'<@ and @'>@ marks are.
+--
+-- I'm so sorry.
+getSurroundingMotion :: Window -> Buffer -> String -> Position' a -> Neovim CornelisEnv ((Int64, Int64), (Int64, Int64))
+getSurroundingMotion w b motion p = do
+  savingCurrentWindow $ do
+    savingCurrentPosition w $ do
+      let lc = positionToVim p
+      nvim_set_current_win w
+      window_set_cursor w lc
+      vim_command $ "normal v" <> motion
+      start <- nvim_buf_get_mark b "<"
+      end <- nvim_buf_get_mark b ">"
+      nvim_input "<esc>"
+      pure (start, end)
+
+doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
+doMakeCase b (RegularCase MakeFunctionCase clauses ip) =
+  replaceInterval b (ip_interval ip & #iStart . #posCol .~ 1) $ unlines clauses
+-- TODO(sandy): It would be nice if Agda just gave us the bounds we're supposed to replace...
+doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
+  ws <- windowsForBuffer b
+  case listToMaybe ws of
+    Nothing ->
+      vim_report_error
+        "Unable to extend a lambda without having a window that contains the modified buffer. This is a bug in cornelis."
+    Just w -> do
+      ((sl, sc), (el, ec)) <- getSurroundingMotion w b "i}" $ iStart $ ip_interval ip
+      nvim_buf_set_text b (sl - 1) sc (el - 1) ec $
+        clauses & _tail %~ fmap (indent $ fromIntegral sc)
+
+------------------------------------------------------------------------------
+-- | Indent a string with the given offset.
+indent :: Int -> String -> String
+indent n s = replicate n ' ' ++ s
+
+
+positionToVim :: Position' a -> (Int64, Int64)
+positionToVim p =
+  ( fromIntegral $ posLine p - 1
+  , fromIntegral $ posCol p - 1
+  )
+
+
 
 replaceInterval :: Buffer -> IntervalWithoutFile -> String -> Neovim CornelisEnv ()
-replaceInterval buffer (Interval start end)
-  = nvim_buf_set_text
-      buffer
-      (fromIntegral $ posLine start - 1)
-      (fromIntegral $ posCol start - 1)
-      (fromIntegral $ posLine end - 1)
-      (fromIntegral $ posCol end - 1)
+replaceInterval buffer (Interval (positionToVim -> (sl, sc)) (positionToVim -> (el, ec)))
+  = nvim_buf_set_text buffer sl sc el ec
   . lines
 
 

@@ -9,7 +9,7 @@ import Data.Foldable (for_)
 import Data.Maybe
 import Data.Traversable (for)
 import Control.Monad.State.Class
-import Cornelis.Utils (withBufferStuff)
+import Cornelis.Utils (withBufferStuff, windowsForBuffer, savingCurrentWindow)
 
 
 cornelisWindowVar :: String
@@ -38,15 +38,6 @@ closeInfoWindowForBuffer bs = do
 
 
 
-windowsForBuffer :: Buffer -> Neovim env [Window]
-windowsForBuffer b = do
-  wins <- vim_get_windows
-  fmap catMaybes $ for wins $ \w -> do
-    wb <- window_get_buffer w
-    pure $ case wb == b of
-      False -> Nothing
-      True -> Just w
-
 showInfoWindow :: Buffer -> [String] -> Neovim CornelisEnv ()
 showInfoWindow b s = withBufferStuff b $ \bs -> do
   let ib = bs_info_win bs
@@ -68,15 +59,10 @@ buildInfoBuffer = do
   pure $ InfoBuffer b
 
 
-saveCurrentWindow :: Neovim env a -> Neovim env a
-saveCurrentWindow m = do
-  w <- nvim_get_current_win
-  m <* nvim_set_current_win w
-
 
 
 buildInfoWindow :: InfoBuffer -> Window -> Neovim env Window
-buildInfoWindow (InfoBuffer split_buf) w = saveCurrentWindow $ do
+buildInfoWindow (InfoBuffer split_buf) w = savingCurrentWindow $ do
   nvim_set_current_win w
   vim_command "split"
   split_win <- nvim_get_current_win

@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Cornelis.Types
   ( module Cornelis.Types
@@ -139,12 +140,16 @@ data Highlight = Highlight
   deriving (Eq, Ord, Show)
 
 data MakeCase
-  = MakeFunctionCase [String] InteractionPoint
+  = RegularCase MakeCaseVariant [String] InteractionPoint
   deriving (Eq, Ord, Show)
+
+data MakeCaseVariant = MakeFunctionCase | ExtendedLambda
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (FromJSON)
 
 instance FromJSON MakeCase where
   parseJSON = withObject "MakeCase" $ \obj ->
-    MakeFunctionCase <$> obj .: "clauses" <*> obj .: "interactionPoint"
+    RegularCase <$> obj .: "variant" <*> obj .: "clauses" <*> obj .: "interactionPoint"
 
 
 data Solution = Solution

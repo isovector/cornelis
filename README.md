@@ -1,5 +1,8 @@
 # cornelis
 
+![Cornelis in Action](https://raw.githubusercontent.com/isovector/cornelis/master/cast.gif)
+
+
 ## Dedication
 
 > I'll ask to stand up

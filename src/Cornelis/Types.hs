@@ -213,7 +213,7 @@ data DisplayInfo
       }
   | GoalSpecific InteractionPoint [InScope] Type
   | UnknownDisplayInfo Value
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
 
 instance FromJSON DisplayInfo where
   parseJSON v = flip (withObject "DisplayInfo") v $ \obj ->

@@ -32,6 +32,7 @@ import qualified Data.Map.Strict as M
 import Cornelis.Highlighting (highlightBuffer)
 import Data.List (intercalate)
 import Cornelis.InfoWin
+import Control.Monad (when)
 
 
 main :: IO ()
@@ -52,7 +53,8 @@ modifyBufferStuff b f = modify' $ #cs_buffers %~ M.update (Just . f) b
 respond :: Buffer -> Response -> Neovim CornelisEnv ()
 -- Update the buffer's goal map
 respond b (DisplayInfo dp) = do
-  modifyBufferStuff b $ #bs_goals .~ dp
+  when (dp & has #_AllGoalsWarnings) $
+    modifyBufferStuff b $ #bs_goals .~ dp
   goalWindow b dp
 -- Update the buffer's interaction points map
 respond b (InteractionPoints ips) = do

@@ -71,7 +71,7 @@ respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) -> do
     getInteractionPoint b i >>= \case
       Nothing -> vim_report_error $ "Can't find interaction point " <> show i
-      Just ip -> replaceInterval b (ip_interval ip) ex
+      Just ip -> replaceInterval b (ip_interval ip) $ parens ex
 respond b ClearHighlighting = do
   ns <- asks ce_namespace
   nvim_buf_clear_namespace b ns 0 (-1)
@@ -88,6 +88,9 @@ respond b (JumpToError _ pos) = do
       for_ ws $ flip window_set_cursor $ first (+1) lc
 respond _ (Unknown k _) = vim_report_error k
 respond _ x = pure ()
+
+parens :: String -> String
+parens s = '(' : s <> ")"
 
 ------------------------------------------------------------------------------
 -- | Awful function that does the motion in visual mode and gives you back

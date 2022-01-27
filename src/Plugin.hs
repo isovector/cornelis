@@ -63,6 +63,8 @@ containsPoint (Interval s e) (l, c) = and
   , fromIntegral c <= posCol e
   ]
 
+-- TODO(sandy): There's a bug here! Vim reports byte-offset columns, so lines
+-- that contain unicode are wrong. ffs
 withGoalAtCursor :: (Buffer -> InteractionPoint -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
 withGoalAtCursor f = getGoalAtCursor >>= \case
    (_, Nothing) -> do

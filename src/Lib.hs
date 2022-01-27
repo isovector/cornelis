@@ -63,6 +63,9 @@ respond b (InteractionPoints ips) = do
 respond b (MakeCase (MakeFunctionCase clauses ip)) = do
   replaceInterval b (ip_interval ip & #iStart . #posCol .~ 1) $ unlines clauses
 -- Replace the interaction point with a result
+respond b (GiveAction result ip) = do
+  replaceInterval b (ip_interval ip) result
+-- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) -> do
     getInteractionPoint b i >>= \case
@@ -115,6 +118,7 @@ cornelis = do
         , $(command "CornelisSolve" 'solveOne) [CmdSync Async]
         , $(command "CornelisTypeContext" 'typeContext) [CmdSync Async]
         , $(command "CornelisMakeCase" 'caseSplit) [CmdSync Async]
+        , $(command "CornelisRefine" 'refine) [CmdSync Async]
         ]
     }
 

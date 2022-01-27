@@ -124,7 +124,7 @@ data Response
     }
   | JumpToError
   | InteractionPoints [InteractionPoint]
-  | GiveAction
+  | GiveAction String InteractionPoint
   | MakeCase MakeCase
   | SolveAll [Solution]
   | Unknown String Value
@@ -243,6 +243,9 @@ instance FromJSON Response where
         InteractionPoints <$> obj .: "interactionPoints"
       "SolveAll" ->
         SolveAll <$> obj .: "solutions"
+      "GiveAction" ->
+        (obj .: "giveResult") >>= \result ->
+          GiveAction <$> result .: "str" <*> obj .: "interactionPoint"
       "DisplayInfo" ->
         DisplayInfo <$> obj .: "info"
       "Status" -> do

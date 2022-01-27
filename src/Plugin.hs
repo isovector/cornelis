@@ -94,6 +94,11 @@ typeContext _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
   flip runIOTCM agda $ Cmd_goal_type_context Simplified (InteractionId $ ip_id goal) noRange ""
 
+refine :: CommandArguments -> Neovim CornelisEnv ()
+refine _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
+  agda <- getAgda b
+  flip runIOTCM agda $ Cmd_refine_or_intro True (InteractionId $ ip_id goal) noRange ""
+
 caseSplit :: CommandArguments -> Neovim CornelisEnv ()
 caseSplit _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   thing <- input @String "Split on what?" Nothing Nothing

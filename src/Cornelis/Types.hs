@@ -103,7 +103,6 @@ data Response
   | InferredType
   | Context
   | Version
-  | GoalSpecific
   | GoalOnly
   | GoalAndHave
   | GoalAndElaboration
@@ -182,7 +181,7 @@ instance FromJSON Highlight where
 
 data GoalInfo = GoalInfo
   { gi_ip :: InteractionPoint
-  , gi_type :: String
+  , gi_type :: Type
   }
   deriving (Eq, Ord, Show)
 
@@ -192,11 +191,27 @@ instance FromJSON GoalInfo where
     -- "OfType", but who knows
     GoalInfo <$> obj .: "constraintObj" <*> obj .: "type"
 
+newtype Type = Type String
+  deriving newtype (Eq, Ord, Show, FromJSON)
+
+data InScope = InScope
+  { is_refied_name :: String
+  , is_original_name :: String
+  , is_in_scope :: Bool
+  , is_type :: Type
+  }
+  deriving (Eq, Ord, Show)
+
+instance FromJSON InScope where
+  parseJSON = withObject "InScope" $ \obj ->
+    InScope <$> obj .: "reifiedName" <*> obj .: "originalName" <*> obj .: "inScope" <*> obj .: "binding"
+
 data DisplayInfo
   = AllGoalsWarnings
       { di_all_visible :: [GoalInfo]
       , di_all_invisible :: [GoalInfo]
       }
+  | GoalSpecific InteractionPoint [InScope] Type
   | UnknownDisplayInfo Value
   deriving (Eq, Ord, Show)
 
@@ -205,6 +220,9 @@ instance FromJSON DisplayInfo where
     obj .: "kind" >>= \case
       "AllGoalsWarnings" ->
         AllGoalsWarnings <$> obj .: "visibleGoals" <*> obj .: "invisibleGoals"
+      "GoalSpecific" ->
+        (obj .: "goalInfo") >>= \info ->
+          GoalSpecific <$> obj .: "interactionPoint" <*> info .: "entries" <*> info .: "type"
       (_ :: String) -> pure $ UnknownDisplayInfo v
 
 instance FromJSON Response where

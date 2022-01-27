@@ -89,6 +89,11 @@ solveOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
   flip runIOTCM agda $ Cmd_solveOne Simplified (InteractionId $ ip_id goal) noRange ""
 
+typeContext :: CommandArguments -> Neovim CornelisEnv ()
+typeContext _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
+  agda <- getAgda b
+  flip runIOTCM agda $ Cmd_goal_type_context Simplified (InteractionId $ ip_id goal) noRange ""
+
 caseSplit :: CommandArguments -> Neovim CornelisEnv ()
 caseSplit _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   thing <- input @String "Split on what?" Nothing Nothing
@@ -116,10 +121,27 @@ showGoals (AllGoalsWarnings vis invis) = lines $ intercalate "\n" $ concat
     | not $ null invis
     ]
   ]
+-- TODO(sandy): align on the :
+-- TODO(sandy): sort
+showGoals (GoalSpecific ip entries (Type ty)) = lines $ unlines
+  -- [ "?" <> show (ip_id ip) <> " : " <> ty
+  [ unwords ["Goal:", ty]
+  , replicate 60 '—'
+  , unlines $ fmap showInScope entries
+  ]
+
 showGoals (UnknownDisplayInfo _) = []
 
+showInScope :: InScope -> String
+showInScope (InScope re orig b (Type ty)) =
+  inScope b $ unwords [ orig , ":", ty ]
+
+inScope :: Bool -> String -> String
+inScope False s = s ++ "    (not in scope)"
+inScope True s = s
+
 showGoal :: GoalInfo -> String
-showGoal (GoalInfo ip ty) = unwords
+showGoal (GoalInfo ip (Type ty)) = unwords
   [ "?" <> show (ip_id ip)
   , " : "
   , ty

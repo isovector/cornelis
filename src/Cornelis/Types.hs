@@ -122,7 +122,7 @@ data Response
     , status_showIrrelevant :: Bool
     , status_showImplicits :: Bool
     }
-  | JumpToError
+  | JumpToError FilePath Int
   | InteractionPoints [InteractionPoint]
   | GiveAction String InteractionPoint
   | MakeCase MakeCase
@@ -256,6 +256,8 @@ instance FromJSON Response where
           GiveAction <$> result .: "str" <*> obj .: "interactionPoint"
       "DisplayInfo" ->
         DisplayInfo <$> obj .: "info"
+      "JumpToError" ->
+        JumpToError <$> obj .: "filepath" <*> obj .: "position"
       "Status" -> do
         (obj .: "status" >>=) $ withObject "Status" $ \s ->
           Status <$> s .: "checked" <*> s .: "showIrrelevantArguments" <*> s .: "showImplicitArguments"

@@ -25,11 +25,11 @@ import Cornelis.Utils
 import Data.ByteString.Lazy.Char8 (unpack)
 import Control.Monad.State.Class (modify', gets)
 import qualified Data.IntMap.Strict as IM
-import Control.Arrow ((&&&))
+import Control.Arrow ((&&&), first)
 import Data.Foldable (for_)
 import Cornelis.Types.Agda
 import qualified Data.Map.Strict as M
-import Cornelis.Highlighting (highlightBuffer)
+import Cornelis.Highlighting (highlightBuffer, getLineIntervals, lookupPoint)
 import Data.List (intercalate)
 import Cornelis.InfoWin
 import Control.Monad (when)
@@ -78,6 +78,14 @@ respond b ClearHighlighting = do
 respond b (HighlightingInfo _remove hl) =
   highlightBuffer b hl
 respond _ (RunningInfo _ x) = vim_out_write x
+respond b (JumpToError _ pos) = do
+  buf_lines <- nvim_buf_get_lines b 0 (-1) True
+  let li = getLineIntervals buf_lines
+  case lookupPoint li pos of
+    Nothing -> vim_report_error "invalid error report from Agda"
+    Just lc -> do
+      ws <- windowsForBuffer b
+      for_ ws $ flip window_set_cursor $ first (+1) lc
 respond _ (Unknown k _) = vim_report_error k
 respond _ x = pure ()
 

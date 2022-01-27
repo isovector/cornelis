@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingStrategies #-}
+
 module Cornelis.Highlighting where
 
 import           Cornelis.Types
@@ -52,6 +53,9 @@ getLineIntervals = LineIntervals . go 0 0
     go pos line (s : ss) =
       let len = length s
        in IM.singleton (Interval pos $ pos + len) (line, s) <> go (pos + len + 1) (line + 1) ss
+
+lookupPoint :: LineIntervals -> Int -> Maybe (Int64, Int64)
+lookupPoint li i = fmap (\(l, c, _) -> (l, c)) $ listToMaybe $ lookupLine li i i
 
 lookupLine :: LineIntervals -> Int -> Int -> [(Int64, Int64, Int64)]
 lookupLine (LineIntervals im) start end = do

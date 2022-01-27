@@ -5,11 +5,11 @@
 
 ## Dedication
 
-> I'll ask to stand up
-> With a show about a rooster,
-> Which was old and worn out,
-> Impotent and weathered.
-> The chickens complained and whined
+> I'll ask to stand up \
+> With a show about a rooster, \
+> Which was old and worn out, \
+> Impotent and weathered. \
+> The chickens complained and whined \
 > Because he did not satisfy them.
 >
 > -- [Cornelis Vreeswijk](https://www.youtube.com/watch?v=oKUscEWPVAM)
@@ -35,6 +35,10 @@ case splitting. These are exposed via the vim commands:
 :CornelisSolve
 :CornelisMakeCase
 ```
+
+Additionally, there is minor support for agda-input via your `<LocalLeader>` in
+insert mode. See [agda-input.vim](https://github.com/isovector/cornelis/blob/master/agda-input.vim)
+for available bindings.
 
 
 ## Installation

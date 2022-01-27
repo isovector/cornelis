@@ -54,7 +54,7 @@ modifyBufferStuff b f = modify' $ #cs_buffers %~ M.update (Just . f) b
 respond :: Buffer -> Response -> Neovim CornelisEnv ()
 -- Update the buffer's goal map
 respond b (DisplayInfo dp) = do
-  when (dp & has #_AllGoalsWarnings) $
+  when (dp & hasn't #_GoalSpecific) $
     modifyBufferStuff b $ #bs_goals .~ dp
   goalWindow b dp
 -- Update the buffer's interaction points map
@@ -86,7 +86,12 @@ respond _ x = pure ()
 -- where vim thinks the @'<@ and @'>@ marks are.
 --
 -- I'm so sorry.
-getSurroundingMotion :: Window -> Buffer -> String -> Position' a -> Neovim CornelisEnv ((Int64, Int64), (Int64, Int64))
+getSurroundingMotion
+    :: Window
+    -> Buffer
+    -> String
+    -> Position' a
+    -> Neovim CornelisEnv ((Int64, Int64), (Int64, Int64))
 getSurroundingMotion w b motion p = do
   savingCurrentWindow $ do
     savingCurrentPosition w $ do

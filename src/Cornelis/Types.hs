@@ -23,7 +23,7 @@ import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Inter
 import GHC.Generics
 import Control.Concurrent.Chan.Unagi (InChan)
 import System.IO (Handle)
-import Data.Aeson
+import Data.Aeson hiding (Error)
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IM
 
@@ -110,7 +110,6 @@ data Response
   | HelperFunction
   | GoalType
   | CurrentGoal
-  | Error
   | DisplayInfo DisplayInfo
   | ClearHighlighting -- TokenBased
   | HighlightingInfo Bool [Highlight]
@@ -217,6 +216,7 @@ data DisplayInfo
       , di_all_invisible :: [GoalInfo]
       }
   | GoalSpecific InteractionPoint [InScope] Type
+  | Error String
   | UnknownDisplayInfo Value
   deriving (Eq, Ord, Show, Generic)
 
@@ -225,6 +225,9 @@ instance FromJSON DisplayInfo where
     obj .: "kind" >>= \case
       "AllGoalsWarnings" ->
         AllGoalsWarnings <$> obj .: "visibleGoals" <*> obj .: "invisibleGoals"
+      "Error" ->
+        obj .: "error" >>= \err ->
+          Error <$> err .: "message"
       "GoalSpecific" ->
         (obj .: "goalInfo") >>= \info ->
           GoalSpecific <$> obj .: "interactionPoint" <*> info .: "entries" <*> info .: "type"

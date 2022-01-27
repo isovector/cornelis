@@ -17,7 +17,7 @@ import Neovim.Context (gets)
 import Control.Monad.State.Class
 import Data.Generics.Labels
 import Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
-import Cornelis.Types.Agda
+import Cornelis.Types.Agda hiding (Error)
 import Data.Traversable (for)
 import Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
 import Data.List
@@ -136,6 +136,7 @@ showGoals (GoalSpecific ip entries (Type ty)) = lines $ unlines
   , replicate 60 '—'
   , unlines $ fmap showInScope entries
   ]
+showGoals (Error msg) = lines msg
 
 showGoals (UnknownDisplayInfo _) = []
 

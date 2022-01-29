@@ -22,6 +22,7 @@ import Data.Traversable (for)
 import Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
 import Data.List
 import Cornelis.Utils
+import Cornelis.Highlighting (unvimifyColumn)
 
 
 
@@ -46,10 +47,11 @@ getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe InteractionPoint)
 getGoalAtCursor = do
   w <- nvim_get_current_win
   b <- window_get_buffer w
-  -- TODO(sandy): stupid off-by-one in vim? or agda?
-  (r, (+1) -> c) <- window_get_cursor w
+  (r, c) <- window_get_cursor w
+  c' <- unvimifyColumn b (r, c)
   ips <- fmap bs_ips . M.lookup b <$> gets cs_buffers
-  pure (b, flip lookupGoal (r, c) =<< ips)
+  -- TODO(sandy): stupid off-by-one in vim? or agda?
+  pure (b, flip lookupGoal (r, fromIntegral (c' + 1)) =<< ips)
 
 
 lookupGoal :: Foldable t => t InteractionPoint -> (Int64, Int64) -> Maybe InteractionPoint

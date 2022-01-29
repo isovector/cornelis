@@ -29,7 +29,7 @@ import Control.Arrow ((&&&), first)
 import Data.Foldable (for_)
 import Cornelis.Types.Agda
 import qualified Data.Map.Strict as M
-import Cornelis.Highlighting (highlightBuffer, getLineIntervals, lookupPoint)
+import Cornelis.Highlighting (highlightBuffer, getLineIntervals, lookupPoint, unvimifyColumn)
 import Data.List (intercalate)
 import Cornelis.InfoWin
 import Control.Monad (when)
@@ -127,9 +127,10 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
       vim_report_error
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a bug in cornelis."
     Just w -> do
-      ((sl, sc), (el, ec)) <- getSurroundingMotion w b "i}" $ iStart $ ip_interval ip
+      (slsc@(sl, sc), (el, ec)) <- getSurroundingMotion w b "i}" $ iStart $ ip_interval ip
+      sc' <- unvimifyColumn b slsc
       nvim_buf_set_text b (sl - 1) (sc + 1) (el - 1) ec $
-        clauses & _tail %~ fmap (indent $ fromIntegral sc)
+        clauses & _tail %~ fmap (indent $ fromIntegral sc')
 
 ------------------------------------------------------------------------------
 -- | Indent a string with the given offset.

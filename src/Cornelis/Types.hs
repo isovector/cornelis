@@ -163,6 +163,12 @@ data InteractionPoint = InteractionPoint
   }
   deriving (Eq, Ord, Show)
 
+data NamedPoint = NamedPoint
+  { np_name :: String
+  , np_interval :: IntervalWithoutFile
+  }
+  deriving (Eq, Ord, Show)
+
 instance FromJSON IntervalWithoutFile where
   parseJSON = withObject "IntervalWithoutFile" $ \obj -> do
     Interval <$> obj .: "start" <*> obj .: "end"
@@ -170,6 +176,10 @@ instance FromJSON IntervalWithoutFile where
 instance FromJSON InteractionPoint where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range")
+
+instance FromJSON NamedPoint where
+  parseJSON = withObject "InteractionPoint" $ \obj -> do
+    NamedPoint <$> obj .: "name" <*> fmap head (obj .: "range")
 
 instance FromJSON (Position' ()) where
   parseJSON = withObject "Position" $ \obj -> do
@@ -183,13 +193,13 @@ instance FromJSON Highlight where
   parseJSON = withObject "Highlight" $ \obj ->
     Highlight <$> obj .: "atoms" <*> fmap (!! 0) (obj .: "range") <*> fmap (!! 1) (obj .: "range")
 
-data GoalInfo = GoalInfo
-  { gi_ip :: InteractionPoint
+data GoalInfo a = GoalInfo
+  { gi_ip :: a
   , gi_type :: Type
   }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Functor)
 
-instance FromJSON GoalInfo where
+instance FromJSON a => FromJSON (GoalInfo a) where
   parseJSON = withObject "GoalInfo" $ \obj ->
     -- TODO(sandy): This thing also has a kind, that always looks like it is
     -- "OfType", but who knows
@@ -212,8 +222,8 @@ instance FromJSON InScope where
 
 data DisplayInfo
   = AllGoalsWarnings
-      { di_all_visible :: [GoalInfo]
-      , di_all_invisible :: [GoalInfo]
+      { di_all_visible :: [GoalInfo InteractionPoint]
+      , di_all_invisible :: [GoalInfo NamedPoint]
       }
   | GoalSpecific InteractionPoint [InScope] Type
   | Error String

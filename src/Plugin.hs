@@ -117,13 +117,13 @@ showGoals :: DisplayInfo -> [String]
 showGoals (AllGoalsWarnings vis invis) = lines $ intercalate "\n" $ concat
   [ [ unlines
       [ "Visible Goals:"
-      , unlines $ fmap showGoal vis
+      , unlines $ fmap (showGoal . fmap (mappend "?" . show . ip_id)) vis
       ]
     | not $ null vis
     ]
   , [ unlines
       [ "Invisible Goals:"
-      , unlines $ fmap showGoal vis
+      , unlines $ fmap (showGoal . fmap np_name) invis
       ]
     | not $ null invis
     ]
@@ -148,9 +148,9 @@ inScope :: Bool -> String -> String
 inScope False s = s ++ "    (not in scope)"
 inScope True s = s
 
-showGoal :: GoalInfo -> String
-showGoal (GoalInfo ip (Type ty)) = unwords
-  [ "?" <> show (ip_id ip)
+showGoal :: GoalInfo String -> String
+showGoal (GoalInfo name (Type ty)) = unwords
+  [ name
   , " : "
   , ty
   ]

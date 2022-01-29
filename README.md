@@ -17,9 +17,9 @@
 
 ## Overview
 
-`cornelis` is agda-mode, but for vim. It's written in Haskell, which means it's
-maintainable and significantly less likely to bit-rot like any vimscript/lua
-implementations.
+`cornelis` is agda-mode, but for neovim. It's written in Haskell, which means
+it's maintainable and significantly less likely to bit-rot like any
+vimscript/lua implementations.
 
 
 ## Features

@@ -78,6 +78,7 @@ respond b ClearHighlighting = do
 respond b (HighlightingInfo _remove hl) =
   highlightBuffer b hl
 respond _ (RunningInfo _ x) = vim_out_write x
+respond _ (ClearRunningInfo) = vim_out_write ""
 respond b (JumpToError _ pos) = do
   buf_lines <- nvim_buf_get_lines b 0 (-1) True
   let li = getLineIntervals buf_lines

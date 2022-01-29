@@ -50,3 +50,16 @@ Plug 'isovector/cornelis'
 
 Make sure you have [`stack`](https://docs.haskellstack.org/en/stable/install_and_upgrade/) on your PATH!
 
+
+## Architecture
+
+Cornelis spins up a new `BufferStuff` for each Agda buffer it encounters.
+`BufferStuff` contains a handle to a unique `agda` instance, which can be used
+to send commands. It also tracks things like the information window buffer,
+in-scope goals, and whatever the last `DisplayInfo` response from `agda` was.
+
+For each `BufferStuff`, we also spin up a new thread, blocking on responses
+from `agda`. These responses all get redirected to a global worker thread, which
+is responsible for dispatching on each command. Commands are typesafe, parsed
+from JSON, and associated with the buffer they came from.
+

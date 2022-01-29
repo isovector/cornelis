@@ -35,7 +35,7 @@ withAgda m = do
     Nothing -> do
       agda <- spawnAgda buffer
       iw <- buildInfoBuffer
-      modify' $ #cs_buffers %~ M.insert buffer (BufferStuff agda mempty (AllGoalsWarnings [] []) iw)
+      modify' $ #cs_buffers %~ M.insert buffer (BufferStuff agda mempty (AllGoalsWarnings [] [] [] []) iw)
       m
 
 getAgda :: Buffer -> Neovim CornelisEnv Agda
@@ -114,20 +114,22 @@ goalWindow b = showInfoWindow b . showGoals
 
 
 showGoals :: DisplayInfo -> [String]
-showGoals (AllGoalsWarnings vis invis) = lines $ intercalate "\n" $ concat
-  [ [ unlines
-      [ "Visible Goals:"
-      , unlines $ fmap (showGoal . fmap (mappend "?" . show . ip_id)) vis
-      ]
-    | not $ null vis
-    ]
-  , [ unlines
-      [ "Invisible Goals:"
-      , unlines $ fmap (showGoal . fmap np_name) invis
-      ]
-    | not $ null invis
-    ]
+showGoals (AllGoalsWarnings vis invis errs warns) = lines $ intercalate "\n" $ concat
+  [ section "Errors" errs getMessage
+  , section "Warnings" warns getMessage
+  , section "Visible Goals" vis $ showGoal . fmap (mappend "?" . show . ip_id)
+  , section "Invisible Goals" invis $ showGoal . fmap np_name
   ]
+  where
+    section header l f =
+      [ unlines
+            [ header <> ":"
+            , unlines $ fmap f l
+            ]
+      | not $ null l
+      ]
+
+
 -- TODO(sandy): align on the :
 -- TODO(sandy): sort
 showGoals (GoalSpecific ip entries (Type ty)) = lines $ unlines

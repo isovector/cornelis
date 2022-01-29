@@ -72,11 +72,9 @@ instance MonadState CornelisState (Neovim CornelisEnv) where
     liftIO $ modifyMVar mv $ pure . fmap swap f
 
 data Response
-  = OfType
-  | CmpInType
+  = CmpInType
   | CmpElim
   | JustType
-  | JustSort
   | Assign
   | TypedAssign
   | PostponedCheckArgs
@@ -201,9 +199,10 @@ data GoalInfo a = GoalInfo
 
 instance FromJSON a => FromJSON (GoalInfo a) where
   parseJSON = withObject "GoalInfo" $ \obj ->
-    -- TODO(sandy): This thing also has a kind, that always looks like it is
-    -- "OfType", but who knows
-    GoalInfo <$> obj .: "constraintObj" <*> obj .: "type"
+    (obj .: "kind") >>= \case
+      "OfType" -> GoalInfo <$> obj .: "constraintObj" <*> obj .: "type"
+      "JustSort" -> GoalInfo <$> obj .: "constraintObj" <*> pure (Type "Sort")
+      (_ :: String) -> empty
 
 newtype Type = Type String
   deriving newtype (Eq, Ord, Show, FromJSON)
@@ -220,10 +219,20 @@ instance FromJSON InScope where
   parseJSON = withObject "InScope" $ \obj ->
     InScope <$> obj .: "reifiedName" <*> obj .: "originalName" <*> obj .: "inScope" <*> obj .: "binding"
 
+newtype Message = Message { getMessage :: String }
+  deriving (Eq, Ord, Show)
+
+instance FromJSON Message where
+  parseJSON = withObject "Message" $ \obj ->
+    Message <$> obj .: "message"
+
+
 data DisplayInfo
   = AllGoalsWarnings
       { di_all_visible :: [GoalInfo InteractionPoint]
       , di_all_invisible :: [GoalInfo NamedPoint]
+      , di_errors :: [Message]
+      , di_warnings :: [Message]
       }
   | GoalSpecific InteractionPoint [InScope] Type
   | Error String
@@ -234,7 +243,7 @@ instance FromJSON DisplayInfo where
   parseJSON v = flip (withObject "DisplayInfo") v $ \obj ->
     obj .: "kind" >>= \case
       "AllGoalsWarnings" ->
-        AllGoalsWarnings <$> obj .: "visibleGoals" <*> obj .: "invisibleGoals"
+        AllGoalsWarnings <$> obj .: "visibleGoals" <*> obj .: "invisibleGoals" <*> obj .: "errors" <*> obj .: "warnings"
       "Error" ->
         obj .: "error" >>= \err ->
           Error <$> err .: "message"

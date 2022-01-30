@@ -7,6 +7,7 @@ import Cornelis.Types hiding (Type)
 import qualified Cornelis.Types as C
 import Data.Bool (bool)
 import Data.Int
+import Prettyprinter.Internal.Type
 
 data HighlightGroup
   = Keyword
@@ -33,6 +34,17 @@ data InfoHighlight a = InfoHighlight
   , ihl_group :: HighlightGroup
   }
   deriving (Eq, Ord, Show, Functor)
+
+spanInfoHighlights
+    :: InfoHighlight (Int64, Int64)
+    -> [InfoHighlight Int64]
+spanInfoHighlights ih@(InfoHighlight (sl, sc) (el, ec) hg)
+  | sl == el = pure $ fmap snd ih
+  | otherwise
+      = InfoHighlight (sl, sc) (-1) hg
+      : InfoHighlight (el, 0) ec hg
+      : fmap (\l -> InfoHighlight (l, 0) (-1) hg) [sl + 1 .. el - 1]
+
 
 renderWithHlGroups
     :: SimpleDocStream HighlightGroup
@@ -65,9 +77,10 @@ prettyGoals :: DisplayInfo -> Doc HighlightGroup
 prettyGoals (AllGoalsWarnings _ _ errs _) | not $ null errs =
   annotate Error $ vcat $ fmap (pretty . getMessage) errs
 prettyGoals (AllGoalsWarnings vis invis _ warns) =
-  vcat $ punctuate hardline $
+  vcat $ punctuate hardline $ filter (not . isEmpty)
     [ section "Warnings" warns $ annotate WarningMsg . pretty . getMessage
-    , section "Visible Goals" vis $ prettyGoal . fmap (mappend "?" . show . ip_id)
+    , section "Visible Goals" vis $
+        prettyGoal . fmap (mappend "?" . show . ip_id)
     , section "Invisible Goals" invis $ prettyGoal . fmap np_name
     ]
 prettyGoals (GoalSpecific goal scoped ty) = vcat
@@ -77,6 +90,10 @@ prettyGoals (GoalSpecific goal scoped ty) = vcat
   ]
 prettyGoals (DisplayError err) = annotate Error $ pretty err
 prettyGoals (UnknownDisplayInfo v) = annotate Error $ pretty $ show v
+
+isEmpty :: Doc HighlightGroup -> Bool
+isEmpty Empty = True
+isEmpty _ = False
 
 
 section

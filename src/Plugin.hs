@@ -23,6 +23,7 @@ import Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
 import Data.List
 import Cornelis.Utils
 import Cornelis.Highlighting (unvimifyColumn)
+import Cornelis.Pretty (prettyGoals)
 
 
 
@@ -110,52 +111,5 @@ caseSplit _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   flip runIOTCM agda $ Cmd_make_case (InteractionId $ ip_id goal) noRange thing
 
 goalWindow :: Buffer -> DisplayInfo ->  Neovim CornelisEnv ()
-goalWindow b = showInfoWindow b . showGoals
-
-
-
-
-showGoals :: DisplayInfo -> [String]
-showGoals (AllGoalsWarnings vis invis errs warns) = lines $ intercalate "\n" $ concat
-  [ section "Errors" errs getMessage
-  , section "Warnings" warns getMessage
-  , section "Visible Goals" vis $ showGoal . fmap (mappend "?" . show . ip_id)
-  , section "Invisible Goals" invis $ showGoal . fmap np_name
-  ]
-  where
-    section header l f =
-      [ unlines
-            [ header <> ":"
-            , unlines $ fmap f l
-            ]
-      | not $ null l
-      ]
-
-
--- TODO(sandy): align on the :
--- TODO(sandy): sort
-showGoals (GoalSpecific ip entries (Type ty)) = lines $ unlines
-  -- [ "?" <> show (ip_id ip) <> " : " <> ty
-  [ unwords ["Goal:", ty]
-  , replicate 60 '—'
-  , unlines $ fmap showInScope entries
-  ]
-showGoals (DisplayError msg) = lines msg
-
-showGoals (UnknownDisplayInfo _) = []
-
-showInScope :: InScope -> String
-showInScope (InScope re orig b (Type ty)) =
-  inScope b $ unwords [ orig , ":", ty ]
-
-inScope :: Bool -> String -> String
-inScope False s = s ++ "    (not in scope)"
-inScope True s = s
-
-showGoal :: GoalInfo String -> String
-showGoal (GoalInfo name (Type ty)) = unwords
-  [ name
-  , " : "
-  , ty
-  ]
+goalWindow b = showInfoWindow b . prettyGoals
 

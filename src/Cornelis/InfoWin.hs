@@ -12,6 +12,9 @@ import Data.Maybe
 import Data.Traversable (for)
 import Control.Monad.State.Class
 import Cornelis.Utils (withBufferStuff, windowsForBuffer, savingCurrentWindow, visibleBuffers)
+import Cornelis.Pretty
+import Prettyprinter (layoutPretty, defaultLayoutOptions)
+import Prettyprinter.Render.String (renderString)
 
 
 cornelisWindowVar :: String
@@ -53,12 +56,13 @@ closeInfoWindowForBuffer bs = do
 
 
 
-showInfoWindow :: Buffer -> [String] -> Neovim CornelisEnv ()
-showInfoWindow b s = withBufferStuff b $ \bs -> do
+showInfoWindow :: Buffer -> Doc HighlightGroup -> Neovim CornelisEnv ()
+showInfoWindow b doc = withBufferStuff b $ \bs -> do
   let ib = bs_info_win bs
   closeInfoWindowForBuffer bs
   closeInfoWindowsForUnseenBuffers
-  writeInfoBuffer ib s
+  ns <- asks ce_namespace
+  writeInfoBuffer ns ib doc
   ws <- windowsForBuffer b
   for_ ws $ buildInfoWindow ib
 
@@ -94,10 +98,20 @@ buildInfoWindow (InfoBuffer split_buf) w = savingCurrentWindow $ do
   pure split_win
 
 
-writeInfoBuffer :: InfoBuffer -> [String] -> Neovim env ()
-writeInfoBuffer iw s = do
+writeInfoBuffer :: Int64 -> InfoBuffer -> Doc HighlightGroup -> Neovim env ()
+writeInfoBuffer ns iw doc = do
+  let sds = layoutPretty defaultLayoutOptions doc
+      (hls, sds') = renderWithHlGroups sds
+      s = lines $ renderString sds'
+
   let b = iw_buffer iw
   nvim_buf_set_option b "modifiable" $ ObjectBool True
   buffer_set_lines b 0 (-1) True s
+
+  for_ (concatMap spanInfoHighlights hls) $ \(InfoHighlight (l, sc) ec hg) ->
+    nvim_buf_add_highlight
+      b ns
+      (show hg)
+      l sc ec
   nvim_buf_set_option b "modifiable" $ ObjectBool False
 

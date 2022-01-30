@@ -8,6 +8,8 @@ import qualified Cornelis.Types as C
 import Data.Bool (bool)
 import Data.Int
 import Prettyprinter.Internal.Type
+import Cornelis.Highlighting (measureUtf8)
+import qualified Data.Text as T
 
 data HighlightGroup
   = Keyword
@@ -59,8 +61,10 @@ renderWithHlGroups = go [] 0 0
       -> ([InfoHighlight (Int64, Int64)], SimpleDocStream a)
     go _ _ _ SFail = pure SFail
     go _ _ _ SEmpty = pure SEmpty
-    go st r c (SChar c' sds) = SChar c' <$> go st r (c + 1) sds
-    go st r c (SText n txt sds) = SText n txt <$> go st r (c + fromIntegral n) sds
+    go st r c (SChar c' sds) =
+      SChar c' <$> go st r (c + fromIntegral (measureUtf8 (pure c') 1)) sds
+    go st r c (SText n txt sds) =
+      SText n txt <$> go st r (c + fromIntegral (measureUtf8 (T.unpack txt) n)) sds
     go st r c (SLine n sds) = SLine n <$> go st (r + 1) (fromIntegral n) sds
     go st r c (SAnnPush hg sds) = go (InfoHighlight (r, c) () hg : st) r c sds
     go [] r c (SAnnPop sds) = error "popping an annotation that doesn't exist"

@@ -4,5 +4,4 @@ packages:
 - .
 
 extra-deps:
-- nvim-hs-2.1.0.7
-
+- nvim-hs-2.2.0.0

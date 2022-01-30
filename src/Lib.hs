@@ -165,10 +165,7 @@ cornelis = do
         AgdaResp buffer next <- liftIO $ readChan outchan
         respond buffer next
 
-  -- https://github.com/neovimhaskell/nvim-hs/issues/94
-  neovimAsync $ do
-    liftIO $ threadDelay 1e6
-    closeInfoWindows
+  neovimAsync closeInfoWindows
 
   wrapPlugin $ Plugin
     { environment = env

@@ -5,12 +5,12 @@
 
 packages:
 - completed:
-    hackage: nvim-hs-2.1.0.7@sha256:79e70280c8f59b6352d9625360a731a9a94685566282e6f7b33d5003cd7791d5,7632
+    hackage: nvim-hs-2.2.0.0@sha256:df5892a4db9056cb8a1704500b466412095e7b047d6952b0b6e5a1bb2318aeaf,7632
     pantry-tree:
       size: 3030
-      sha256: 002cf3614dc619de5fff63d5c24bdec2edfd9438103cdf46a103f2db9400d719
+      sha256: 06e59dd210cfdf830cc405ebc5d91cb6f9a0c66b81e113b89d5b26f3c6d14453
   original:
-    hackage: nvim-hs-2.1.0.7
+    hackage: nvim-hs-2.2.0.0
 snapshots:
 - completed:
     size: 586286

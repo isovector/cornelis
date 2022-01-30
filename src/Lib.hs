@@ -165,7 +165,7 @@ cornelis = do
         AgdaResp buffer next <- liftIO $ readChan outchan
         respond buffer next
 
-  neovimAsync closeInfoWindows
+  closeInfoWindows
 
   wrapPlugin $ Plugin
     { environment = env

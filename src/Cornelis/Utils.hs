@@ -42,3 +42,7 @@ windowsForBuffer b = do
       False -> Nothing
       True -> Just w
 
+visibleBuffers :: Neovim env [Buffer]
+visibleBuffers = do
+  wins <- vim_get_windows
+  for wins window_get_buffer

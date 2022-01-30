@@ -1,5 +1,7 @@
 module Cornelis.InfoWin (closeInfoWindows, showInfoWindow, buildInfoBuffer) where
 
+import qualified Data.Set as S
+import Data.Set (Set)
 import qualified Data.Map as M
 import Data.Map (Map)
 import Cornelis.Types
@@ -9,7 +11,7 @@ import Data.Foldable (for_)
 import Data.Maybe
 import Data.Traversable (for)
 import Control.Monad.State.Class
-import Cornelis.Utils (withBufferStuff, windowsForBuffer, savingCurrentWindow)
+import Cornelis.Utils (withBufferStuff, windowsForBuffer, savingCurrentWindow, visibleBuffers)
 
 
 cornelisWindowVar :: String
@@ -23,6 +25,17 @@ getBufferVariableOfWindow variableName window = do
       buffer <- window_get_buffer window
       let getVariableValue = Just . fromObjectUnsafe <$> buffer_get_var buffer variableName
       getVariableValue `catchNeovimException` const (pure Nothing)
+
+closeInfoWindowsForUnseenBuffers :: Neovim CornelisEnv ()
+closeInfoWindowsForUnseenBuffers = do
+  seen <- S.fromList <$> visibleBuffers
+  bufs <- gets cs_buffers
+  let known = M.keysSet bufs
+      unseen = known S.\\ seen
+  for_ unseen $ \b -> do
+    for_ (M.lookup b bufs) $ \bs -> do
+      ws <- windowsForBuffer $ iw_buffer $ bs_info_win bs
+      for_ ws $ flip nvim_win_close True
 
 closeInfoWindows :: Neovim env ()
 closeInfoWindows = do
@@ -44,6 +57,7 @@ showInfoWindow :: Buffer -> [String] -> Neovim CornelisEnv ()
 showInfoWindow b s = withBufferStuff b $ \bs -> do
   let ib = bs_info_win bs
   closeInfoWindowForBuffer bs
+  closeInfoWindowsForUnseenBuffers
   writeInfoBuffer ib s
   ws <- windowsForBuffer b
   for_ ws $ buildInfoWindow ib
@@ -71,7 +85,6 @@ buildInfoWindow (InfoBuffer split_buf) w = savingCurrentWindow $ do
   nvim_win_set_buf split_win split_buf
 
   -- Setup things in the window
-  buffer_set_var split_buf cornelisWindowVar $ ObjectBool True
   nvim_win_set_option split_win "relativenumber" $ ObjectBool False
   nvim_win_set_option split_win "number" $ ObjectBool False
 

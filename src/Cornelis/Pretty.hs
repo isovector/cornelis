@@ -128,6 +128,6 @@ prettyGoal :: GoalInfo String -> Doc HighlightGroup
 prettyGoal (GoalInfo name ty) = hsep
   [ prettyName name
   , ":"
-  , prettyType ty
+  , align $ prettyType ty
   ]
 

@@ -15,19 +15,21 @@ import Cornelis.Utils (withBufferStuff, windowsForBuffer, savingCurrentWindow)
 cornelisWindowVar :: String
 cornelisWindowVar = "cornelis_window"
 
+getBufferVariableOfWindow :: NvimObject o => String -> Window -> Neovim env (Maybe o)
+getBufferVariableOfWindow variableName window = do
+  window_is_valid window >>= \case
+    False -> pure Nothing
+    True -> do
+      buffer <- window_get_buffer window
+      let getVariableValue = Just . fromObjectUnsafe <$> buffer_get_var buffer variableName
+      getVariableValue `catchNeovimException` const (pure Nothing)
 
 closeInfoWindows :: Neovim env ()
 closeInfoWindows = do
   ws <- vim_get_windows
-  for_ ws $ \w ->
-    window_is_valid w >>= \case
-      False -> pure ()
-      True -> do
-        b <- window_get_buffer w
-        buffer_get_var b cornelisWindowVar >>= \case
-          ObjectBool True -> do
-            nvim_win_close w True
-          _ -> pure ()
+  for_ ws $ \w -> getBufferVariableOfWindow cornelisWindowVar w >>= \case
+    Just True -> nvim_win_close w True
+    _ -> pure ()
 
 
 closeInfoWindowForBuffer :: BufferStuff -> Neovim CornelisEnv ()

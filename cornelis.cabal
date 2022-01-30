@@ -28,6 +28,7 @@ library
       Cornelis.Agda
       Cornelis.Highlighting
       Cornelis.InfoWin
+      Cornelis.Pretty
       Cornelis.Types
       Cornelis.Types.Agda
       Cornelis.Utils
@@ -97,6 +98,7 @@ library
     , mtl
     , nvim-hs
     , nvim-hs-contrib
+    , prettyprinter
     , process
     , resourcet
     , text
@@ -173,6 +175,7 @@ executable cornelis
     , mtl
     , nvim-hs
     , nvim-hs-contrib
+    , prettyprinter
     , process
     , resourcet
     , text
@@ -250,6 +253,7 @@ test-suite cornelis-test
     , mtl
     , nvim-hs
     , nvim-hs-contrib
+    , prettyprinter
     , process
     , resourcet
     , text

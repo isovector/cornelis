@@ -39,6 +39,7 @@ dependencies:
 - text
 - bytestring
 - fingertree
+- prettyprinter
 
 default-extensions:
   - BangPatterns

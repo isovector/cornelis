@@ -235,7 +235,7 @@ data DisplayInfo
       , di_warnings :: [Message]
       }
   | GoalSpecific InteractionPoint [InScope] Type
-  | Error String
+  | DisplayError String
   | UnknownDisplayInfo Value
   deriving (Eq, Ord, Show, Generic)
 
@@ -246,7 +246,7 @@ instance FromJSON DisplayInfo where
         AllGoalsWarnings <$> obj .: "visibleGoals" <*> obj .: "invisibleGoals" <*> obj .: "errors" <*> obj .: "warnings"
       "Error" ->
         obj .: "error" >>= \err ->
-          Error <$> err .: "message"
+          DisplayError <$> err .: "message"
       "GoalSpecific" ->
         (obj .: "goalInfo") >>= \info ->
           GoalSpecific <$> obj .: "interactionPoint" <*> info .: "entries" <*> info .: "type"

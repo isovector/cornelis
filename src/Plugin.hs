@@ -140,7 +140,7 @@ showGoals (GoalSpecific ip entries (Type ty)) = lines $ unlines
   , replicate 60 '—'
   , unlines $ fmap showInScope entries
   ]
-showGoals (Error msg) = lines msg
+showGoals (DisplayError msg) = lines msg
 
 showGoals (UnknownDisplayInfo _) = []
 

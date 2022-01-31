@@ -37,6 +37,7 @@ import Data.Maybe
 import Data.Text (Text)
 import Cornelis.Offsets
 import qualified Data.Text as T
+import Cornelis.Debug (reportExceptions)
 
 
 main :: IO ()
@@ -178,7 +179,7 @@ cornelis = do
   let env = CornelisEnv mvar inchan ns
   withLocalEnv env $
     neovimAsync $ do
-      forever $ do
+      forever $ reportExceptions $ do
         AgdaResp buffer next <- liftIO $ readChan outchan
         respond buffer next
 

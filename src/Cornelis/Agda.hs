@@ -25,6 +25,7 @@ import qualified Data.Text.Lazy as T
 import Data.Text.Lazy (Text)
 import Data.Text.Lazy.Encoding (encodeUtf8)
 import Data.Bool (bool)
+import Cornelis.Debug (reportExceptions)
 
 debugJson :: Bool
 debugJson = False
@@ -41,7 +42,7 @@ spawnAgda buffer = do
         hSetBuffering hin NoBuffering
         hSetBuffering hout NoBuffering
 
-      neovimAsync $ forever $ do
+      neovimAsync $ forever $ reportExceptions $ do
         resp <- liftIO $ hGetLine hout
         chan <- asks ce_stream
         when debugJson $ vim_report_error $ show resp

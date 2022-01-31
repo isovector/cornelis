@@ -2,14 +2,14 @@
 
 module Cornelis.Pretty where
 
-import Prettyprinter
-import Cornelis.Types hiding (Type)
+import           Cornelis.Offsets (toBytes, Offset (Offset))
 import qualified Cornelis.Types as C
-import Data.Bool (bool)
-import Data.Int
-import Prettyprinter.Internal.Type
-import Cornelis.Offsets (toBytes, Offset (Offset))
+import           Cornelis.Types hiding (Type)
+import           Data.Bool (bool)
+import           Data.Int
 import qualified Data.Text as T
+import           Prettyprinter
+import           Prettyprinter.Internal.Type
 
 data HighlightGroup
   = Keyword
@@ -65,9 +65,9 @@ renderWithHlGroups = go [] 0 0
       SChar c' <$> go st r (c + fromIntegral (toBytes (T.singleton c') $ Offset 1)) sds
     go st r c (SText n txt sds) =
       SText n txt <$> go st r (c + fromIntegral (toBytes txt $ Offset $ fromIntegral n)) sds
-    go st r c (SLine n sds) = SLine n <$> go st (r + 1) (fromIntegral n) sds
+    go st r _ (SLine n sds) = SLine n <$> go st (r + 1) (fromIntegral n) sds
     go st r c (SAnnPush hg sds) = go (InfoHighlight (r, c) () hg : st) r c sds
-    go [] r c (SAnnPop sds) = error "popping an annotation that doesn't exist"
+    go [] _ _ (SAnnPop _) = error "popping an annotation that doesn't exist"
     go (ih : ihs) r c (SAnnPop sds) = do
       sds' <- go ihs r c sds
       ([(r, c) <$ ih], sds')
@@ -87,7 +87,7 @@ prettyGoals (AllGoalsWarnings vis invis _ warns) =
         prettyGoal . fmap (mappend "?" . T.pack . show . ip_id)
     , section "Invisible Goals" invis $ prettyGoal . fmap np_name
     ]
-prettyGoals (GoalSpecific goal scoped ty) = vcat
+prettyGoals (GoalSpecific _ scoped ty) = vcat
   [ annotate Title "Goal:" <+>  prettyType ty
   , mconcat $ replicate 60 "—"
   , vcat $ fmap prettyInScope scoped
@@ -105,7 +105,7 @@ section
     -> [a]
     -> (a -> Doc HighlightGroup)
     -> Doc HighlightGroup
-section doc [] f = mempty
+section _ [] _ = mempty
 section doc as f = vcat $
   annotate Title (doc <> ":") : fmap f as
 
@@ -115,7 +115,7 @@ prettyName = annotate Identifier . pretty
 
 
 prettyInScope :: InScope -> Doc HighlightGroup
-prettyInScope (InScope re orig in_scope ty) =
+prettyInScope (InScope _ orig in_scope ty) =
   hsep
     [ prettyGoal $ GoalInfo orig ty
     , bool

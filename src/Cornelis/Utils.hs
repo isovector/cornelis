@@ -2,17 +2,16 @@
 
 module Cornelis.Utils where
 
+import           Control.Concurrent.Async
+import           Control.Monad.IO.Unlift (MonadUnliftIO(withRunInIO))
+import           Control.Monad.State.Class
+import           Cornelis.Types
 import qualified Data.Map as M
-import Data.Map (Map)
-import Neovim
-import Control.Concurrent.Async
-import Control.Monad.IO.Unlift (MonadUnliftIO(withRunInIO))
-import Cornelis.Types
-import Control.Monad.State.Class
-import Neovim.API.Text
-import Data.Maybe
-import Data.Traversable
+import           Data.Maybe
+import           Data.Traversable
 import qualified Data.Vector as V
+import           Neovim
+import           Neovim.API.Text
 
 
 neovimAsync :: (MonadUnliftIO m) => m a -> m (Async a)

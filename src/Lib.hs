@@ -6,45 +6,39 @@
 
 module Lib where
 
-import Neovim
-import Plugin
-import Control.Lens
-import Cornelis.Types
-import Control.Concurrent (newMVar, threadDelay)
-import Control.Concurrent.Async (async)
-import Control.Monad.IO.Unlift (withUnliftIO, withRunInIO)
-import Control.Concurrent.Chan.Unagi
-import Control.Monad (forever)
-import Data.Aeson
-import Control.Monad.Reader.Class (local)
-import Neovim.Context.Internal (Neovim(..), retypeConfig)
-import Control.Monad.Trans.Resource (transResourceT)
-import Control.Monad.Reader (mapReaderT, withReaderT)
-import Neovim.API.Text
-import Cornelis.Utils
-import Control.Monad.State.Class (modify', gets)
+import           Control.Arrow ((&&&), first)
+import           Control.Concurrent (newMVar)
+import           Control.Concurrent.Chan.Unagi
+import           Control.Lens
+import           Control.Monad (forever)
+import           Control.Monad (when)
+import           Control.Monad.Reader (withReaderT)
+import           Control.Monad.State.Class (modify', gets)
+import           Control.Monad.Trans.Resource (transResourceT)
+import           Cornelis.Debug (reportExceptions)
+import           Cornelis.Highlighting (highlightBuffer, getLineIntervals, lookupPoint, unvimifyColumn)
+import           Cornelis.InfoWin
+import           Cornelis.Offsets
+import           Cornelis.Types
+import           Cornelis.Types.Agda
+import           Cornelis.Utils
+import           Data.Foldable (for_)
 import qualified Data.IntMap.Strict as IM
-import Control.Arrow ((&&&), first)
-import Data.Foldable (for_)
-import Cornelis.Types.Agda
 import qualified Data.Map.Strict as M
-import Cornelis.Highlighting (highlightBuffer, getLineIntervals, lookupPoint, unvimifyColumn)
-import Data.List (intercalate)
-import Cornelis.InfoWin
-import Control.Monad (when)
-import Data.Maybe
-import Data.Text (Text)
-import Cornelis.Offsets
+import           Data.Maybe
 import qualified Data.Text as T
-import Cornelis.Debug (reportExceptions)
 import qualified Data.Vector as V
+import           Neovim
+import           Neovim.API.Text
+import           Neovim.Context.Internal (Neovim(..), retypeConfig)
+import           Plugin
 
 
 main :: IO ()
 main = neovim defaultConfig { plugins = [cornelis] }
 
 
-withLocalEnv :: env -> Neovim env a -> Neovim env' a
+withLocalEnv :: env ->Neovim env a -> Neovim env' a
 withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (retypeConfig env)
 
 
@@ -92,8 +86,8 @@ respond b (JumpToError _ pos) = do
     Just lc -> do
       ws <- windowsForBuffer b
       for_ ws $ flip window_set_cursor $ first (+1) lc
+respond _ Status{} = pure ()
 respond _ (Unknown k _) = vim_report_error k
-respond _ x = pure ()
 
 parens :: Text -> Text
 parens s = "(" <> s <> ")"
@@ -118,7 +112,7 @@ getSurroundingMotion w b motion p = do
       vim_command $ "normal v" <> motion
       start <- nvim_buf_get_mark b "<"
       end <- nvim_buf_get_mark b ">"
-      nvim_input "<esc>"
+      void $ nvim_input "<esc>"
       pure (start, end)
 
 doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
@@ -177,7 +171,7 @@ cornelis = do
   mvar <- liftIO $ newMVar $ CornelisState mempty
 
   let env = CornelisEnv mvar inchan ns
-  withLocalEnv env $
+  void $ withLocalEnv env $
     neovimAsync $ do
       forever $ reportExceptions $ do
         AgdaResp buffer next <- liftIO $ readChan outchan

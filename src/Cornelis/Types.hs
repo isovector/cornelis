@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Cornelis.Types
   ( module Cornelis.Types
@@ -13,22 +14,20 @@ module Cornelis.Types
   , Text
   ) where
 
-import qualified Data.Map as M
-import Data.Map (Map)
-import Neovim.API.Text (Buffer(..), Window)
 import Control.Concurrent
-import Neovim
-import Control.Monad.State.Class
-import Data.Tuple (swap)
-import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset, LineOffset)
-import GHC.Generics
 import Control.Concurrent.Chan.Unagi (InChan)
-import System.IO (Handle)
+import Control.Monad.State.Class
+import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset)
 import Data.Aeson hiding (Error)
+import Data.Generics.Labels ()
 import Data.IntMap.Strict (IntMap)
-import qualified Data.IntMap.Strict as IM
+import Data.Map (Map)
 import Data.Text (Text)
-import qualified Data.Text as T
+import Data.Tuple (swap)
+import GHC.Generics
+import Neovim hiding (err)
+import Neovim.API.Text (Buffer(..), Window)
+import System.IO (Handle)
 
 deriving stock instance Ord Buffer
 
@@ -75,47 +74,9 @@ instance MonadState CornelisState (Neovim CornelisEnv) where
     liftIO $ modifyMVar mv $ pure . fmap swap f
 
 data Response
-  = CmpInType
-  | CmpElim
-  | JustType
-  | Assign
-  | TypedAssign
-  | PostponedCheckArgs
-  | IsEmptyType
-  | SizeLtSat
-  | FindInstanceOF
-  | PTSInstance
-  | PostponedCheckFunDef
-  | CheckLock
-  | UsableAtMod
-  | UnblockOnMeta
-  | UnblockOnProblem
-  | UnblockOnAll
-  | UnblockOnAny
-  | CompilationOk
-  | Constraints
-  | Time
-  | IntroNotFound
-  | IntroConstructorUnknown
-  | Auto
-  | ModuleContents
-  | SearchAbout
-  | WhyInScope
-  | NormalForm
-  | InferredType
-  | Context
-  | Version
-  | GoalOnly
-  | GoalAndHave
-  | GoalAndElaboration
-  | HelperFunction
-  | GoalType
-  | CurrentGoal
-  | DisplayInfo DisplayInfo
+  = DisplayInfo DisplayInfo
   | ClearHighlighting -- TokenBased
   | HighlightingInfo Bool [Highlight]
-  | DoneAborting
-  | DoneExiting
   | ClearRunningInfo
   | RunningInfo Int Text
   | Status

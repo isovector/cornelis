@@ -3,13 +3,13 @@
 
 module Cornelis.Types.Agda where
 
-import GHC.Generics
 import           Control.Monad (liftM4)
 import           Control.Monad (mplus, liftM2)
 import           Control.Monad.Except (ExceptT, throwError)
 import           Control.Monad.State.Strict (StateT, runStateT, put, get)
 import           Control.Monad.Trans (lift)
 import           Control.Monad.Trans.Except (runExceptT)
+import           Data.Aeson (FromJSON)
 import           Data.Data
 import           Data.Function (on)
 import           Data.Functor.Identity
@@ -18,12 +18,10 @@ import qualified Data.List as List
 import           Data.Maybe (listToMaybe)
 import           Data.Sequence
 import qualified Data.Sequence as Seq
+import           Data.Text (Text)
 import           GHC.Generics
-import           System.Directory
+import           GHC.Show (showSpace)
 import           System.FilePath
-import GHC.Show (showSpace)
-import Data.Aeson (FromJSON)
-import Data.Text (Text)
 
 newtype LineNumber = LineNumber { getLineNumber :: Int32 }
   deriving stock Data
@@ -380,15 +378,15 @@ readsToParse s f = do
   st <- lift get
   case f st of
     Nothing -> throwError s
-    Just (a, st) -> do
-        lift $ put st
+    Just (a, st') -> do
+        lift $ put st'
         return a
 
 
 
 parseToReadsPrec :: Parse a -> Int -> String -> [(a, String)]
-parseToReadsPrec p i s = case runIdentity . flip runStateT s . runExceptT $ parens' p of
-  (Right a, s) -> [(a,s)]
+parseToReadsPrec p _ s = case runIdentity . flip runStateT s . runExceptT $ parens' p of
+  (Right a, s') -> [(a,s')]
   _            -> []
 
 exact :: String -> Parse ()

@@ -2,23 +2,19 @@
 
 module Cornelis.InfoWin (closeInfoWindows, showInfoWindow, buildInfoBuffer) where
 
-import qualified Data.Set as S
-import Data.Set (Set)
+import           Control.Monad.State.Class
+import           Cornelis.Pretty
+import           Cornelis.Types
+import           Cornelis.Utils (withBufferStuff, windowsForBuffer, savingCurrentWindow, visibleBuffers)
+import           Data.Foldable (for_)
 import qualified Data.Map as M
-import Data.Map (Map)
-import Cornelis.Types
+import qualified Data.Set as S
 import qualified Data.Text as T
-import Neovim
-import Neovim.API.Text
-import Data.Foldable (for_)
-import Data.Maybe
-import Data.Traversable (for)
-import Control.Monad.State.Class
-import Cornelis.Utils (withBufferStuff, windowsForBuffer, savingCurrentWindow, visibleBuffers)
-import Cornelis.Pretty
-import Prettyprinter (layoutPretty, defaultLayoutOptions)
-import Prettyprinter.Render.Text (renderStrict)
 import qualified Data.Vector as V
+import           Neovim
+import           Neovim.API.Text
+import           Prettyprinter (layoutPretty, defaultLayoutOptions)
+import           Prettyprinter.Render.Text (renderStrict)
 
 
 cornelisWindowVar :: Text
@@ -78,7 +74,7 @@ buildInfoBuffer = do
     nvim_create_buf False True
 
   -- Setup things in the buffer
-  buffer_set_var b cornelisWindowVar $ ObjectBool True
+  void $ buffer_set_var b cornelisWindowVar $ ObjectBool True
   nvim_buf_set_option b "modifiable" $ ObjectBool False
   pure $ InfoBuffer b
 

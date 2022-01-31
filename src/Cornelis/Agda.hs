@@ -3,45 +3,41 @@
 
 module Cornelis.Agda where
 
-import qualified Data.Map as M
-import Data.Map (Map)
-import Data.Aeson
-import System.IO hiding (hGetLine)
-import Control.Monad.IO.Class
-import System.Process
-import Cornelis.Types.Agda
-import Neovim
-import Neovim.API.Text
-import Control.Concurrent (threadDelay)
-import Cornelis.Types
-import Cornelis.Utils
-import Control.Monad (forever, when)
-import Control.Concurrent.Chan.Unagi (writeChan)
-import Data.List (isPrefixOf)
-import Data.Foldable (for_)
-import Data.Text.Lazy.IO (hGetLine)
-import qualified Data.Text.Lazy as LT
-import Data.Text.Lazy.Encoding (encodeUtf8)
-import Data.Bool (bool)
-import Cornelis.Debug (reportExceptions)
+import           Control.Concurrent.Chan.Unagi (writeChan)
+import           Control.Monad (forever, when)
+import           Control.Monad.IO.Class
+import           Cornelis.Debug (reportExceptions)
+import           Cornelis.Types
+import           Cornelis.Types.Agda
+import           Cornelis.Utils
+import           Data.Aeson
+import           Data.Bool (bool)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as LT
+import           Data.Text.Lazy.Encoding (encodeUtf8)
+import           Data.Text.Lazy.IO (hGetLine)
+import           Neovim hiding (err)
+import           Neovim.API.Text
+import           System.IO hiding (hGetLine)
+import           System.Process
+
 
 debugJson :: Bool
 debugJson = False
 
 spawnAgda :: Buffer -> Neovim CornelisEnv Agda
 spawnAgda buffer = do
-  (min, mout, _, _) <-
+  (m_in, m_out, _, _) <-
     liftIO $ createProcess $
       (proc "agda" ["--interaction-json"])
         { std_in = CreatePipe , std_out = CreatePipe }
-  case (min, mout) of
+  case (m_in, m_out) of
     (Just hin, Just hout) -> do
       liftIO $ do
         hSetBuffering hin NoBuffering
         hSetBuffering hout NoBuffering
 
-      neovimAsync $ forever $ reportExceptions $ do
+      void $ neovimAsync $ forever $ reportExceptions $ do
         resp <- liftIO $ hGetLine hout
         chan <- asks ce_stream
         when debugJson $ vim_report_error $ T.pack $ show resp

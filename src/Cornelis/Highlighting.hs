@@ -3,21 +3,18 @@
 
 module Cornelis.Highlighting where
 
+import           Cornelis.Offsets
 import           Cornelis.Types
-import Data.Coerce (coerce)
-import qualified Data.ByteString as BS
+import           Data.Coerce (coerce)
 import           Data.Foldable (for_)
 import           Data.IntervalMap.FingerTree (IntervalMap, Interval (Interval))
 import qualified Data.IntervalMap.FingerTree as IM
 import           Data.Maybe (listToMaybe, fromMaybe)
 import qualified Data.Text as T
-import           Data.Text.Encoding (encodeUtf8)
-import           Neovim
-import           Neovim.API.Text (nvim_buf_get_lines, nvim_create_namespace, nvim_buf_add_highlight, buffer_get_line, vim_report_error)
-import Cornelis.Offsets
-import Data.Text (Text)
-import Data.Vector (Vector)
+import           Data.Vector (Vector)
 import qualified Data.Vector as V
+import           Neovim
+import           Neovim.API.Text
 
 hlGroup :: Text -> Text
 hlGroup "keyword"              = "Keyword"
@@ -75,7 +72,8 @@ lookupPoint li i = fmap (\(l, c, _) -> (l, c)) $ listToMaybe $ lookupLine li i i
 lookupLine :: LineIntervals -> BufferOffset -> BufferOffset -> [(Int64, Int64, Int64)]
 lookupLine (LineIntervals im) start end = do
   (Interval scs _, (startline, s)) <- IM.search start im
-  (Interval ecs _, endline) <- IM.search end im
+  -- TODO(sandy): bug here that doesn't use the end line
+  (Interval ecs _, _endline) <- IM.search end im
   pure ( fromIntegral $ getLineNumber startline
        , fromIntegral $ toBytes s (offsetDiff start scs) - 1
        , fromIntegral $ toBytes s (offsetDiff end ecs) - 1

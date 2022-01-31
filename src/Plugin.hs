@@ -6,26 +6,21 @@
 
 module Plugin where
 
-import Control.Lens
+import           Control.Lens
+import           Control.Monad.State.Class
+import           Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
+import           Cornelis.Highlighting (unvimifyColumn)
+import           Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
+import           Cornelis.Offsets
+import           Cornelis.Pretty (prettyGoals)
+import           Cornelis.Types
+import           Cornelis.Types.Agda hiding (Error)
+import           Cornelis.Utils
+import           Data.List
 import qualified Data.Map as M
-import Data.Map (Map)
-import Neovim
-import Neovim.User.Input (input)
-import Neovim.API.Text
-import Data.Foldable (for_, find)
-import Cornelis.Types
-import Neovim.Context (gets)
-import Control.Monad.State.Class
-import Data.Generics.Labels
-import Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
-import Cornelis.Types.Agda hiding (Error)
-import Data.Traversable (for)
-import Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
-import Data.List
-import Cornelis.Utils
-import Cornelis.Highlighting (unvimifyColumn)
-import Cornelis.Pretty (prettyGoals)
-import Cornelis.Offsets
+import           Neovim
+import           Neovim.API.Text
+import           Neovim.User.Input (input)
 
 
 

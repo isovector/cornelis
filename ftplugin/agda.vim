@@ -11,3 +11,5 @@ call textobj#user#plugin('cornelis', {
 \   },
 \ })
 
+setlocal commentstring=--\ %s
+

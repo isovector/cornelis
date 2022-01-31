@@ -57,6 +57,16 @@ Plug 'isovector/cornelis'
 
 Make sure you have [`stack`](https://docs.haskellstack.org/en/stable/install_and_upgrade/) on your PATH!
 
+## Contributing
+
+I'm a noob at Agda, and I don't know what I don't know. If this plugin doesn't
+have some necessary feature for you to get work done, please file a bug,
+including both what's missing, and how you use it in your workflow. I'd love to
+learn how to use Agda better! I can move quickly on feature requests.
+
+If you'd like to get involved, feel free to tackle an issue on the tracker and
+send a PR. I'd love to have you on board!
+
 
 ## Architecture
 
@@ -69,4 +79,5 @@ For each `BufferStuff`, we also spin up a new thread, blocking on responses
 from `agda`. These responses all get redirected to a global worker thread, which
 is responsible for dispatching on each command. Commands are typesafe, parsed
 from JSON, and associated with the buffer they came from.
+
 

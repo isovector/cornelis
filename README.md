@@ -41,9 +41,16 @@ insert mode. See [agda-input.vim](https://github.com/isovector/cornelis/blob/mas
 for available bindings.
 
 
+## Text Objects
+
+Use the `iz`/`az` text objects to operate on text between `≡⟨` and `⟩`.
+
+
+
 ## Installation
 
 ```
+Plug 'kana/vim-textobj-user'
 Plug 'neovimhaskell/nvim-hs.vim'
 Plug 'isovector/cornelis'
 ```

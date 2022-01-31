@@ -28,6 +28,7 @@ library
       Cornelis.Agda
       Cornelis.Highlighting
       Cornelis.InfoWin
+      Cornelis.Offsets
       Cornelis.Pretty
       Cornelis.Types
       Cornelis.Types.Agda

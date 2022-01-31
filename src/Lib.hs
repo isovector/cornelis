@@ -34,6 +34,9 @@ import Data.List (intercalate)
 import Cornelis.InfoWin
 import Control.Monad (when)
 import Data.Maybe
+import Data.Text (Text)
+import Cornelis.Offsets
+import qualified Data.Text as T
 
 
 main :: IO ()
@@ -71,7 +74,8 @@ respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) -> do
     getInteractionPoint b i >>= \case
       Nothing -> vim_report_error $ "Can't find interaction point " <> show i
-      Just ip -> replaceInterval b (ip_interval ip) $ parens ex
+      Just ip -> do
+        replaceInterval b (ip_interval ip) $ parens ex
 respond b ClearHighlighting = do
   ns <- asks ce_namespace
   nvim_buf_clear_namespace b ns 0 (-1)
@@ -102,12 +106,12 @@ getSurroundingMotion
     :: Window
     -> Buffer
     -> String
-    -> Position' a
+    -> Position' LineOffset a
     -> Neovim CornelisEnv ((Int64, Int64), (Int64, Int64))
 getSurroundingMotion w b motion p = do
   savingCurrentWindow $ do
     savingCurrentPosition w $ do
-      let lc = positionToVim p
+      lc <- positionToVim <$> vimifyPositionM b p
       nvim_set_current_win w
       window_set_cursor w lc
       vim_command $ "normal v" <> motion
@@ -118,7 +122,7 @@ getSurroundingMotion w b motion p = do
 
 doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
 doMakeCase b (RegularCase Function clauses ip) =
-  replaceInterval b (ip_interval ip & #iStart . #posCol .~ 1) $ unlines clauses
+  replaceInterval b (ip_interval ip & #iStart . #posCol .~ Offset 1) $ unlines clauses
 -- TODO(sandy): It would be nice if Agda just gave us the bounds we're supposed to replace...
 doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
   ws <- windowsForBuffer b
@@ -128,7 +132,7 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a bug in cornelis."
     Just w -> do
       (slsc@(sl, sc), (el, ec)) <- getSurroundingMotion w b "i}" $ iStart $ ip_interval ip
-      sc' <- unvimifyColumn b slsc
+      Offset sc' <- unvimifyColumn b slsc
       nvim_buf_set_text b (sl - 1) (sc + 1) (el - 1) ec $
         clauses & _tail %~ fmap (indent $ fromIntegral sc')
 
@@ -137,19 +141,32 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
 indent :: Int -> String -> String
 indent n s = replicate (n - 1) ' ' <> "; " <> s
 
+vimifyPositionM :: Buffer -> Position' LineOffset a -> Neovim env (Position' Int64 a)
+vimifyPositionM b p = do
+  l <- getBufferLine b $ posLine p
+  pure $ vimifyPosition l p
 
-positionToVim :: Position' a -> (Int64, Int64)
+
+vimifyPosition :: Text -> Position' LineOffset a -> Position' Int64 a
+vimifyPosition t = #posCol %~ fromIntegral . toBytes t
+
+positionToVim :: Position' Int64 a -> (Int64, Int64)
 positionToVim p =
-  ( fromIntegral $ posLine p - 1
+  ( fromIntegral $ getLineNumber (posLine p) - 1
   , fromIntegral $ posCol p - 1
   )
 
+getBufferLine :: Buffer -> LineNumber -> Neovim env Text
+getBufferLine b (LineNumber ln) =
+  fmap T.pack $ buffer_get_line b $ fromIntegral ln - 1
 
 
-replaceInterval :: Buffer -> IntervalWithoutFile -> String -> Neovim CornelisEnv ()
-replaceInterval buffer (Interval (positionToVim -> (sl, sc)) (positionToVim -> (el, ec)))
-  = nvim_buf_set_text buffer sl sc el ec
-  . lines
+replaceInterval :: Buffer -> Interval' LineOffset () -> String -> Neovim CornelisEnv ()
+replaceInterval b i str
+  = do
+    (sl, sc) <- fmap positionToVim $ vimifyPositionM b $ iStart i
+    (el, ec) <- fmap positionToVim $ vimifyPositionM b $ iEnd i
+    nvim_buf_set_text b sl sc el ec $ lines str
 
 
 cornelis :: Neovim () NeovimPlugin

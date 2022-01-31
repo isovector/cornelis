@@ -1,7 +1,9 @@
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DataKinds #-}
 
 module Cornelis.Types.Agda where
 
+import GHC.Generics
 import           Control.Monad (liftM4)
 import           Control.Monad (mplus, liftM2)
 import           Control.Monad.Except (ExceptT, throwError)
@@ -20,6 +22,20 @@ import           GHC.Generics
 import           System.Directory
 import           System.FilePath
 import GHC.Show (showSpace)
+import Data.Aeson (FromJSON)
+
+newtype LineNumber = LineNumber { getLineNumber :: Int32 }
+  deriving stock Data
+  deriving newtype (Eq, Ord, Show, Read, FromJSON)
+
+data OffsetType = Line | File
+
+newtype Offset (a :: OffsetType) = Offset Int32
+  deriving stock Data
+  deriving newtype (Eq, Ord, Show, Read, FromJSON)
+
+type BufferOffset = Offset 'File
+type LineOffset = Offset 'Line
 
 
 data Rewrite =  AsIs | Instantiated | HeadNormal | Simplified | Normalised
@@ -35,13 +51,13 @@ data UseForce
   deriving (Eq, Read, Show)
 
 
-importantPart :: Position' a -> (a, Int32)
+importantPart :: Position' b a -> (a, BufferOffset)
 importantPart p = (srcFile p, posPos p)
 
-instance Eq a => Eq (Position' a) where
+instance Eq a => Eq (Position' b a) where
   (==) = (==) `on` importantPart
 
-instance Ord a => Ord (Position' a) where
+instance Ord a => Ord (Position' b a) where
   compare = compare `on` importantPart
 
 
@@ -94,22 +110,22 @@ instance Show a =>
               ((.)
                  showSpace (showsPrec 11 b2_a1hOm))))
 
-data Interval' a = Interval { iStart, iEnd :: !(Position' a) }
+data Interval' b a = Interval { iStart, iEnd :: !(Position' b  a) }
   deriving (Show, Data, Eq, Ord, Functor, Foldable, Traversable, Generic)
 
-type Interval            = Interval' SrcFile
-type IntervalWithoutFile = Interval' ()
+type Interval            = Interval' LineOffset SrcFile
+type IntervalWithoutFile = Interval' LineOffset ()
 
 type SrcFile = Maybe AbsolutePath
 
-data Position' a = Pn
+data Position' b a = Pn
   { srcFile :: !a
     -- ^ File.
-  , posPos  :: !Int32
+  , posPos  :: !BufferOffset
     -- ^ Position, counting from 1.
-  , posLine :: !Int32
+  , posLine :: !LineNumber
     -- ^ Line number, counting from 1.
-  , posCol  :: !Int32
+  , posCol  :: !b
     -- ^ Column number, counting from 1.
   }
   deriving (Show, Data, Functor, Foldable, Traversable, Generic)
@@ -331,7 +347,7 @@ instance Read a => Read (Range' a) where
         `mplus`
       (exact "noRange" >> return noRange)
 
-instance Read a => Read (Interval' a) where
+instance (Read b, Read a) => Read (Interval' b a) where
     readsPrec = parseToReadsPrec $ do
         exact "Interval"
         liftM2 Interval readParse readParse
@@ -350,7 +366,7 @@ mkAbsolute f
   | otherwise    = error "impossible"
 
 
-instance Read a => Read (Position' a) where
+instance (Read b, Read a) => Read (Position' b a) where
     readsPrec = parseToReadsPrec $ do
         exact "Pn"
         liftM4 Pn readParse readParse readParse readParse

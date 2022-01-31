@@ -3,6 +3,7 @@
 module Cornelis.Highlighting where
 
 import           Cornelis.Types
+import Data.Coerce (coerce)
 import qualified Data.ByteString as BS
 import           Data.Foldable (for_)
 import           Data.IntervalMap.FingerTree (IntervalMap, Interval (Interval))
@@ -12,6 +13,8 @@ import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import           Neovim
 import           Neovim.API.String (nvim_buf_get_lines, nvim_create_namespace, nvim_buf_add_highlight, buffer_get_line, vim_report_error)
+import Cornelis.Offsets
+import Data.Text (Text)
 
 hlGroup :: String -> String
 hlGroup "keyword"              = "Keyword"
@@ -45,54 +48,43 @@ highlightBuffer b hs = do
   for_ hs $ addHighlight b li
 
 newtype LineIntervals = LineIntervals
-  { li_intervalMap :: IntervalMap Int (Int, String)
+  { li_intervalMap :: IntervalMap BufferOffset (LineNumber, Text)
     -- ^ Mapping from positions to line numbers
   }
   deriving newtype (Semigroup, Monoid)
 
 
 getLineIntervals :: [String] -> LineIntervals
-getLineIntervals = LineIntervals . go 0 0
+getLineIntervals = LineIntervals . go (Offset 0) (LineNumber 0)
   where
+    go :: BufferOffset -> LineNumber -> [String] -> IntervalMap BufferOffset (LineNumber, Text)
     go _ _ [] = mempty
-    go pos line (s : ss) =
-      let len = length s
-       in IM.singleton (Interval pos $ pos + len) (line, s) <> go (pos + len + 1) (line + 1) ss
+    go (Offset pos) line (s : ss) =
+      let t = T.pack s
+          len = T.length t
+          pos' = pos + fromIntegral len
+       in IM.singleton (Interval (coerce pos) $ coerce pos') (line, t)
+            <> go (coerce $ pos' + 1) (incLineNumber line) ss
 
-lookupPoint :: LineIntervals -> Int -> Maybe (Int64, Int64)
+lookupPoint :: LineIntervals -> BufferOffset -> Maybe (Int64, Int64)
 lookupPoint li i = fmap (\(l, c, _) -> (l, c)) $ listToMaybe $ lookupLine li i i
 
-lookupLine :: LineIntervals -> Int -> Int -> [(Int64, Int64, Int64)]
+lookupLine :: LineIntervals -> BufferOffset -> BufferOffset -> [(Int64, Int64, Int64)]
 lookupLine (LineIntervals im) start end = do
   (Interval scs _, (startline, s)) <- IM.search start im
   (Interval ecs _, endline) <- IM.search end im
-  pure ( fromIntegral startline
-       , fromIntegral $ measureUtf8 s (start - scs) - 1
-       , fromIntegral $ measureUtf8 s (end - ecs) - 1
+  pure ( fromIntegral $ getLineNumber startline
+       , fromIntegral $ toBytes s (offsetDiff start scs) - 1
+       , fromIntegral $ toBytes s (offsetDiff end ecs) - 1
        )
 
 ------------------------------------------------------------------------------
 -- | Vim insists on returning byte-based offsets for the cursor positions...
--- why the fuck? This function (expensively) undoes the problem.
-unvimifyColumn :: Buffer -> (Int64, Int64) -> Neovim env Int
+-- why the fuck? This function undoes the problem.
+unvimifyColumn :: Buffer -> (Int64, Int64) -> Neovim env LineOffset
 unvimifyColumn b (l, c) = do
   lstr <- buffer_get_line b $ l - 1
-  pure $ unmeasureUtf8 lstr $ fromIntegral c
-
-------------------------------------------------------------------------------
--- | Convert a character-based index into a byte-indexed one
-measureUtf8 :: String -> Int -> Int
-measureUtf8 s i = length $ BS.unpack $ encodeUtf8 $ T.pack $ take i s
-
-------------------------------------------------------------------------------
--- | Convert a byte-based index into a character-indexed one.
---
--- Stupidly expensive
-unmeasureUtf8 :: String -> Int -> Int
-unmeasureUtf8 _ 0 = 0
-unmeasureUtf8 (c : str) i = 1 + (unmeasureUtf8 str $ i - (length $ BS.unpack $ encodeUtf8 $ T.pack $ pure c))
--- TODO(sandy): ??? maybe crash?
-unmeasureUtf8 [] i = i
+  pure $ fromBytes (T.pack lstr) $ fromIntegral c
 
 
 addHighlight :: Buffer -> LineIntervals -> Highlight -> Neovim CornelisEnv ()

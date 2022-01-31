@@ -24,6 +24,7 @@ import Data.List
 import Cornelis.Utils
 import Cornelis.Highlighting (unvimifyColumn)
 import Cornelis.Pretty (prettyGoals)
+import Cornelis.Offsets
 
 
 
@@ -52,18 +53,18 @@ getGoalAtCursor = do
   c' <- unvimifyColumn b (r, c)
   ips <- fmap bs_ips . M.lookup b <$> gets cs_buffers
   -- TODO(sandy): stupid off-by-one in vim? or agda?
-  pure (b, flip lookupGoal (r, fromIntegral (c' + 1)) =<< ips)
+  pure (b, ips >>= \ip -> lookupGoal ip (LineNumber $ fromIntegral r) (offsetPlus c' $ Offset 1))
 
 
-lookupGoal :: Foldable t => t InteractionPoint -> (Int64, Int64) -> Maybe InteractionPoint
-lookupGoal ips rc = flip find ips $ (\(InteractionPoint ip iv) -> containsPoint iv rc)
+lookupGoal :: Foldable t => t InteractionPoint -> LineNumber -> LineOffset -> Maybe InteractionPoint
+lookupGoal ips line col = flip find ips $ (\(InteractionPoint _ iv) -> containsPoint iv line col)
 
-containsPoint :: IntervalWithoutFile -> (Int64, Int64) -> Bool
-containsPoint (Interval s e) (l, c) = and
-  [ posLine s <= fromIntegral l
-  , fromIntegral l <= posLine e
-  , posCol s <= fromIntegral c
-  , fromIntegral c <= posCol e
+containsPoint :: IntervalWithoutFile -> LineNumber -> LineOffset -> Bool
+containsPoint (Interval s e) l c = and
+  [ posLine s <= l
+  , l <= posLine e
+  , posCol s <= c
+  , c <= posCol e
   ]
 
 -- TODO(sandy): There's a bug here! Vim reports byte-offset columns, so lines

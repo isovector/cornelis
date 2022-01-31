@@ -19,7 +19,7 @@ import Control.Concurrent
 import Neovim
 import Control.Monad.State.Class
 import Data.Tuple (swap)
-import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval))
+import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset, LineOffset)
 import GHC.Generics
 import Control.Concurrent.Chan.Unagi (InChan)
 import System.IO (Handle)
@@ -120,7 +120,7 @@ data Response
     , status_showIrrelevant :: Bool
     , status_showImplicits :: Bool
     }
-  | JumpToError FilePath Int
+  | JumpToError FilePath BufferOffset
   | InteractionPoints [InteractionPoint]
   | GiveAction String InteractionPoint
   | MakeCase MakeCase
@@ -131,8 +131,8 @@ data Response
 data Highlight = Highlight
   { hl_atoms :: [String]
   -- , hl_definitionSite :: (FilePath, Position')
-  , hl_start :: Int
-  , hl_end :: Int
+  , hl_start :: BufferOffset
+  , hl_end :: BufferOffset
   }
   deriving (Eq, Ord, Show)
 
@@ -179,7 +179,7 @@ instance FromJSON NamedPoint where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     NamedPoint <$> obj .: "name" <*> fmap head (obj .: "range")
 
-instance FromJSON (Position' ()) where
+instance FromJSON b => FromJSON (Position' b ()) where
   parseJSON = withObject "Position" $ \obj -> do
     Pn <$> pure () <*> obj .: "pos" <*> obj .: "line" <*> obj .: "col"
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE OverloadedStrings  #-}
 
 module Cornelis.Highlighting where
 
@@ -12,11 +13,13 @@ import           Data.Maybe (listToMaybe, fromMaybe)
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import           Neovim
-import           Neovim.API.String (nvim_buf_get_lines, nvim_create_namespace, nvim_buf_add_highlight, buffer_get_line, vim_report_error)
+import           Neovim.API.Text (nvim_buf_get_lines, nvim_create_namespace, nvim_buf_add_highlight, buffer_get_line, vim_report_error)
 import Cornelis.Offsets
 import Data.Text (Text)
+import Data.Vector (Vector)
+import qualified Data.Vector as V
 
-hlGroup :: String -> String
+hlGroup :: Text -> Text
 hlGroup "keyword"              = "Keyword"
 hlGroup "symbol"               = "Normal"
 hlGroup "datatype"             = "Type"
@@ -54,17 +57,17 @@ newtype LineIntervals = LineIntervals
   deriving newtype (Semigroup, Monoid)
 
 
-getLineIntervals :: [String] -> LineIntervals
+getLineIntervals :: Vector Text -> LineIntervals
 getLineIntervals = LineIntervals . go (Offset 0) (LineNumber 0)
   where
-    go :: BufferOffset -> LineNumber -> [String] -> IntervalMap BufferOffset (LineNumber, Text)
-    go _ _ [] = mempty
-    go (Offset pos) line (s : ss) =
-      let t = T.pack s
-          len = T.length t
-          pos' = pos + fromIntegral len
-       in IM.singleton (Interval (coerce pos) $ coerce pos') (line, t)
-            <> go (coerce $ pos' + 1) (incLineNumber line) ss
+    go :: BufferOffset -> LineNumber -> Vector Text -> IntervalMap BufferOffset (LineNumber, Text)
+    go (Offset pos) line v
+      | Just (t, ss) <- V.uncons v =
+        let len = T.length t
+            pos' = pos + fromIntegral len
+        in IM.singleton (Interval (coerce pos) $ coerce pos') (line, t)
+              <> go (coerce $ pos' + 1) (incLineNumber line) ss
+      | otherwise = mempty
 
 lookupPoint :: LineIntervals -> BufferOffset -> Maybe (Int64, Int64)
 lookupPoint li i = fmap (\(l, c, _) -> (l, c)) $ listToMaybe $ lookupLine li i i
@@ -84,7 +87,7 @@ lookupLine (LineIntervals im) start end = do
 unvimifyColumn :: Buffer -> (Int64, Int64) -> Neovim env LineOffset
 unvimifyColumn b (l, c) = do
   lstr <- buffer_get_line b $ l - 1
-  pure $ fromBytes (T.pack lstr) $ fromIntegral c
+  pure $ fromBytes lstr $ fromIntegral c
 
 
 addHighlight :: Buffer -> LineIntervals -> Highlight -> Neovim CornelisEnv ()

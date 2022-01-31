@@ -11,21 +11,20 @@ import Control.Monad.IO.Class
 import System.Process
 import Cornelis.Types.Agda
 import Neovim
-import Neovim.API.String
+import Neovim.API.Text
 import Control.Concurrent (threadDelay)
 import Cornelis.Types
 import Cornelis.Utils
 import Control.Monad (forever, when)
 import Control.Concurrent.Chan.Unagi (writeChan)
 import Data.List (isPrefixOf)
-import Data.ByteString.Lazy.Char8 (pack)
 import Data.Foldable (for_)
 import Data.Text.Lazy.IO (hGetLine)
-import qualified Data.Text.Lazy as T
-import Data.Text.Lazy (Text)
+import qualified Data.Text.Lazy as LT
 import Data.Text.Lazy.Encoding (encodeUtf8)
 import Data.Bool (bool)
 import Cornelis.Debug (reportExceptions)
+import qualified Data.Text as T
 
 debugJson :: Bool
 debugJson = False
@@ -45,18 +44,18 @@ spawnAgda buffer = do
       neovimAsync $ forever $ reportExceptions $ do
         resp <- liftIO $ hGetLine hout
         chan <- asks ce_stream
-        when debugJson $ vim_report_error $ show resp
+        when debugJson $ vim_report_error $ T.pack $ show resp
         case eitherDecode @Response $ encodeUtf8 $ (dropPrefix "JSON> ") resp of
-          Left err -> vim_report_error err
+          Left err -> vim_report_error $ T.pack err
           Right re -> liftIO $ writeChan chan $ AgdaResp buffer re
 
       pure $ Agda buffer hin
     (_, _) -> error "can't start agda"
 
 
-dropPrefix :: Text -> Text -> Text
+dropPrefix :: LT.Text -> LT.Text -> LT.Text
 dropPrefix pref msg
-  | T.isPrefixOf pref msg = T.drop (T.length pref) msg
+  | LT.isPrefixOf pref msg = LT.drop (LT.length pref) msg
   | otherwise = msg
 
 

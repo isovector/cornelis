@@ -84,7 +84,7 @@ prettyGoals (AllGoalsWarnings vis invis _ warns) =
   vcat $ punctuate hardline $ filter (not . isEmpty)
     [ section "Warnings" warns $ annotate WarningMsg . pretty . getMessage
     , section "Visible Goals" vis $
-        prettyGoal . fmap (mappend "?" . show . ip_id)
+        prettyGoal . fmap (mappend "?" . T.pack . show . ip_id)
     , section "Invisible Goals" invis $ prettyGoal . fmap np_name
     ]
 prettyGoals (GoalSpecific goal scoped ty) = vcat
@@ -110,7 +110,7 @@ section doc as f = vcat $
   annotate Title (doc <> ":") : fmap f as
 
 
-prettyName :: String -> Doc HighlightGroup
+prettyName :: Text -> Doc HighlightGroup
 prettyName = annotate Identifier . pretty
 
 
@@ -124,7 +124,7 @@ prettyInScope (InScope re orig in_scope ty) =
         in_scope
     ]
 
-prettyGoal :: GoalInfo String -> Doc HighlightGroup
+prettyGoal :: GoalInfo Text -> Doc HighlightGroup
 prettyGoal (GoalInfo name ty) = hsep
   [ prettyName name
   , ":"

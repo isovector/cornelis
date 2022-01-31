@@ -23,6 +23,7 @@ import           System.Directory
 import           System.FilePath
 import GHC.Show (showSpace)
 import Data.Aeson (FromJSON)
+import Data.Text (Text)
 
 newtype LineNumber = LineNumber { getLineNumber :: Int32 }
   deriving stock Data
@@ -141,7 +142,7 @@ type Range = Range' SrcFile
 type IOTCM = IOTCM' Range
 data IOTCM' range
     = IOTCM
-        FilePath
+        Text
          -- -^ The current file. If this file does not match
          -- 'theCurrentFile, and the 'Interaction' is not
          -- \"independent\", then an error is raised.
@@ -157,7 +158,7 @@ data IOTCM' range
 data Interaction' range
     -- | @cmd_load m argv@ loads the module in file @m@, using
     -- @argv@ as the command-line options.
-  = Cmd_load            FilePath [String]
+  = Cmd_load            Text [String]
 
   | Cmd_constraints
 

@@ -20,9 +20,8 @@ import Control.Monad.Reader.Class (local)
 import Neovim.Context.Internal (Neovim(..), retypeConfig)
 import Control.Monad.Trans.Resource (transResourceT)
 import Control.Monad.Reader (mapReaderT, withReaderT)
-import Neovim.API.String
+import Neovim.API.Text
 import Cornelis.Utils
-import Data.ByteString.Lazy.Char8 (unpack)
 import Control.Monad.State.Class (modify', gets)
 import qualified Data.IntMap.Strict as IM
 import Control.Arrow ((&&&), first)
@@ -38,6 +37,7 @@ import Data.Text (Text)
 import Cornelis.Offsets
 import qualified Data.Text as T
 import Cornelis.Debug (reportExceptions)
+import qualified Data.Vector as V
 
 
 main :: IO ()
@@ -74,7 +74,7 @@ respond b (GiveAction result ip) = do
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) -> do
     getInteractionPoint b i >>= \case
-      Nothing -> vim_report_error $ "Can't find interaction point " <> show i
+      Nothing -> vim_report_error $ T.pack $ "Can't find interaction point " <> show i
       Just ip -> do
         replaceInterval b (ip_interval ip) $ parens ex
 respond b ClearHighlighting = do
@@ -95,8 +95,8 @@ respond b (JumpToError _ pos) = do
 respond _ (Unknown k _) = vim_report_error k
 respond _ x = pure ()
 
-parens :: String -> String
-parens s = '(' : s <> ")"
+parens :: Text -> Text
+parens s = "(" <> s <> ")"
 
 ------------------------------------------------------------------------------
 -- | Awful function that does the motion in visual mode and gives you back
@@ -106,7 +106,7 @@ parens s = '(' : s <> ")"
 getSurroundingMotion
     :: Window
     -> Buffer
-    -> String
+    -> Text
     -> Position' LineOffset a
     -> Neovim CornelisEnv ((Int64, Int64), (Int64, Int64))
 getSurroundingMotion w b motion p = do
@@ -123,7 +123,7 @@ getSurroundingMotion w b motion p = do
 
 doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
 doMakeCase b (RegularCase Function clauses ip) =
-  replaceInterval b (ip_interval ip & #iStart . #posCol .~ Offset 1) $ unlines clauses
+  replaceInterval b (ip_interval ip & #iStart . #posCol .~ Offset 1) $ T.unlines clauses
 -- TODO(sandy): It would be nice if Agda just gave us the bounds we're supposed to replace...
 doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
   ws <- windowsForBuffer b
@@ -134,13 +134,13 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
     Just w -> do
       (slsc@(sl, sc), (el, ec)) <- getSurroundingMotion w b "i}" $ iStart $ ip_interval ip
       Offset sc' <- unvimifyColumn b slsc
-      nvim_buf_set_text b (sl - 1) (sc + 1) (el - 1) ec $
+      nvim_buf_set_text b (sl - 1) (sc + 1) (el - 1) ec $ V.fromList $
         clauses & _tail %~ fmap (indent $ fromIntegral sc')
 
 ------------------------------------------------------------------------------
 -- | Indent a string with the given offset.
-indent :: Int -> String -> String
-indent n s = replicate (n - 1) ' ' <> "; " <> s
+indent :: Int -> Text -> Text
+indent n s = T.replicate (n - 1) " " <> "; " <> s
 
 vimifyPositionM :: Buffer -> Position' LineOffset a -> Neovim env (Position' Int64 a)
 vimifyPositionM b p = do
@@ -159,15 +159,15 @@ positionToVim p =
 
 getBufferLine :: Buffer -> LineNumber -> Neovim env Text
 getBufferLine b (LineNumber ln) =
-  fmap T.pack $ buffer_get_line b $ fromIntegral ln - 1
+  buffer_get_line b $ fromIntegral ln - 1
 
 
-replaceInterval :: Buffer -> Interval' LineOffset () -> String -> Neovim CornelisEnv ()
+replaceInterval :: Buffer -> Interval' LineOffset () -> Text -> Neovim CornelisEnv ()
 replaceInterval b i str
   = do
     (sl, sc) <- fmap positionToVim $ vimifyPositionM b $ iStart i
     (el, ec) <- fmap positionToVim $ vimifyPositionM b $ iEnd i
-    nvim_buf_set_text b sl sc el ec $ lines str
+    nvim_buf_set_text b sl sc el ec $ V.fromList $ T.lines str
 
 
 cornelis :: Neovim () NeovimPlugin

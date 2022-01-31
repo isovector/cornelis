@@ -107,6 +107,7 @@ library
     , transformers
     , unagi-chan
     , unliftio-core
+    , vector
   default-language: Haskell2010
 
 executable cornelis
@@ -184,6 +185,7 @@ executable cornelis
     , transformers
     , unagi-chan
     , unliftio-core
+    , vector
   default-language: Haskell2010
 
 test-suite cornelis-test
@@ -262,4 +264,5 @@ test-suite cornelis-test
     , transformers
     , unagi-chan
     , unliftio-core
+    , vector
   default-language: Haskell2010

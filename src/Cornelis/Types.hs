@@ -10,11 +10,12 @@ module Cornelis.Types
   ( module Cornelis.Types
   , Buffer
   , Window
+  , Text
   ) where
 
 import qualified Data.Map as M
 import Data.Map (Map)
-import Neovim.API.String (Buffer(..), Window)
+import Neovim.API.Text (Buffer(..), Window)
 import Control.Concurrent
 import Neovim
 import Control.Monad.State.Class
@@ -26,6 +27,8 @@ import System.IO (Handle)
 import Data.Aeson hiding (Error)
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IM
+import Data.Text (Text)
+import qualified Data.Text as T
 
 deriving stock instance Ord Buffer
 
@@ -114,7 +117,7 @@ data Response
   | DoneAborting
   | DoneExiting
   | ClearRunningInfo
-  | RunningInfo Int String
+  | RunningInfo Int Text
   | Status
     { status_checked :: Bool
     , status_showIrrelevant :: Bool
@@ -122,14 +125,14 @@ data Response
     }
   | JumpToError FilePath BufferOffset
   | InteractionPoints [InteractionPoint]
-  | GiveAction String InteractionPoint
+  | GiveAction Text InteractionPoint
   | MakeCase MakeCase
   | SolveAll [Solution]
-  | Unknown String Value
+  | Unknown Text Value
   deriving (Eq, Ord, Show)
 
 data Highlight = Highlight
-  { hl_atoms :: [String]
+  { hl_atoms :: [Text]
   -- , hl_definitionSite :: (FilePath, Position')
   , hl_start :: BufferOffset
   , hl_end :: BufferOffset
@@ -137,7 +140,7 @@ data Highlight = Highlight
   deriving (Eq, Ord, Show)
 
 data MakeCase
-  = RegularCase MakeCaseVariant [String] InteractionPoint
+  = RegularCase MakeCaseVariant [Text] InteractionPoint
   deriving (Eq, Ord, Show)
 
 data MakeCaseVariant = Function | ExtendedLambda
@@ -151,7 +154,7 @@ instance FromJSON MakeCase where
 
 data Solution = Solution
   { s_ip :: Int
-  , s_expression :: String
+  , s_expression :: Text
   }
   deriving (Eq, Ord, Show)
 
@@ -162,7 +165,7 @@ data InteractionPoint = InteractionPoint
   deriving (Eq, Ord, Show)
 
 data NamedPoint = NamedPoint
-  { np_name :: String
+  { np_name :: Text
   , np_interval :: IntervalWithoutFile
   }
   deriving (Eq, Ord, Show)
@@ -202,14 +205,14 @@ instance FromJSON a => FromJSON (GoalInfo a) where
     (obj .: "kind") >>= \case
       "OfType" -> GoalInfo <$> obj .: "constraintObj" <*> obj .: "type"
       "JustSort" -> GoalInfo <$> obj .: "constraintObj" <*> pure (Type "Sort")
-      (_ :: String) -> empty
+      (_ :: Text) -> empty
 
-newtype Type = Type String
+newtype Type = Type Text
   deriving newtype (Eq, Ord, Show, FromJSON)
 
 data InScope = InScope
-  { is_refied_name :: String
-  , is_original_name :: String
+  { is_refied_name :: Text
+  , is_original_name :: Text
   , is_in_scope :: Bool
   , is_type :: Type
   }
@@ -219,7 +222,7 @@ instance FromJSON InScope where
   parseJSON = withObject "InScope" $ \obj ->
     InScope <$> obj .: "reifiedName" <*> obj .: "originalName" <*> obj .: "inScope" <*> obj .: "binding"
 
-newtype Message = Message { getMessage :: String }
+newtype Message = Message { getMessage :: Text }
   deriving (Eq, Ord, Show)
 
 instance FromJSON Message where
@@ -235,7 +238,7 @@ data DisplayInfo
       , di_warnings :: [Message]
       }
   | GoalSpecific InteractionPoint [InScope] Type
-  | DisplayError String
+  | DisplayError Text
   | UnknownDisplayInfo Value
   deriving (Eq, Ord, Show, Generic)
 
@@ -250,7 +253,7 @@ instance FromJSON DisplayInfo where
       "GoalSpecific" ->
         (obj .: "goalInfo") >>= \info ->
           GoalSpecific <$> obj .: "interactionPoint" <*> info .: "entries" <*> info .: "type"
-      (_ :: String) -> pure $ UnknownDisplayInfo v
+      (_ :: Text) -> pure $ UnknownDisplayInfo v
 
 instance FromJSON Response where
   parseJSON v = flip (withObject "Response") v $ \obj -> do
@@ -280,5 +283,5 @@ instance FromJSON Response where
       "Status" -> do
         (obj .: "status" >>=) $ withObject "Status" $ \s ->
           Status <$> s .: "checked" <*> s .: "showIrrelevantArguments" <*> s .: "showImplicitArguments"
-      (_ :: String) -> Unknown <$> obj .: "kind" <*> pure v
+      (_ :: Text) -> Unknown <$> obj .: "kind" <*> pure v
 

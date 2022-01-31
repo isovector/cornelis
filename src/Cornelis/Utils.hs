@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Cornelis.Utils where
 
 import qualified Data.Map as M
@@ -7,9 +9,10 @@ import Control.Concurrent.Async
 import Control.Monad.IO.Unlift (MonadUnliftIO(withRunInIO))
 import Cornelis.Types
 import Control.Monad.State.Class
-import Neovim.API.String
+import Neovim.API.Text
 import Data.Maybe
 import Data.Traversable
+import qualified Data.Vector as V
 
 
 neovimAsync :: (MonadUnliftIO m) => m a -> m (Async a)
@@ -35,7 +38,7 @@ savingCurrentWindow m = do
 
 windowsForBuffer :: Buffer -> Neovim env [Window]
 windowsForBuffer b = do
-  wins <- vim_get_windows
+  wins <- fmap V.toList $ vim_get_windows
   fmap catMaybes $ for wins $ \w -> do
     wb <- window_get_buffer w
     pure $ case wb == b of
@@ -44,5 +47,5 @@ windowsForBuffer b = do
 
 visibleBuffers :: Neovim env [Buffer]
 visibleBuffers = do
-  wins <- vim_get_windows
+  wins <- fmap V.toList $ vim_get_windows
   for wins window_get_buffer

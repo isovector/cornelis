@@ -1,7 +1,8 @@
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE LambdaCase       #-}
-{-# LANGUAGE OverloadedLabels #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module Plugin where
 
@@ -10,7 +11,7 @@ import qualified Data.Map as M
 import Data.Map (Map)
 import Neovim
 import Neovim.User.Input (input)
-import Neovim.API.String
+import Neovim.API.Text
 import Data.Foldable (for_, find)
 import Cornelis.Types
 import Neovim.Context (gets)

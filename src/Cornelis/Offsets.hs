@@ -18,7 +18,7 @@ offsetPlus :: Offset a -> Offset a -> Offset a
 offsetPlus = coerce $ (+) @Int32
 
 offsetDiff :: Offset a -> Offset a -> Offset a
-offsetDiff = coerce $ subtract @Int32
+offsetDiff = coerce $ (-) @Int32
 
 incLineNumber :: LineNumber -> LineNumber
 incLineNumber = coerce ((+) @Int32 1)

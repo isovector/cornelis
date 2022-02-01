@@ -57,6 +57,24 @@ Plug 'isovector/cornelis'
 
 Make sure you have [`stack`](https://docs.haskellstack.org/en/stable/install_and_upgrade/) on your PATH!
 
+
+## Example Configuration
+
+Once you have `cornelis` installed, you'll probably want to add some keybindings
+for it! This is enough to get you started:
+
+```viml
+au BufRead,BufNewFile *.agda call AgdaFiletype()
+function! AgdaFiletype()
+    nnoremap <buffer> <leader>l :CornelisLoad<CR>
+    nnoremap <buffer> <leader>r :CornelisRefine<CR>
+    nnoremap <buffer> <leader>d :CornelisMakeCase<CR>
+    nnoremap <buffer> <leader>, :CornelisTypeContext<CR>
+    nnoremap <buffer> <leader>n :CornelisSolve<CR>
+endfunction
+```
+
+
 ## Contributing
 
 I'm a noob at Agda, and I don't know what I don't know. If this plugin doesn't

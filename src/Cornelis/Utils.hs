@@ -3,6 +3,7 @@
 module Cornelis.Utils where
 
 import           Control.Concurrent.Async
+import           Control.Exception (throwIO)
 import           Control.Monad.IO.Unlift (MonadUnliftIO(withRunInIO))
 import           Control.Monad.State.Class
 import           Cornelis.Types
@@ -10,7 +11,7 @@ import qualified Data.Map as M
 import           Data.Maybe
 import           Data.Traversable
 import qualified Data.Vector as V
-import           Neovim
+import           Neovim hiding (err)
 import           Neovim.API.Text
 
 
@@ -48,3 +49,9 @@ visibleBuffers :: Neovim env [Buffer]
 visibleBuffers = do
   wins <- fmap V.toList $ vim_get_windows
   for wins window_get_buffer
+
+criticalFailure :: Text -> Neovim env a
+criticalFailure err = do
+  vim_report_error err
+  liftIO $ throwIO $ ErrorResult "critical error" ObjectNil
+

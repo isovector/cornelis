@@ -4,38 +4,42 @@
 module Cornelis.Highlighting where
 
 import           Cornelis.Offsets
-import           Cornelis.Types
+import           Cornelis.Pretty
+import           Cornelis.Types hiding (Type)
+import           Cornelis.Utils (criticalFailure)
 import           Data.Coerce (coerce)
 import           Data.Foldable (for_)
 import           Data.IntervalMap.FingerTree (IntervalMap, Interval (Interval))
 import qualified Data.IntervalMap.FingerTree as IM
+import qualified Data.Map as M
 import           Data.Maybe (listToMaybe, fromMaybe)
 import qualified Data.Text as T
+import           Data.Text.Encoding (encodeUtf8)
 import           Data.Vector (Vector)
 import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
 
-hlGroup :: Text -> Text
-hlGroup "keyword"              = "Keyword"
-hlGroup "symbol"               = "Normal"
-hlGroup "datatype"             = "Type"
-hlGroup "primitivetype"        = "Type"
-hlGroup "function"             = "Operator"
-hlGroup "bound"                = "Identifier"
-hlGroup "inductiveconstructor" = "Constant"
-hlGroup "number"               = "Number"
-hlGroup "comment"              = "Comment"
-hlGroup "hole"                 = "Todo"
-hlGroup "unsolvedmeta"         = "Todo"
-hlGroup "string"               = "String"
-hlGroup "catchallclause"       = "Folded"
-hlGroup "typechecks"           = "Normal"
-hlGroup "module"               = "Structure"
-hlGroup "postulate"            = "PreProc"
-hlGroup "primitive"            = "PreProc"
-hlGroup "error"                = "Error"
-hlGroup _                      = "Normal"
+hlGroup :: Text -> HighlightGroup
+hlGroup "keyword"              = Keyword
+hlGroup "symbol"               = Normal
+hlGroup "datatype"             = Type
+hlGroup "primitivetype"        = Type
+hlGroup "function"             = Operator
+hlGroup "bound"                = Identifier
+hlGroup "inductiveconstructor" = Constant
+hlGroup "number"               = Number
+hlGroup "comment"              = Comment
+hlGroup "hole"                 = Todo
+hlGroup "unsolvedmeta"         = Todo
+hlGroup "string"               = String
+hlGroup "catchallclause"       = Folded
+hlGroup "typechecks"           = Normal
+hlGroup "module"               = Structure
+hlGroup "postulate"            = PreProc
+hlGroup "primitive"            = PreProc
+hlGroup "error"                = Error
+hlGroup _                      = Normal
 
 lineIntervalsForBuffer :: Buffer -> Neovim CornelisEnv LineIntervals
 lineIntervalsForBuffer b = do
@@ -67,16 +71,10 @@ getLineIntervals = LineIntervals . go (Offset 0) (LineNumber 0)
       | otherwise = mempty
 
 lookupPoint :: LineIntervals -> BufferOffset -> Maybe (Int64, Int64)
-lookupPoint li i = fmap (\(l, c, _) -> (l, c)) $ listToMaybe $ lookupLine li i i
-
-lookupLine :: LineIntervals -> BufferOffset -> BufferOffset -> [(Int64, Int64, Int64)]
-lookupLine (LineIntervals im) start end = do
-  (Interval scs _, (startline, s)) <- IM.search start im
-  -- TODO(sandy): bug here that doesn't use the end line
-  (Interval ecs _, _endline) <- IM.search end im
+lookupPoint (LineIntervals im) off = do
+  (Interval scs _, (startline, s)) <- listToMaybe $ IM.search off im
   pure ( fromIntegral $ getLineNumber startline
-       , fromIntegral $ toBytes s (offsetDiff start scs) - 1
-       , fromIntegral $ toBytes s (offsetDiff end ecs) - 1
+       , fromIntegral $ toBytes s (offsetDiff off scs) - 1
        )
 
 ------------------------------------------------------------------------------
@@ -88,12 +86,37 @@ unvimifyColumn b (l, c) = do
   pure $ fromBytes lstr $ fromIntegral c
 
 
-addHighlight :: Buffer -> LineIntervals -> Highlight -> Neovim CornelisEnv ()
+addHighlight :: Buffer -> LineIntervals -> Highlight -> Neovim CornelisEnv Extmark
 addHighlight b lis hl = do
+  (start, end)
+    <- maybe (criticalFailure "Missing buffer offset when adding highlights") pure
+     $ liftA2 (,) (lookupPoint lis (hl_start hl))
+     $ lookupPoint lis (hl_end hl)
+  setHighlight b start end $ hlGroup $ fromMaybe "" $ listToMaybe $ hl_atoms hl
+
+
+setHighlight
+    :: Buffer
+    -> (Int64, Int64)
+    -> (Int64, Int64)
+    -> HighlightGroup
+    -> Neovim CornelisEnv Extmark
+setHighlight b (sl, sc) (el, ec) hl = do
   ns <- asks ce_namespace
-  for_ (lookupLine lis (hl_start hl) (hl_end hl)) $ \(line, start, end) ->
-    nvim_buf_add_highlight
-      b ns
-      (hlGroup $ fromMaybe "" $ listToMaybe $ hl_atoms hl)
-      line start end
+  fmap coerce $ nvim_buf_set_extmark b ns sl sc $ M.fromList
+    [ ( "end_line"
+      , ObjectInt el
+      )
+      -- unlike literally everywhere else in vim, this function is INCLUSIVE
+      -- in its end column
+    , ( "end_col"
+      , ObjectInt $ ec + 1
+      )
+    , ( "hl_group"
+      , ObjectString
+          $ encodeUtf8
+          $ T.pack
+          $ show hl
+      )
+    ]
 

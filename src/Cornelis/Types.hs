@@ -246,3 +246,6 @@ instance FromJSON Response where
           Status <$> s .: "checked" <*> s .: "showIrrelevantArguments" <*> s .: "showImplicitArguments"
       (_ :: Text) -> Unknown <$> obj .: "kind" <*> pure v
 
+newtype Extmark = Extmark Int64
+  deriving (Eq, Ord, Show)
+

@@ -1,20 +1,22 @@
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE OverloadedLabels   #-}
 {-# LANGUAGE OverloadedStrings  #-}
 
 module Cornelis.Highlighting where
 
+import           Control.Lens ((<>~))
 import           Cornelis.Offsets
 import           Cornelis.Pretty
 import           Cornelis.Types hiding (Type)
-import           Cornelis.Utils (criticalFailure)
+import           Cornelis.Utils (criticalFailure, modifyBufferStuff)
 import           Data.Coerce (coerce)
-import           Data.Foldable (for_)
 import           Data.IntervalMap.FingerTree (IntervalMap, Interval (Interval))
 import qualified Data.IntervalMap.FingerTree as IM
 import qualified Data.Map as M
-import           Data.Maybe (listToMaybe, fromMaybe)
+import           Data.Maybe (listToMaybe, fromMaybe, catMaybes)
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
+import           Data.Traversable (for)
 import           Data.Vector (Vector)
 import qualified Data.Vector as V
 import           Neovim
@@ -49,7 +51,10 @@ lineIntervalsForBuffer b = do
 highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv ()
 highlightBuffer b hs = do
   li <- lineIntervalsForBuffer b
-  for_ hs $ addHighlight b li
+  zs <- fmap catMaybes . for hs $ \hl -> do
+    ext <- addHighlight b li hl
+    pure $ sequenceA (ext, hl_definitionSite hl)
+  modifyBufferStuff b $ #bs_goto_sites <>~ M.fromList zs
 
 newtype LineIntervals = LineIntervals
   { li_intervalMap :: IntervalMap BufferOffset (LineNumber, Text)

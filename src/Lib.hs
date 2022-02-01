@@ -13,7 +13,7 @@ import           Control.Lens
 import           Control.Monad (forever)
 import           Control.Monad (when)
 import           Control.Monad.Reader (withReaderT)
-import           Control.Monad.State.Class (modify', gets)
+import           Control.Monad.State.Class (gets)
 import           Control.Monad.Trans.Resource (transResourceT)
 import           Cornelis.Debug (reportExceptions)
 import           Cornelis.Highlighting (highlightBuffer, getLineIntervals, lookupPoint, unvimifyColumn)
@@ -24,7 +24,6 @@ import           Cornelis.Types.Agda
 import           Cornelis.Utils
 import           Data.Foldable (for_)
 import qualified Data.IntMap.Strict as IM
-import qualified Data.Map.Strict as M
 import           Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -44,9 +43,6 @@ withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (rety
 
 getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe InteractionPoint)
 getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
-
-modifyBufferStuff :: Buffer -> (BufferStuff -> BufferStuff) -> Neovim CornelisEnv ()
-modifyBufferStuff b f = modify' $ #cs_buffers %~ M.update (Just . f) b
 
 
 respond :: Buffer -> Response -> Neovim CornelisEnv ()
@@ -72,6 +68,9 @@ respond b (SolveAll solutions) = do
       Just ip -> do
         replaceInterval b (ip_interval ip) $ parens ex
 respond b ClearHighlighting = do
+  -- delete what we know about goto positions
+  modifyBufferStuff b $ #bs_goto_sites .~ mempty
+  -- remove the extmarks and highlighting
   ns <- asks ce_namespace
   nvim_buf_clear_namespace b ns 0 (-1)
 respond b (HighlightingInfo _remove hl) =
@@ -188,6 +187,7 @@ cornelis = do
         , $(command "CornelisTypeContext" 'typeContext) [CmdSync Async]
         , $(command "CornelisMakeCase" 'caseSplit) [CmdSync Async]
         , $(command "CornelisRefine" 'refine) [CmdSync Async]
+        , $(command "CornelisGoToDefinition" 'gotoDefinition) [CmdSync Async]
         ]
     }
 

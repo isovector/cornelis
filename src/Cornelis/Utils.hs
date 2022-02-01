@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLabels  #-}
 
 module Cornelis.Utils where
 
 import           Control.Concurrent.Async
 import           Control.Exception (throwIO)
+import           Control.Lens ((%~))
 import           Control.Monad.IO.Unlift (MonadUnliftIO(withRunInIO))
 import           Control.Monad.State.Class
 import           Cornelis.Types
@@ -19,12 +21,6 @@ neovimAsync :: (MonadUnliftIO m) => m a -> m (Async a)
 neovimAsync m =
   withRunInIO $ \lower ->
     liftIO $ async $ lower m
-
-withBufferStuff :: Buffer -> (BufferStuff -> Neovim CornelisEnv ()) -> Neovim CornelisEnv ()
-withBufferStuff b f =
-  gets (M.lookup b . cs_buffers) >>= \case
-    Nothing -> vim_report_error "no buffer stuff!"
-    Just bs -> f bs
 
 savingCurrentPosition :: Window -> Neovim env a -> Neovim env a
 savingCurrentPosition w m = do
@@ -54,4 +50,13 @@ criticalFailure :: Text -> Neovim env a
 criticalFailure err = do
   vim_report_error err
   liftIO $ throwIO $ ErrorResult "critical error" ObjectNil
+
+modifyBufferStuff :: Buffer -> (BufferStuff -> BufferStuff) -> Neovim CornelisEnv ()
+modifyBufferStuff b f = modify' $ #cs_buffers %~ M.update (Just . f) b
+
+withBufferStuff :: Buffer -> (BufferStuff -> Neovim CornelisEnv ()) -> Neovim CornelisEnv ()
+withBufferStuff b f =
+  gets (M.lookup b . cs_buffers) >>= \case
+    Nothing -> vim_report_error "no buffer stuff!"
+    Just bs -> f bs
 

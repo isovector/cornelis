@@ -24,8 +24,8 @@ vimscript/lua implementations.
 
 ## Features
 
-It supports highlighting, goal listing, type-context, refinement, solving, and
-case splitting. These are exposed via the vim commands:
+It supports highlighting, goal listing, type-context, refinement, solving,
+case splitting, and go-to definition. These are exposed via the vim commands:
 
 ```
 :CornelisLoad
@@ -34,7 +34,12 @@ case splitting. These are exposed via the vim commands:
 :CornelisRefine
 :CornelisSolve
 :CornelisMakeCase
+:CornelisGoToDefinition
 ```
+
+A note on `CornelisGoToDefinition` --- for whatever weird technical reason
+(vim's fault), goto definition only works if your cursor is on the first
+character of the identifier name.
 
 Additionally, there is minor support for agda-input via your `<LocalLeader>` in
 insert mode. See [agda-input.vim](https://github.com/isovector/cornelis/blob/master/agda-input.vim)
@@ -71,6 +76,7 @@ function! AgdaFiletype()
     nnoremap <buffer> <leader>d :CornelisMakeCase<CR>
     nnoremap <buffer> <leader>, :CornelisTypeContext<CR>
     nnoremap <buffer> <leader>n :CornelisSolve<CR>
+    nnoremap <buffer> gd        :CornelisGoToDefinition<CR>
 endfunction
 ```
 

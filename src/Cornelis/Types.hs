@@ -38,10 +38,11 @@ data Agda = Agda
   deriving Generic
 
 data BufferStuff = BufferStuff
-  { bs_agda_proc :: Agda
-  , bs_ips       :: IntMap InteractionPoint
-  , bs_goals     :: DisplayInfo
-  , bs_info_win  :: InfoBuffer
+  { bs_agda_proc  :: Agda
+  , bs_ips        :: IntMap InteractionPoint
+  , bs_goto_sites :: Map Extmark DefinitionSite
+  , bs_goals      :: DisplayInfo
+  , bs_info_win   :: InfoBuffer
   }
   deriving Generic
 
@@ -92,13 +93,31 @@ data Response
   | Unknown Text Value
   deriving (Eq, Ord, Show)
 
-data Highlight = Highlight
-  { hl_atoms :: [Text]
-  -- , hl_definitionSite :: (FilePath, Position')
-  , hl_start :: BufferOffset
-  , hl_end :: BufferOffset
+data DefinitionSite = DefinitionSite
+  { ds_filepath :: Text
+  , ds_position :: BufferOffset
   }
   deriving (Eq, Ord, Show)
+
+instance FromJSON DefinitionSite where
+  parseJSON = withObject "DefinitionSite" $ \obj ->
+    DefinitionSite <$> obj .: "filepath" <*> obj .: "position"
+
+data Highlight = Highlight
+  { hl_atoms          :: [Text]
+  , hl_definitionSite :: Maybe DefinitionSite
+  , hl_start          :: BufferOffset
+  , hl_end            :: BufferOffset
+  }
+  deriving (Eq, Ord, Show)
+
+instance FromJSON Highlight where
+  parseJSON = withObject "Highlight" $ \obj ->
+    Highlight
+      <$> obj .: "atoms"
+      <*> obj .:? "definitionSite"
+      <*> fmap (!! 0) (obj .: "range")
+      <*> fmap (!! 1) (obj .: "range")
 
 data MakeCase
   = RegularCase MakeCaseVariant [Text] InteractionPoint
@@ -150,10 +169,6 @@ instance FromJSON b => FromJSON (Position' b ()) where
 instance FromJSON Solution where
   parseJSON = withObject "Solution" $ \obj ->
     Solution <$> obj .: "interactionPoint" <*> obj .: "expression"
-
-instance FromJSON Highlight where
-  parseJSON = withObject "Highlight" $ \obj ->
-    Highlight <$> obj .: "atoms" <*> fmap (!! 0) (obj .: "range") <*> fmap (!! 1) (obj .: "range")
 
 data GoalInfo a = GoalInfo
   { gi_ip :: a

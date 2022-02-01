@@ -38,6 +38,28 @@ call s:agda_input("nat", "ℕ")
 call s:agda_input("=>", "⇒")
 call s:agda_input("in", "∈")
 
+call s:agda_input("_0", "₀")
+call s:agda_input("_1", "₁")
+call s:agda_input("_2", "₂")
+call s:agda_input("_3", "₃")
+call s:agda_input("_4", "₄")
+call s:agda_input("_5", "₅")
+call s:agda_input("_6", "₆")
+call s:agda_input("_7", "₇")
+call s:agda_input("_8", "₈")
+call s:agda_input("_9", "₉")
+
+call s:agda_input("^0", "⁰")
+call s:agda_input("^1", "¹")
+call s:agda_input("^2", "²")
+call s:agda_input("^3", "³")
+call s:agda_input("^4", "⁴")
+call s:agda_input("^5", "⁵")
+call s:agda_input("^6", "⁶")
+call s:agda_input("^7", "⁷")
+call s:agda_input("^8", "⁸")
+call s:agda_input("^9", "⁹")
+
 
 " Agda-input proper
 call s:agda_input("=n", "≠")

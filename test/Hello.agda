@@ -13,3 +13,6 @@ unit = ?
 test : Bool → Bool
 test x = ?
 
+unicodeTest₁ : Bool → Bool
+unicodeTest₁ x = ?
+

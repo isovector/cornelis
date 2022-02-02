@@ -3,28 +3,11 @@
 
 module TestSpec where
 
-import Neovim.API.Text
-import Neovim.Test
-import Plugin
-import Test.Hspec
-import Utils
 import qualified Data.Text as T
-import Lib
-import Cornelis.Types.Agda
-import Control.Lens
-import Cornelis.Offsets (offsetDiff)
-import Data.Int (Int32)
-import Neovim (Neovim)
-
-
-mkPos :: Int32 -> Int32 -> Position' LineOffset ()
-mkPos line col = Pn () (Offset 0) (LineNumber $ line) $ Offset col
-
-goto :: Window -> Buffer -> Int32 -> Int32 -> Neovim env ()
-goto  w b row col = do
-  (row', col') <- fmap positionToVim $ vimifyPositionM b $ mkPos row col
-  -- TODO(sandy): I can't keep track of these one indicies for my life
-  nvim_win_set_cursor w (row' + 1, col')
+import           Neovim.Test
+import           Plugin
+import           Test.Hspec
+import           Utils
 
 
 spec :: Spec

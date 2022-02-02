@@ -5,6 +5,7 @@ module Utils where
 
 import           Control.Concurrent (threadDelay)
 import           Cornelis.Types
+import           Cornelis.Types.Agda
 import           Data.Bifunctor (bimap)
 import           Data.Foldable (minimumBy)
 import           Data.Ord (comparing)
@@ -66,4 +67,14 @@ diffSpec name secs fp diffs m = do
       w <- vim_get_current_window
       b <- nvim_win_get_buf w
       intervention b diffs $ m w b
+
+
+mkPos :: Int32 -> Int32 -> Position' LineOffset ()
+mkPos line col = Pn () (Offset 0) (LineNumber $ line) $ Offset col
+
+goto :: Window -> Buffer -> Int32 -> Int32 -> Neovim env ()
+goto  w b row col = do
+  (row', col') <- fmap positionToVim $ vimifyPositionM b $ mkPos row col
+  -- TODO(sandy): I can't keep track of these one indicies for my life
+  nvim_win_set_cursor w (row' + 1, col')
 

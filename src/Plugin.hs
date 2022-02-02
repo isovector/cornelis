@@ -113,14 +113,20 @@ gotoDefinition _ = withAgda $ do
             vim_command $ "normal! " <> T.pack (show buffer_idx) <> "go"
 
 
-load :: CommandArguments -> Neovim CornelisEnv ()
-load _ = withAgda $ do
+doLoad :: CommandArguments -> Neovim CornelisEnv ()
+doLoad = const load
+
+load :: Neovim CornelisEnv ()
+load = withAgda $ do
   agda <- withCurrentBuffer getAgda
   name <- buffer_get_name $ a_buffer agda
   flip runIOTCM agda $ Cmd_load name []
 
-allGoals :: CommandArguments -> Neovim CornelisEnv ()
-allGoals _ =
+doAllGoals :: CommandArguments -> Neovim CornelisEnv ()
+doAllGoals = const allGoals
+
+allGoals :: Neovim CornelisEnv ()
+allGoals =
   withAgda $ withCurrentBuffer $ \b ->
     withBufferStuff b $ \bs -> do
       goalWindow b $ bs_goals bs
@@ -136,16 +142,23 @@ typeContext _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
   flip runIOTCM agda $ Cmd_goal_type_context Simplified (InteractionId $ ip_id goal) noRange ""
 
-refine :: CommandArguments -> Neovim CornelisEnv ()
-refine _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
+doRefine :: CommandArguments -> Neovim CornelisEnv ()
+doRefine = const refine
+
+refine :: Neovim CornelisEnv ()
+refine = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
   flip runIOTCM agda $ Cmd_refine_or_intro True (InteractionId $ ip_id goal) noRange ""
 
-caseSplit :: CommandArguments -> Neovim CornelisEnv ()
-caseSplit _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
-  thing <- input @String "Split on what?" Nothing Nothing
+doCaseSplit :: CommandArguments -> Neovim CornelisEnv ()
+doCaseSplit _ = do
+  thing <- input @Text "Split on what?" Nothing Nothing
+  caseSplit thing
+
+caseSplit :: Text -> Neovim CornelisEnv ()
+caseSplit thing = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
-  flip runIOTCM agda $ Cmd_make_case (InteractionId $ ip_id goal) noRange thing
+  flip runIOTCM agda $ Cmd_make_case (InteractionId $ ip_id goal) noRange $ T.unpack thing
 
 goalWindow :: Buffer -> DisplayInfo ->  Neovim CornelisEnv ()
 goalWindow b = showInfoWindow b . prettyGoals

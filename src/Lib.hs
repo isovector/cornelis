@@ -187,12 +187,12 @@ cornelis = do
   wrapPlugin $ Plugin
     { environment = env
     , exports =
-        [ $(command "CornelisLoad" 'load) [CmdSync Async]
-        , $(command "CornelisGoals" 'allGoals) [CmdSync Async]
+        [ $(command "CornelisLoad" 'doLoad) [CmdSync Async]
+        , $(command "CornelisGoals" 'doAllGoals) [CmdSync Async]
         , $(command "CornelisSolve" 'solveOne) [CmdSync Async]
         , $(command "CornelisTypeContext" 'typeContext) [CmdSync Async]
-        , $(command "CornelisMakeCase" 'caseSplit) [CmdSync Async]
-        , $(command "CornelisRefine" 'refine) [CmdSync Async]
+        , $(command "CornelisMakeCase" 'doCaseSplit) [CmdSync Async]
+        , $(command "CornelisRefine" 'doRefine) [CmdSync Async]
         , $(command "CornelisGoToDefinition" 'gotoDefinition) [CmdSync Async]
         ]
     }

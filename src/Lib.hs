@@ -37,7 +37,7 @@ main :: IO ()
 main = neovim defaultConfig { plugins = [cornelis] }
 
 
-withLocalEnv :: env ->Neovim env a -> Neovim env' a
+withLocalEnv :: env -> Neovim env a -> Neovim env' a
 withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (retypeConfig env)
 
 
@@ -147,7 +147,7 @@ vimifyPosition t = #posCol %~ fromIntegral . toBytes t
 positionToVim :: Position' Int64 a -> (Int64, Int64)
 positionToVim p =
   ( fromIntegral $ getLineNumber (posLine p) - 1
-  , fromIntegral $ posCol p - 1
+  , fromIntegral $ posCol p
   )
 
 getBufferLine :: Buffer -> LineNumber -> Neovim env Text
@@ -158,8 +158,13 @@ getBufferLine b (LineNumber ln) =
 replaceInterval :: Buffer -> Interval' LineOffset () -> Text -> Neovim CornelisEnv ()
 replaceInterval b i str
   = do
-    (sl, sc) <- fmap positionToVim $ vimifyPositionM b $ iStart i
-    (el, ec) <- fmap positionToVim $ vimifyPositionM b $ iEnd i
+    (sl, sc) <- fmap positionToVim
+              $ vimifyPositionM b
+              $ iStart i
+                & #posCol %~ flip offsetDiff (Offset 1)
+    (el, ec) <- fmap positionToVim
+              $ vimifyPositionM b
+              $ iEnd i
     nvim_buf_set_text b sl sc el ec $ V.fromList $ T.lines str
 
 

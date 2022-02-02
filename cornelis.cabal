@@ -97,6 +97,7 @@ library
     , filepath
     , fingertree
     , generic-lens
+    , hspec
     , lens
     , mtl
     , nvim-hs
@@ -163,7 +164,7 @@ executable cornelis
       TypeApplications
       TypeOperators
       TypeSynonymInstances
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , async
@@ -175,6 +176,7 @@ executable cornelis
     , filepath
     , fingertree
     , generic-lens
+    , hspec
     , lens
     , mtl
     , nvim-hs
@@ -193,6 +195,8 @@ test-suite cornelis-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      TestSpec
+      Utils
       Paths_cornelis
   hs-source-dirs:
       test
@@ -242,7 +246,7 @@ test-suite cornelis-test
       TypeApplications
       TypeOperators
       TypeSynonymInstances
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , async
@@ -254,6 +258,7 @@ test-suite cornelis-test
     , filepath
     , fingertree
     , generic-lens
+    , hspec
     , lens
     , mtl
     , nvim-hs

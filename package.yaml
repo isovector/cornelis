@@ -42,6 +42,8 @@ dependencies:
 - prettyprinter
 - vector
 
+- hspec
+
 default-extensions:
   - BangPatterns
   - BinaryLiterals
@@ -90,10 +92,11 @@ default-extensions:
   - TypeOperators
   - TypeSynonymInstances
 
+ghc-options:
+- -Wall
+
 library:
   source-dirs: src
-  ghc-options:
-  - -Wall
 
 executables:
   cornelis:
@@ -116,3 +119,6 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - cornelis
+    - hspec
+    build-dependencies:
+    - hspec-discover

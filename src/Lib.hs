@@ -163,8 +163,8 @@ replaceInterval b i str
     nvim_buf_set_text b sl sc el ec $ V.fromList $ T.lines str
 
 
-cornelis :: Neovim () NeovimPlugin
-cornelis = do
+cornelisInit :: Neovim env CornelisEnv
+cornelisInit = do
   (inchan, outchan) <- liftIO newChan
   ns <- nvim_create_namespace "cornelis"
   mvar <- liftIO $ newMVar $ CornelisState mempty
@@ -175,7 +175,13 @@ cornelis = do
       forever $ reportExceptions $ do
         AgdaResp buffer next <- liftIO $ readChan outchan
         respond buffer next
+  pure env
 
+
+
+cornelis :: Neovim () NeovimPlugin
+cornelis = do
+  env <- cornelisInit
   closeInfoWindows
 
   wrapPlugin $ Plugin

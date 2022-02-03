@@ -1,12 +1,14 @@
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE StandaloneDeriving    #-}
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE UndecidableInstances  #-}
+
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE DataKinds #-}
 
 module Cornelis.Types
   ( module Cornelis.Types
@@ -18,8 +20,9 @@ module Cornelis.Types
 import Control.Concurrent
 import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
-import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset, Offset (..), LineNumber, LineOffset)
+import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset, Offset (..), LineNumber, LineOffset, AgdaOffset)
 import Data.Aeson hiding (Error)
+import Data.Bifunctor (first)
 import Data.Generics.Labels ()
 import Data.IntMap.Strict (IntMap)
 import Data.Map (Map)
@@ -49,7 +52,7 @@ data Agda = Agda
 
 data BufferStuff = BufferStuff
   { bs_agda_proc  :: Agda
-  , bs_ips        :: IntMap InteractionPoint
+  , bs_ips        :: IntMap (InteractionPoint LineOffset)
   , bs_goto_sites :: Map Extmark DefinitionSite
   , bs_goals      :: DisplayInfo
   , bs_info_win   :: InfoBuffer
@@ -96,8 +99,8 @@ data Response
     , status_showImplicits :: Bool
     }
   | JumpToError FilePath BufferOffset
-  | InteractionPoints [InteractionPoint]
-  | GiveAction Text InteractionPoint
+  | InteractionPoints [InteractionPoint AgdaOffset]
+  | GiveAction Text (InteractionPoint AgdaOffset)
   | MakeCase MakeCase
   | SolveAll [Solution]
   | Unknown Text Value
@@ -130,8 +133,8 @@ instance FromJSON Highlight where
       <*> fmap (!! 1) (obj .: "range")
 
 data MakeCase
-  = RegularCase MakeCaseVariant [Text] InteractionPoint
-  deriving (Eq, Ord, Show)
+  = RegularCase MakeCaseVariant [Text] (InteractionPoint AgdaOffset)
+  deriving (Eq, Ord, Show, Generic)
 
 data MakeCaseVariant = Function | ExtendedLambda
   deriving stock (Eq, Ord, Show, Generic)
@@ -148,11 +151,14 @@ data Solution = Solution
   }
   deriving (Eq, Ord, Show)
 
-data InteractionPoint = InteractionPoint
+data InteractionPoint a = InteractionPoint
   { ip_id :: Int
-  , ip_interval :: IntervalWithoutFile
+  , ip_interval :: Interval' a ()
   }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
+
+instance Functor InteractionPoint where
+  fmap fab (InteractionPoint ip int) = InteractionPoint ip $ first fab int
 
 data NamedPoint = NamedPoint
   { np_name :: Text
@@ -164,7 +170,7 @@ instance FromJSON IntervalWithoutFile where
   parseJSON = withObject "IntervalWithoutFile" $ \obj -> do
     Interval <$> obj .: "start" <*> obj .: "end"
 
-instance FromJSON InteractionPoint where
+instance FromJSON (Interval' a ()) => FromJSON (InteractionPoint a) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range")
 
@@ -218,12 +224,12 @@ instance FromJSON Message where
 
 data DisplayInfo
   = AllGoalsWarnings
-      { di_all_visible :: [GoalInfo InteractionPoint]
+      { di_all_visible :: [GoalInfo (InteractionPoint AgdaOffset)]
       , di_all_invisible :: [GoalInfo NamedPoint]
       , di_errors :: [Message]
       , di_warnings :: [Message]
       }
-  | GoalSpecific InteractionPoint [InScope] Type
+  | GoalSpecific (InteractionPoint AgdaOffset) [InScope] Type
   | DisplayError Text
   | UnknownDisplayInfo Value
   deriving (Eq, Ord, Show, Generic)

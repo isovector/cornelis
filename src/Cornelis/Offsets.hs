@@ -34,6 +34,9 @@ incLineNumber = coerce ((+) @Int32 1)
 getVimLineNumber :: LineNumber -> Int64
 getVimLineNumber (LineNumber l) = fromIntegral l - 1
 
+agdaToLine :: AgdaOffset -> LineOffset
+agdaToLine = coerce $ subtract @Int32 1
+
 ------------------------------------------------------------------------------
 -- | Convert a character-based index into a byte-indexed one
 toBytes :: T.Text -> Offset a -> Int

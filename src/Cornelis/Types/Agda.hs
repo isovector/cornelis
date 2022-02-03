@@ -10,6 +10,7 @@ import           Control.Monad.State.Strict (StateT, runStateT, put, get)
 import           Control.Monad.Trans (lift)
 import           Control.Monad.Trans.Except (runExceptT)
 import           Data.Aeson (FromJSON)
+import           Data.Bifunctor
 import           Data.Data
 import           Data.Function (on)
 import           Data.Functor.Identity
@@ -29,7 +30,7 @@ newtype LineNumber = LineNumber { getOneIndexedLineNumber :: Int32 }
   deriving stock Data
   deriving newtype (Eq, Ord, Show, Read, FromJSON)
 
-data OffsetType = Line | File
+data OffsetType = Line | File | OneIndexed
 
 newtype Offset (a :: OffsetType) = Offset Int32
   deriving stock Data
@@ -37,6 +38,7 @@ newtype Offset (a :: OffsetType) = Offset Int32
 
 type BufferOffset = Offset 'File
 type LineOffset = Offset 'Line
+type AgdaOffset = Offset 'OneIndexed
 
 
 data Rewrite =  AsIs | Instantiated | HeadNormal | Simplified | Normalised
@@ -114,8 +116,11 @@ instance Show a =>
 data Interval' b a = Interval { iStart, iEnd :: !(Position' b  a) }
   deriving (Show, Data, Eq, Ord, Functor, Foldable, Traversable, Generic)
 
-type Interval            = Interval' LineOffset SrcFile
-type IntervalWithoutFile = Interval' LineOffset ()
+instance Bifunctor Interval' where
+  bimap fab fcd (Interval a b) = Interval (bimap fab fcd a) (bimap fab fcd b)
+
+type Interval            = Interval' AgdaOffset SrcFile
+type IntervalWithoutFile = Interval' AgdaOffset ()
 
 type SrcFile = Maybe AbsolutePath
 
@@ -130,6 +135,9 @@ data Position' b a = Pn
     -- ^ Column number, counting from 1.
   }
   deriving (Show, Data, Functor, Foldable, Traversable, Generic)
+
+instance Bifunctor Position' where
+  bimap fab fcd (Pn c off ln a) = Pn (fcd c) off ln $ fab a
 
 
 newtype AbsolutePath = AbsolutePath { textPath :: String }

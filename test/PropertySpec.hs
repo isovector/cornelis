@@ -3,7 +3,6 @@
 module PropertySpec where
 
 import           Cornelis.Offsets
-import           Cornelis.Types.Agda
 import           Cornelis.Types
 import           Cornelis.Vim
 import           Data.Bool (bool)

@@ -6,7 +6,7 @@
 
 module Lib where
 
-import           Control.Arrow ((&&&), first)
+import           Control.Arrow ((&&&))
 import           Control.Concurrent (newMVar)
 import           Control.Concurrent.Chan.Unagi
 import           Control.Lens
@@ -23,6 +23,7 @@ import           Cornelis.Types
 import           Cornelis.Types.Agda
 import           Cornelis.Utils
 import           Cornelis.Vim
+import           Data.Bifunctor
 import           Data.Foldable (for_)
 import qualified Data.IntMap.Strict as IM
 import           Data.Maybe
@@ -41,7 +42,7 @@ withLocalEnv :: env -> Neovim env a -> Neovim env' a
 withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (retypeConfig env)
 
 
-getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe InteractionPoint)
+getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe (InteractionPoint LineOffset))
 getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
 
 
@@ -53,13 +54,14 @@ respond b (DisplayInfo dp) = do
   goalWindow b dp
 -- Update the buffer's interaction points map
 respond b (InteractionPoints ips) = do
-  modifyBufferStuff b $ #bs_ips .~ (IM.fromList $ fmap (ip_id &&& id) ips)
+  modifyBufferStuff b $ #bs_ips .~ (IM.fromList $ fmap (ip_id &&& id) $ fmap (fmap agdaToLine) ips)
 -- Replace a function clause
 respond b (MakeCase mkcase) = do
   doMakeCase b mkcase
 -- Replace the interaction point with a result
 respond b (GiveAction result ip) = do
-  replaceInterval b (positionToPos $ iStart $ ip_interval ip) (positionToPos $ iEnd $ ip_interval ip) result
+  let ip' = fmap agdaToLine ip
+  replaceInterval b (positionToPos $ iStart $ ip_interval ip') (positionToPos $ iEnd $ ip_interval ip') result
 -- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) -> do
@@ -115,19 +117,22 @@ getSurroundingMotion w b motion p = do
 
 doMakeCase :: Buffer -> MakeCase -> Neovim env ()
 doMakeCase b (RegularCase Function clauses ip) =
-  let int = ip_interval ip & #iStart . #posCol .~ Offset 1
+  let int = ip_interval
+          $ fmap agdaToLine
+          $ ip & #ip_interval . #iStart . #posCol .~ Offset 1
       start = positionToPos $ iStart int
       end = positionToPos $ iEnd int
    in replaceInterval b start end $ T.unlines clauses
 -- TODO(sandy): It would be nice if Agda just gave us the bounds we're supposed to replace...
 doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
+  let ip' = fmap agdaToLine ip
   ws <- windowsForBuffer b
   case listToMaybe ws of
     Nothing ->
       vim_report_error
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a limitation in cornelis."
     Just w -> do
-      (start, end) <- getSurroundingMotion w b "i}" $ positionToPos $ iStart $ ip_interval ip
+      (start, end) <- getSurroundingMotion w b "i}" $ positionToPos $ iStart $ ip_interval ip'
       replaceInterval b start end $ T.unlines $
         clauses & _tail %~ fmap (indent start)
 

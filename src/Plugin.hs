@@ -9,12 +9,14 @@ module Plugin where
 import           Control.Lens
 import           Control.Monad.State.Class
 import           Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
+import           Cornelis.Debug (traceMX)
 import           Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
 import           Cornelis.Offsets
 import           Cornelis.Pretty (prettyGoals)
 import           Cornelis.Types
 import           Cornelis.Types.Agda hiding (Error)
 import           Cornelis.Utils
+import           Cornelis.Vim
 import           Data.List
 import qualified Data.Map as M
 import qualified Data.Text as T
@@ -22,8 +24,6 @@ import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
 import           Neovim.User.Input (input)
-import Cornelis.Vim
-import Cornelis.Debug (traceMX)
 
 
 
@@ -50,7 +50,7 @@ getAgda :: Buffer -> Neovim CornelisEnv Agda
 getAgda buffer = gets $ bs_agda_proc . (M.! buffer) . cs_buffers
 
 
-getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe InteractionPoint)
+getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe (InteractionPoint LineOffset))
 getGoalAtCursor = do
   w <- nvim_get_current_win
   b <- window_get_buffer w
@@ -59,22 +59,18 @@ getGoalAtCursor = do
   pure (b, ips >>= flip lookupGoal p)
 
 
-lookupGoal :: Foldable t => t InteractionPoint -> Pos -> Maybe InteractionPoint
+lookupGoal :: Foldable t => t (InteractionPoint LineOffset) -> Pos -> Maybe (InteractionPoint LineOffset)
 lookupGoal ips p = flip find ips $ (\(InteractionPoint _ iv) -> containsPoint iv p)
 
-containsPoint :: IntervalWithoutFile -> Pos -> Bool
+containsPoint :: Ord a => Interval' a b -> Pos' a -> Bool
 containsPoint (Interval s e) (Pos l c) = and $
-  -- This is a search in agda, which is one-indexed in its characters.
-  -- TODO(sandy): normalize Pos to be 1-indexed
-  let c' = offsetPlus c $ Offset 1
-   in
-      [ posLine s <= l
-      , l <= posLine e
-      , posCol s <= c'
-      , c' <= posCol e
-      ]
+  [ posLine s <= l
+  , l <= posLine e
+  , posCol s <= c
+  , c <= posCol e
+  ]
 
-withGoalAtCursor :: (Buffer -> InteractionPoint -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
+withGoalAtCursor :: (Buffer -> InteractionPoint LineOffset -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
 withGoalAtCursor f = getGoalAtCursor >>= \case
    (_, Nothing) -> do
      vim_report_error "No goal at cursor"

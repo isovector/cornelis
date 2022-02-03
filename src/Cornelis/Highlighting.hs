@@ -78,17 +78,9 @@ getLineIntervals = LineIntervals . go (Offset 0) (LineNumber 0)
 lookupPoint :: LineIntervals -> BufferOffset -> Maybe (Int64, Int64)
 lookupPoint (LineIntervals im) off = do
   (Interval scs _, (startline, s)) <- listToMaybe $ IM.search off im
-  pure ( fromIntegral $ getLineNumber startline
+  pure ( fromIntegral $ getOneIndexedLineNumber startline
        , fromIntegral $ toBytes s (offsetDiff off scs) - 1
        )
-
-------------------------------------------------------------------------------
--- | Vim insists on returning byte-based offsets for the cursor positions...
--- why the fuck? This function undoes the problem.
-unvimifyColumn :: Buffer -> (Int64, Int64) -> Neovim env LineOffset
-unvimifyColumn b (l, c) = do
-  lstr <- buffer_get_line b $ l - 1
-  pure $ fromBytes lstr $ fromIntegral c
 
 
 addHighlight :: Buffer -> LineIntervals -> Highlight -> Neovim CornelisEnv Extmark

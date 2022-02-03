@@ -46,6 +46,7 @@ library
       BinaryLiterals
       ConstrainedClassMethods
       ConstraintKinds
+      DataKinds
       DeriveDataTypeable
       DeriveFoldable
       DeriveFunctor
@@ -125,6 +126,7 @@ executable cornelis
       BinaryLiterals
       ConstrainedClassMethods
       ConstraintKinds
+      DataKinds
       DeriveDataTypeable
       DeriveFoldable
       DeriveFunctor
@@ -209,6 +211,7 @@ test-suite test
       BinaryLiterals
       ConstrainedClassMethods
       ConstraintKinds
+      DataKinds
       DeriveDataTypeable
       DeriveFoldable
       DeriveFunctor

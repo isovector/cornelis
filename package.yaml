@@ -50,6 +50,7 @@ default-extensions:
   - BinaryLiterals
   - ConstrainedClassMethods
   - ConstraintKinds
+  - DataKinds
   - DeriveDataTypeable
   - DeriveFoldable
   - DeriveFunctor

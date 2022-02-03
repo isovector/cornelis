@@ -6,6 +6,7 @@
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE DataKinds #-}
 
 module Cornelis.Types
   ( module Cornelis.Types
@@ -17,7 +18,7 @@ module Cornelis.Types
 import Control.Concurrent
 import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
-import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset)
+import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset, Offset (..), LineNumber, LineOffset)
 import Data.Aeson hiding (Error)
 import Data.Generics.Labels ()
 import Data.IntMap.Strict (IntMap)
@@ -30,6 +31,15 @@ import Neovim.API.Text (Buffer(..), Window)
 import System.IO (Handle)
 
 deriving stock instance Ord Buffer
+
+data Pos' l = Pos
+  { p_line :: LineNumber
+  , p_col :: l
+  }
+  deriving (Eq, Ord, Show, Generic)
+
+type Pos = Pos' LineOffset
+
 
 data Agda = Agda
   { a_buffer :: Buffer

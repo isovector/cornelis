@@ -4,12 +4,13 @@ module PropertySpec where
 
 import           Cornelis.Offsets
 import           Cornelis.Types.Agda
+import           Cornelis.Types
+import           Cornelis.Vim
 import           Data.Bool (bool)
 import           Data.Containers.ListUtils (nubOrd)
 import           Data.Maybe (mapMaybe)
 import qualified Data.Text as T
 import qualified Data.Vector as V
-import           Lib hiding (main)
 import           Neovim
 import           Neovim.API.Text
 import           Neovim.Test (Seconds(Seconds))
@@ -38,7 +39,7 @@ spec = do
     row <- choose (1, length strs)
     let rowidx = row - 1
     col <- choose (0, max 0 $ length (strs !! rowidx) - 1)
-    let pn = Pn () (Offset 0) (LineNumber $ fromIntegral row) $ Offset $ fromIntegral col
+    let pn = Pos (LineNumber $ fromIntegral row) $ Offset $ fromIntegral col
     pure
       $ counterexample (show strs)
       $ counterexample (show row)
@@ -47,10 +48,7 @@ spec = do
       $ counterexample (show $ strs !! rowidx)
       $ withVim (Seconds 1) $ \w b -> do
           buffer_set_lines b 0 (-1) False $ V.fromList $ fmap T.pack $ strs
-          z <- fmap positionToVim (vimifyPositionM b pn)
-
-          liftIO $ snd z `shouldNotBe` -1
-          nvim_win_set_cursor w z
+          setWindowCursor w pn
           ObjectInt row' <- vim_call_function "line" $ V.fromList [ObjectString "."]
           ObjectInt col' <- vim_call_function "virtcol" $ V.fromList [ObjectString "."]
           liftIO $ Row row' `shouldBe` Row (fromIntegral row)
@@ -65,15 +63,14 @@ spec = do
     let srow = LineNumber 1
         scol = Offset $ fromIntegral $ start
         ecol = Offset $ fromIntegral $ start + end
-        spn = Pn () (Offset 0) srow scol
-        epn = Pn () (Offset 0) srow ecol
-        int = Interval spn epn
+        spn = Pos srow scol
+        epn = Pos srow ecol
         expected = T.take start str <> rep <> T.drop (start + end) str
     pure $
       withVim (Seconds 1) $ \_ b -> do
         buffer_set_lines b 0 (-1) False $ V.fromList $ pure str
         intervention b (mapMaybe simplify [Modify str expected]) $
-          replaceInterval b int rep
+          replaceInterval b spn epn rep
 
 
 agdaChar :: Gen Char

@@ -9,7 +9,6 @@ module Plugin where
 import           Control.Lens
 import           Control.Monad.State.Class
 import           Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
-import           Cornelis.Highlighting (unvimifyColumn)
 import           Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
 import           Cornelis.Offsets
 import           Cornelis.Pretty (prettyGoals)
@@ -23,6 +22,8 @@ import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
 import           Neovim.User.Input (input)
+import Cornelis.Vim
+import Cornelis.Debug (traceMX)
 
 
 
@@ -53,26 +54,26 @@ getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe InteractionPoint)
 getGoalAtCursor = do
   w <- nvim_get_current_win
   b <- window_get_buffer w
-  (r, c) <- window_get_cursor w
-  c' <- unvimifyColumn b (r, c)
+  p <- getWindowCursor w
   ips <- fmap bs_ips . M.lookup b <$> gets cs_buffers
-  -- TODO(sandy): stupid off-by-one in vim? or agda?
-  pure (b, ips >>= \ip -> lookupGoal ip (LineNumber $ fromIntegral r) (offsetPlus c' $ Offset 1))
+  pure (b, ips >>= flip lookupGoal p)
 
 
-lookupGoal :: Foldable t => t InteractionPoint -> LineNumber -> LineOffset -> Maybe InteractionPoint
-lookupGoal ips line col = flip find ips $ (\(InteractionPoint _ iv) -> containsPoint iv line col)
+lookupGoal :: Foldable t => t InteractionPoint -> Pos -> Maybe InteractionPoint
+lookupGoal ips p = flip find ips $ (\(InteractionPoint _ iv) -> containsPoint iv p)
 
-containsPoint :: IntervalWithoutFile -> LineNumber -> LineOffset -> Bool
-containsPoint (Interval s e) l c = and
-  [ posLine s <= l
-  , l <= posLine e
-  , posCol s <= c
-  , c <= posCol e
-  ]
+containsPoint :: IntervalWithoutFile -> Pos -> Bool
+containsPoint (Interval s e) (Pos l c) = and $
+  -- This is a search in agda, which is one-indexed in its characters.
+  -- TODO(sandy): normalize Pos to be 1-indexed
+  let c' = offsetPlus c $ Offset 1
+   in
+      [ posLine s <= l
+      , l <= posLine e
+      , posCol s <= c'
+      , c' <= posCol e
+      ]
 
--- TODO(sandy): There's a bug here! Vim reports byte-offset columns, so lines
--- that contain unicode are wrong. ffs
 withGoalAtCursor :: (Buffer -> InteractionPoint -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
 withGoalAtCursor f = getGoalAtCursor >>= \case
    (_, Nothing) -> do
@@ -94,6 +95,7 @@ getExtmark b (r, c) = do
 gotoDefinition :: CommandArguments -> Neovim CornelisEnv ()
 gotoDefinition _ = withAgda $ do
   w <- nvim_get_current_win
+  -- TODO(sandy): NO
   rc <- window_get_cursor w
   b <- window_get_buffer w
   withBufferStuff b $ \bs -> do

@@ -23,7 +23,9 @@ import           GHC.Generics
 import           GHC.Show (showSpace)
 import           System.FilePath
 
-newtype LineNumber = LineNumber { getLineNumber :: Int32 }
+------------------------------------------------------------------------------
+-- | Line numbers are always 1-indexed
+newtype LineNumber = LineNumber { getOneIndexedLineNumber :: Int32 }
   deriving stock Data
   deriving newtype (Eq, Ord, Show, Read, FromJSON)
 

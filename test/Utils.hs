@@ -17,6 +17,8 @@ import           Neovim.API.Text
 import           Neovim.Test
 import           Plugin
 import           Test.Hspec hiding (after, before)
+import Cornelis.Types
+import Cornelis.Vim
 
 
 data Diff a
@@ -84,12 +86,9 @@ diffSpec name secs fp diffs m = do
       intervention b diffs $ m w b
 
 
-mkPos :: Int32 -> Int32 -> Position' LineOffset ()
-mkPos line col = Pn () (Offset 0) (LineNumber $ line) $ Offset col
+mkPos :: Int32 -> Int32 -> Pos
+mkPos line col = Pos (LineNumber line) $ Offset col
 
-goto :: Window -> Buffer -> Int32 -> Int32 -> Neovim env ()
-goto  w b row col = do
-  (row', col') <- fmap positionToVim $ vimifyPositionM b $ mkPos row col
-  -- TODO(sandy): I can't keep track of these one indicies for my life
-  nvim_win_set_cursor w (row' + 1, col')
+goto :: Window -> Int32 -> Int32 -> Neovim env ()
+goto w row col = setWindowCursor w $ mkPos row col
 

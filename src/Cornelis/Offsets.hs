@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module Cornelis.Offsets
   ( module Cornelis.Offsets
   , LineNumber(..)
@@ -6,12 +7,19 @@ module Cornelis.Offsets
   , LineOffset
   ) where
 
+import           Cornelis.Types
 import           Cornelis.Types.Agda
 import qualified Data.ByteString as BS
 import           Data.Coerce (coerce)
 import           Data.Int
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
+
+positionToPos :: Position' LineOffset () -> Pos
+positionToPos (Pn _ _ ln off') = Pos {p_line = ln, p_col = off'}
+
+posToPosition :: Pos -> Position' LineOffset ()
+posToPosition (Pos l c) = Pn () (Offset $ error "fake buffer offset") l c
 
 
 offsetPlus :: Offset a -> Offset a -> Offset a
@@ -22,6 +30,9 @@ offsetDiff = coerce $ (-) @Int32
 
 incLineNumber :: LineNumber -> LineNumber
 incLineNumber = coerce ((+) @Int32 1)
+
+getVimLineNumber :: LineNumber -> Int64
+getVimLineNumber (LineNumber l) = fromIntegral l - 1
 
 ------------------------------------------------------------------------------
 -- | Convert a character-based index into a byte-indexed one

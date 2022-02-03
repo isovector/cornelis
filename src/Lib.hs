@@ -162,11 +162,12 @@ replaceInterval b i str
     (sl, sc) <- fmap positionToVim
               $ vimifyPositionM b
               $ iStart i
-                & #posCol %~ flip offsetDiff (Offset 1)
     (el, ec) <- fmap positionToVim
               $ vimifyPositionM b
               $ iEnd i
-    nvim_buf_set_text b sl sc el ec $ V.fromList $ T.lines str
+    -- TODO(sandy): WHAT THE FUCK. THIS FUNCTION IS 0-INDEXED FOR LINE NUMBERS.
+    -- BUT EVERYWHERE ELSE VIM TREATS THE FIRST LINE AS 1
+    nvim_buf_set_text b (sl - 1) sc (el - 1) ec $ V.fromList $ T.lines str
 
 
 cornelisInit :: Neovim env CornelisEnv

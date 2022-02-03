@@ -4,7 +4,9 @@ module PropertySpec where
 
 import           Cornelis.Offsets
 import           Cornelis.Types.Agda
+import           Data.Bool (bool)
 import           Data.Containers.ListUtils (nubOrd)
+import           Data.Maybe (mapMaybe)
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import           Lib hiding (main)
@@ -54,6 +56,25 @@ spec = do
           liftIO $ Row row' `shouldBe` Row (fromIntegral row)
           -- virtcol is 1-based....
           liftIO $ Col (col' - 1) `shouldBe` Col (fromIntegral col)
+
+  prop "replaceInterval does as it says" $ do
+    str <- T.pack <$> listOf agdaChar
+    rep <- T.pack <$> listOf agdaChar
+    start <- choose (0, T.length str - 1)
+    end <- choose (0, T.length str - start)
+    let srow = LineNumber 1
+        scol = Offset $ fromIntegral $ start
+        ecol = Offset $ fromIntegral $ start + end
+        spn = Pn () (Offset 0) srow scol
+        epn = Pn () (Offset 0) srow ecol
+        int = Interval spn epn
+        expected = T.take start str <> rep <> T.drop (start + end) str
+    pure $
+      withVim (Seconds 1) $ \_ b -> do
+        buffer_set_lines b 0 (-1) False $ V.fromList $ pure str
+        intervention b (mapMaybe simplify [Modify str expected]) $
+          replaceInterval b int rep
+
 
 agdaChar :: Gen Char
 agdaChar = elements $ mconcat
@@ -140,7 +161,12 @@ agdaChar = elements $ mconcat
     ]
   ]
 
-subsets :: [Char] -> [[Char]]
+
+simplify :: Eq a => Diff a -> Maybe (Diff a)
+simplify x@(Modify b a) = bool Nothing (Just x) $ b /= a
+simplify x = Just x
+
+subsets :: Ord a => [a] -> [[a]]
 subsets [] = [[]]
 subsets zs@(x : xs) = nubOrd $ filter (/= zs) $ subsets xs ++ fmap (x :) (subsets xs)
 

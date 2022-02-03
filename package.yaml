@@ -43,6 +43,7 @@ dependencies:
 - vector
 
 - hspec
+- QuickCheck
 
 default-extensions:
   - BangPatterns

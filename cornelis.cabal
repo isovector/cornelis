@@ -88,7 +88,8 @@ library
       TypeSynonymInstances
   ghc-options: -Wall
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , async
     , base >=4.7 && <5
     , bytestring
@@ -166,7 +167,8 @@ executable cornelis
       TypeSynonymInstances
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , async
     , base >=4.7 && <5
     , bytestring
@@ -195,6 +197,7 @@ test-suite cornelis-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      PropertySpec
       TestSpec
       Utils
       Paths_cornelis
@@ -248,7 +251,8 @@ test-suite cornelis-test
       TypeSynonymInstances
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , async
     , base >=4.7 && <5
     , bytestring

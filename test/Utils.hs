@@ -40,7 +40,7 @@ diff = (snd .) . go
           minimumBy (comparing fst) [z, x, y]
 
 
-differing :: Buffer -> Neovim CornelisEnv () -> Neovim CornelisEnv [Diff Text]
+differing :: Buffer -> Neovim env () -> Neovim env [Diff Text]
 differing b m = do
   before <- fmap V.toList $ buffer_get_lines b 0 (-1) False
   m
@@ -49,7 +49,7 @@ differing b m = do
   pure $ diff before after
 
 
-intervention :: Buffer -> [Diff Text] -> Neovim CornelisEnv () -> Neovim CornelisEnv ()
+intervention :: Buffer -> [Diff Text] -> Neovim env () -> Neovim env ()
 intervention b d m = do
   d' <- differing b m
   liftIO $ d' `shouldBe` d
@@ -64,7 +64,13 @@ withVim secs m = do
     m w b
 
 
-diffSpec :: String -> Seconds -> FilePath -> [Diff Text] -> (Window -> Buffer -> Neovim CornelisEnv ()) -> Spec
+diffSpec
+    :: String
+    -> Seconds
+    -> FilePath
+    -> [Diff Text]
+    -> (Window -> Buffer -> Neovim CornelisEnv ())
+    -> Spec
 diffSpec name secs fp diffs m = do
   let withNeovimEmbedded f a = testWithEmbeddedNeovim f secs () a
   it name . withNeovimEmbedded Nothing $ do

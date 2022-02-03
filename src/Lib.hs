@@ -31,7 +31,6 @@ import           Neovim
 import           Neovim.API.Text
 import           Neovim.Context.Internal (Neovim(..), retypeConfig)
 import           Plugin
-import Debug.Trace (traceShowId)
 
 
 main :: IO ()
@@ -102,7 +101,7 @@ getSurroundingMotion
     -> Buffer
     -> Text
     -> Position' LineOffset a
-    -> Neovim CornelisEnv ((Int64, Int64), (Int64, Int64))
+    -> Neovim env ((Int64, Int64), (Int64, Int64))
 getSurroundingMotion w b motion p = do
   savingCurrentWindow $ do
     savingCurrentPosition w $ do
@@ -115,7 +114,7 @@ getSurroundingMotion w b motion p = do
       void $ nvim_input "<esc>"
       pure (start, end)
 
-doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
+doMakeCase :: Buffer -> MakeCase -> Neovim env ()
 doMakeCase b (RegularCase Function clauses ip) =
   replaceInterval b (ip_interval ip & #iStart . #posCol .~ Offset 1) $ T.unlines clauses
 -- TODO(sandy): It would be nice if Agda just gave us the bounds we're supposed to replace...
@@ -157,7 +156,7 @@ getBufferLine b (LineNumber ln) =
   buffer_get_line b $ fromIntegral ln - 1
 
 
-replaceInterval :: Buffer -> Interval' LineOffset () -> Text -> Neovim CornelisEnv ()
+replaceInterval :: Buffer -> Interval' LineOffset () -> Text -> Neovim env ()
 replaceInterval b i str
   = do
     (sl, sc) <- fmap positionToVim

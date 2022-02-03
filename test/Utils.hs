@@ -54,6 +54,15 @@ intervention b d m = do
   d' <- differing b m
   liftIO $ d' `shouldBe` d
 
+withVim :: Seconds -> (Window -> Buffer -> Neovim () ()) -> IO ()
+withVim secs m = do
+  let withNeovimEmbedded f a = testWithEmbeddedNeovim f secs () a
+  withNeovimEmbedded Nothing $ do
+    b <- nvim_create_buf False False
+    w <- vim_get_current_window
+    nvim_win_set_buf w b
+    m w b
+
 
 diffSpec :: String -> Seconds -> FilePath -> [Diff Text] -> (Window -> Buffer -> Neovim CornelisEnv ()) -> Spec
 diffSpec name secs fp diffs m = do

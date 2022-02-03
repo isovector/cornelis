@@ -31,6 +31,7 @@ import           Neovim
 import           Neovim.API.Text
 import           Neovim.Context.Internal (Neovim(..), retypeConfig)
 import           Plugin
+import Debug.Trace (traceShowId)
 
 
 main :: IO ()
@@ -144,9 +145,10 @@ vimifyPositionM b p = do
 vimifyPosition :: Text -> Position' LineOffset a -> Position' Int64 a
 vimifyPosition t = #posCol %~ fromIntegral . toBytes t
 
+
 positionToVim :: Position' Int64 a -> (Int64, Int64)
 positionToVim p =
-  ( fromIntegral $ getLineNumber (posLine p) - 1
+  ( fromIntegral $ getLineNumber (posLine p)
   , fromIntegral $ posCol p
   )
 

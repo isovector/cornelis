@@ -111,7 +111,7 @@ executables:
     - cornelis
 
 tests:
-  cornelis-test:
+  test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -121,5 +121,5 @@ tests:
     dependencies:
     - cornelis
     - hspec
-    build-dependencies:
-    - hspec-discover
+    # build-dependencies:
+    # - hspec-discover

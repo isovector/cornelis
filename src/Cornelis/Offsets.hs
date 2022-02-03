@@ -6,12 +6,12 @@ module Cornelis.Offsets
   , LineOffset
   ) where
 
-import qualified Data.Text as T
+import           Cornelis.Types.Agda
 import qualified Data.ByteString as BS
-import Data.Text.Encoding (encodeUtf8)
-import Cornelis.Types.Agda
-import Data.Coerce (coerce)
-import Data.Int
+import           Data.Coerce (coerce)
+import           Data.Int
+import qualified Data.Text as T
+import           Data.Text.Encoding (encodeUtf8)
 
 
 offsetPlus :: Offset a -> Offset a -> Offset a
@@ -35,5 +35,5 @@ fromBytes _ 0 = Offset 0
 fromBytes t i | Just (c, str) <- T.uncons t =
   Offset $ 1 + coerce (fromBytes str $ i - (BS.length $ encodeUtf8 $ T.singleton c))
 -- TODO(sandy): ??? maybe crash?
-fromBytes _ i = Offset $ fromIntegral i
+fromBytes _ _ = error "missing bytes"
 

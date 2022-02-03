@@ -34,6 +34,7 @@ library
       Cornelis.Types
       Cornelis.Types.Agda
       Cornelis.Utils
+      Cornelis.Vim
       Lib
       Plugin
   other-modules:
@@ -193,7 +194,7 @@ executable cornelis
     , vector
   default-language: Haskell2010
 
-test-suite cornelis-test
+test-suite test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:

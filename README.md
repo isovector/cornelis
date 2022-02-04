@@ -82,6 +82,11 @@ function! AgdaFiletype()
 endfunction
 ```
 
+Feeling spicy? Automatically run `CornelisLoad` every time you save the file.
+
+```haskell
+au BufWritePost *.agda execute "normal! :CornelisLoad\<CR>"
+```
 
 ## Contributing
 

@@ -5,9 +5,14 @@ runtime agda-input.vim
 
 call textobj#user#plugin('cornelis', {
 \   'zbrackets': {
-\     'pattern': ['⟨ ', ' ⟩'],
+\     'pattern': ['⟨', '⟩'],
 \     'select-a': 'az',
 \     'select-i': 'iz',
+\   },
+\   'ibrackets': {
+\     'pattern': ['⦃', '⦄'],
+\     'select-a': 'ai',
+\     'select-i': 'ii',
 \   },
 \ })
 

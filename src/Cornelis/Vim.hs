@@ -1,17 +1,17 @@
-{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Cornelis.Vim where
 
-import Data.Int
-import Cornelis.Types
-import Cornelis.Types.Agda
-import Neovim
-import Neovim.API.Text
-import Cornelis.Offsets
-import Control.Lens
+import           Control.Lens
+import           Cornelis.Offsets
+import           Cornelis.Types
+import           Data.Int
 import qualified Data.Text as T
+import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.Vector as V
-import Debug.Trace (traceM)
+import           Neovim
+import           Neovim.API.Text
 
 
 vimFirstLine :: Int64
@@ -31,15 +31,18 @@ getWindowCursor w = do
   col' <- unvimifyColumn b line col
   pure $ Pos line col'
 
-
-getMark :: Buffer -> Char -> Neovim env Pos
-getMark b mark = do
-  (row, col) <- nvim_buf_get_mark b $ T.singleton mark
-  -- buffer_get_mark gives us a 1-indexed line, but that is the same way that
+-- | TODO(sandy): POSSIBLE BUG HERE. MAKE SURE YOU SET THE CURRENT WINDOW
+-- BEFORE CALLING THIS FUNCTION
+getpos :: Buffer -> Char -> Neovim env Pos
+getpos b mark = do
+  ObjectArray [_, ObjectInt row, ObjectInt col, _]
+    <- vim_call_function "getpos" $ V.fromList [ObjectString $ encodeUtf8 $ T.singleton mark]
+  -- getpos gives us a 1-indexed line, but that is the same way that
   -- lines are indexed.
   let line = LineNumber $ fromIntegral row
   col' <- unvimifyColumn b line col
-  pure $ Pos line col'
+  -- but the columns are one indexed!
+  pure $ Pos line $ offsetDiff col' $ Offset 1
 
 
 setWindowCursor :: Window -> Pos -> Neovim env ()

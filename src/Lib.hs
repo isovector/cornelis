@@ -110,8 +110,8 @@ getSurroundingMotion w b motion p = do
       nvim_set_current_win w
       setWindowCursor w p
       vim_command $ "normal v" <> motion
-      start <- getMark b '<'
-      end <- getMark b '>'
+      start <- getpos b 'v'
+      end <- getpos b '.'
       void $ nvim_input "<esc>"
       pure (start, end)
 
@@ -133,7 +133,9 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a limitation in cornelis."
     Just w -> do
       (start, end) <- getSurroundingMotion w b "i}" $ positionToPos $ iStart $ ip_interval ip'
-      replaceInterval b start end $ T.unlines $
+      -- Add an extra character to the start so we leave a space after the
+      -- opening brace
+      replaceInterval b (start & #p_col %~ offsetPlus (Offset 1)) end $ T.unlines $
         clauses & _tail %~ fmap (indent start)
 
 mkInterval :: Pos -> Pos -> Interval' LineOffset ()

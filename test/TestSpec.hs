@@ -17,6 +17,13 @@ spec = do
     goto w 11 8
     refine
 
+  diffSpec "should case split (unicode lambda)" (Seconds 5) "test/Hello.agda"
+      [ Modify "slap = λ { x → ? }" "slap = λ { true → ?"
+      , Insert                      "         ; false → ? }"
+      ] $ \w _ -> do
+    goto w 20 16
+    caseSplit "x"
+
   let case_split_test name row col =
         diffSpec ("should case split (" <> T.unpack name <> ")") (Seconds 5) "test/Hello.agda"
             (fmap (fmap (name <>))

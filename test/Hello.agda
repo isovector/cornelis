@@ -16,3 +16,6 @@ test x = ?
 unicodeTest₁ : Bool → Bool
 unicodeTest₁ x = ?
 
+slap : Bool → Bool
+slap = λ { x → ? }
+

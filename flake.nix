@@ -38,7 +38,6 @@
         defaultPackage = packages.cornelis;
         app = {
           cornelis = flake-utils.lib.mkApp { name = "cornelis"; drv = packages.cornelis; };
-          cornelis-vim = flake-utils.lib.mkApp { name = "cornelis-vim"; drv = packages.cornelis-vim; };
         };
         defaultApp = app.cornelis;
       });

@@ -1,5 +1,5 @@
 if exists("g:cornelis_use_global_binary")
-  call jobstart("cornelis -e cornelis")
+  call remote#host#Register('cornelis', '*', rpcstart('cornelis', []))
 else
   call nvimhs#start(expand('<sfile>:p:h:h'), 'cornelis', ['-v', 'DEBUG', '-l', '/tmp/cornelis.log'])
 endif

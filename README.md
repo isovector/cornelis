@@ -127,7 +127,7 @@ You can install both the vim plugin and the cornelis binary using nix flakes! Yo
 }
 ```
 
-Make sure to enable using a global binary in your vim config.
+Make sure you enable the global binary option in your vim config. Since `/nix/store` is immutable cornelis will fail when `nvim-hs` tries to run stack, which it will do if the global binary option isn't enabled.
 
 #### Use global binary instead of stack
 

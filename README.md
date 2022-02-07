@@ -64,6 +64,83 @@ Plug 'isovector/cornelis'
 
 Make sure you have [`stack`](https://docs.haskellstack.org/en/stable/install_and_upgrade/) on your PATH!
 
+#### Installation with Nix
+
+You can install both the vim plugin and the cornelis binary using nix flakes! You can access the binary as `cornelis.packages.<my-system>.cornelis` and the vim plugin as `cornelis.packages.<my-system>.cornelis-vim`. Below is a sample configuration to help you understand where everything plugs in.
+
+```nix
+# flake.nix
+{
+  description = "my-config";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    cornelis.url = "github:JonathanLorimer/cornelis";
+    cornelis.inputs.nixpkgs.follows = "nixpkgs";
+  };
+  outputs =
+    { home-manager
+    , nixpkgs
+    , cornelis
+    , ...
+    }: {
+    nixosConfigurations = {
+      bellerophon = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          home-manager.nixosModules.home-manager
+            {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.users.my-home = (import ./my-home.nix) {
+                cornelis = cornelis.packages."x86_64-linux".cornelis;
+                cornelis-vim = cornelis.packages."x86_64-linux".cornelis-vim;
+              };
+            }
+        ];
+      };
+    };
+  };
+}
+
+# my-home.nix
+{cornelis, cornelis-vim}: {pkgs, ...}:
+{
+  home = {
+    packages = [cornelis pkgs.agda];
+  };
+  programs = {
+    neovim = {
+      enable = true;
+      extraConfig = builtins.readFile ./init.vim;
+      plugins = with pkgs.vimPlugins; [
+        cornelis-vim
+        vim-textobj-user
+        nvim-hs-vim
+      ];
+    };
+  };
+}
+```
+
+Make sure you enable the global binary option in your vim config. Since `/nix/store` is immutable cornelis will fail when `nvim-hs` tries to run stack, which it will do if the global binary option isn't enabled.
+
+#### Use global binary instead of stack
+
+Vimscript
+```vimscript
+let g:cornelis_use_global_binary = 1
+```
+
+Lua
+```lua
+vim.g.cornelis_use_global_binary = 1
+```
+
 
 ## Example Configuration
 

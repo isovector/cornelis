@@ -1,3 +1,5 @@
 .stack-work/
 *.agdai
 *~
+result
+dist-newstyle/

@@ -2,6 +2,7 @@
 
 module Cornelis.InfoWin (closeInfoWindows, showInfoWindow, buildInfoBuffer) where
 
+import           Control.Monad (unless)
 import           Control.Monad.State.Class
 import           Cornelis.Pretty
 import           Cornelis.Types
@@ -10,6 +11,7 @@ import           Data.Foldable (for_)
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.Text as T
+import           Data.Traversable (for)
 import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
@@ -31,7 +33,7 @@ getBufferVariableOfWindow variableName window = do
 
 closeInfoWindowsForUnseenBuffers :: Neovim CornelisEnv ()
 closeInfoWindowsForUnseenBuffers = do
-  seen <- S.fromList <$> visibleBuffers
+  seen <- S.fromList . fmap snd <$> visibleBuffers
   bufs <- gets cs_buffers
   let known = M.keysSet bufs
       unseen = known S.\\ seen
@@ -59,12 +61,28 @@ closeInfoWindowForBuffer bs = do
 showInfoWindow :: Buffer -> Doc HighlightGroup -> Neovim CornelisEnv ()
 showInfoWindow b doc = withBufferStuff b $ \bs -> do
   let ib = bs_info_win bs
-  closeInfoWindowForBuffer bs
   closeInfoWindowsForUnseenBuffers
+
+  vis <- visibleBuffers
   ns <- asks ce_namespace
-  writeInfoBuffer ns ib doc
-  ws <- windowsForBuffer b
-  for_ ws $ buildInfoWindow ib
+
+  -- Check if the info win still exists, and if so, just modify it
+  found <- fmap or $
+    for vis $ \(w, vb) -> do
+      case vb == iw_buffer ib of
+        False -> pure False
+        True -> do
+          writeInfoBuffer ns ib doc
+          resizeInfoWin w ib
+          pure True
+
+  -- Otherwise we need to rebuild it
+  unless found $ do
+    closeInfoWindowForBuffer bs
+    writeInfoBuffer ns ib doc
+    ws <- windowsForBuffer b
+    for_ ws $ buildInfoWindow ib
+
 
 
 buildInfoBuffer :: Neovim env InfoBuffer
@@ -92,10 +110,15 @@ buildInfoWindow (InfoBuffer split_buf) w = savingCurrentWindow $ do
   nvim_win_set_option split_win "relativenumber" $ ObjectBool False
   nvim_win_set_option split_win "number" $ ObjectBool False
 
-  size <- nvim_buf_line_count split_buf
-  window_set_height split_win size
+  resizeInfoWin split_win (InfoBuffer split_buf)
 
   pure split_win
+
+resizeInfoWin :: Window -> InfoBuffer -> Neovim env ()
+resizeInfoWin w ib = do
+  t <- nvim_buf_get_lines (iw_buffer ib) 0 (-1) False
+  window_set_height w $ fromIntegral $ V.length t
+
 
 
 writeInfoBuffer :: Int64 -> InfoBuffer -> Doc HighlightGroup -> Neovim env ()

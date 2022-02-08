@@ -46,10 +46,10 @@ windowsForBuffer b = do
       False -> Nothing
       True -> Just w
 
-visibleBuffers :: Neovim env [Buffer]
+visibleBuffers :: Neovim env [(Window, Buffer)]
 visibleBuffers = do
   wins <- fmap V.toList $ vim_get_windows
-  for wins window_get_buffer
+  for wins $ \w -> fmap (w, ) $ window_get_buffer w
 
 criticalFailure :: Text -> Neovim env a
 criticalFailure err = do

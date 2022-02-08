@@ -1,4 +1,5 @@
 module Cornelis.Debug where
+
 import Neovim
 import Neovim.API.String (vim_report_error)
 

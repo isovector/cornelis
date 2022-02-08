@@ -15,12 +15,14 @@ module Cornelis.Types
   , Buffer
   , Window
   , Text
+  , traceMX
   ) where
 
 import Control.Concurrent
 import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
-import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset, Offset (..), LineNumber, LineOffset, AgdaOffset)
+import Cornelis.Debug
+import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset, LineNumber, LineOffset, AgdaOffset)
 import Data.Aeson hiding (Error)
 import Data.Bifunctor (first)
 import Data.Generics.Labels ()

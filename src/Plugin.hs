@@ -9,7 +9,6 @@ module Plugin where
 import           Control.Lens
 import           Control.Monad.State.Class
 import           Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
-import           Cornelis.Debug (traceMX)
 import           Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
 import           Cornelis.Offsets
 import           Cornelis.Pretty (prettyGoals)

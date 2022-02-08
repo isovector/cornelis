@@ -17,6 +17,11 @@ import           Neovim hiding (err)
 import           Neovim.API.Text
 
 
+objectToInt :: Object -> Maybe Int
+objectToInt (ObjectUInt w) = Just $ fromIntegral w
+objectToInt (ObjectInt w) = Just $ fromIntegral w
+objectToInt _ = Nothing
+
 neovimAsync :: (MonadUnliftIO m) => m a -> m (Async a)
 neovimAsync m =
   withRunInIO $ \lower ->

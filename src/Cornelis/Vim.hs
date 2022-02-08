@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Cornelis.Vim where
 
@@ -12,6 +13,7 @@ import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
+import Cornelis.Utils (objectToInt)
 
 
 vimFirstLine :: Int64
@@ -35,12 +37,12 @@ getWindowCursor w = do
 -- BEFORE CALLING THIS FUNCTION
 getpos :: Buffer -> Char -> Neovim env Pos
 getpos b mark = do
-  ObjectArray [_, ObjectInt row, ObjectInt col, _]
+  ObjectArray [_, objectToInt -> Just row, objectToInt -> Just col, _]
     <- vim_call_function "getpos" $ V.fromList [ObjectString $ encodeUtf8 $ T.singleton mark]
   -- getpos gives us a 1-indexed line, but that is the same way that
   -- lines are indexed.
   let line = LineNumber $ fromIntegral row
-  col' <- unvimifyColumn b line col
+  col' <- unvimifyColumn b line $ fromIntegral col
   -- but the columns are one indexed!
   pure $ Pos line $ offsetDiff col' $ Offset 1
 

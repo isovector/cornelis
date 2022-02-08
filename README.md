@@ -35,6 +35,8 @@ case splitting, and go-to definition. These are exposed via the vim commands:
 :CornelisSolve
 :CornelisMakeCase
 :CornelisGoToDefinition
+:CornelisPrevGoal
+:CornelisNextGoal
 ```
 
 A note on `CornelisGoToDefinition` --- for whatever weird technical reason
@@ -156,6 +158,8 @@ function! AgdaFiletype()
     nnoremap <buffer> <leader>, :CornelisTypeContext<CR>
     nnoremap <buffer> <leader>n :CornelisSolve<CR>
     nnoremap <buffer> gd        :CornelisGoToDefinition<CR>
+    nnoremap <buffer> [/        :CornelisPrevGoal<CR>
+    nnoremap <buffer> ]/        :CornelisNextGoal<CR>
 endfunction
 ```
 

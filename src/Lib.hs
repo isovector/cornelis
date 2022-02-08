@@ -24,18 +24,16 @@ import           Cornelis.Types.Agda
 import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Bifunctor
-import           Data.Foldable (for_)
+import           Data.Foldable (for_, toList, maximumBy)
 import qualified Data.IntMap.Strict as IM
 import           Data.Maybe
+import           Data.Ord (comparing, Down (Down))
 import qualified Data.Text as T
 import           Neovim
 import           Neovim.API.Text
 import           Neovim.Context.Internal (Neovim(..), retypeConfig)
 import           Plugin
 
-
-main :: IO ()
-main = neovim defaultConfig { plugins = [cornelis] }
 
 
 withLocalEnv :: env -> Neovim env a -> Neovim env' a
@@ -156,6 +154,52 @@ reload = do
   load
 
 
+-- | Find a goal in the current window
+findGoal :: Ord a => (Pos -> Pos -> Maybe a) -> Neovim CornelisEnv ()
+findGoal hunt = withAgda $ do
+  w <- vim_get_current_window
+  b <- window_get_buffer w
+  withBufferStuff b $ \bs -> do
+    pos <- getWindowCursor w
+    let goals = toList $ bs_ips bs
+        judged_goals
+              = mapMaybe ( sequenceA
+                         . (id &&& hunt pos)
+                         . positionToPos
+                         . iStart
+                         . ip_interval
+                         ) goals
+    case judged_goals of
+      [] -> vim_out_write "No hole matching predicate"
+      _ -> do
+        let pos' = fst $ maximumBy (comparing snd) judged_goals
+        setWindowCursor w pos'
+
+prevGoal :: Neovim CornelisEnv ()
+prevGoal =
+  findGoal $ \pos goal ->
+    case pos > goal of
+      False -> Nothing
+      True -> Just $ ( lineDiff (p_line goal) (p_line pos)
+                     , offsetDiff (p_col goal) (p_col pos)
+                     )
+
+doPrevGoal :: CommandArguments -> Neovim CornelisEnv ()
+doPrevGoal = const prevGoal
+
+nextGoal :: Neovim CornelisEnv ()
+nextGoal =
+  findGoal $ \pos goal ->
+    case pos < goal of
+      False -> Nothing
+      True -> Just $ Down ( lineDiff (p_line goal) (p_line pos)
+                          , offsetDiff (p_col goal) (p_col pos)
+                          )
+
+doNextGoal :: CommandArguments -> Neovim CornelisEnv ()
+doNextGoal = const nextGoal
+
+
 cornelisInit :: Neovim env CornelisEnv
 cornelisInit = do
   (inchan, outchan) <- liftIO newChan
@@ -170,6 +214,13 @@ cornelisInit = do
         void $ neovimAsync $ reportExceptions $ respond buffer next
   pure env
 
+
+-- Flush the TH environment
+$(pure [])
+
+
+main :: IO ()
+main = neovim defaultConfig { plugins = [cornelis] }
 
 
 cornelis :: Neovim () NeovimPlugin
@@ -186,6 +237,8 @@ cornelis = do
         , $(command "CornelisTypeContext" 'typeContext) [CmdSync Async]
         , $(command "CornelisMakeCase" 'doCaseSplit) [CmdSync Async]
         , $(command "CornelisRefine" 'doRefine) [CmdSync Async]
+        , $(command "CornelisPrevGoal" 'doPrevGoal) [CmdSync Async]
+        , $(command "CornelisNextGoal" 'doNextGoal) [CmdSync Async]
         , $(command "CornelisGoToDefinition" 'gotoDefinition) [CmdSync Async]
         ]
     }

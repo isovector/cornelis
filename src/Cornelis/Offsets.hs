@@ -28,6 +28,9 @@ offsetPlus = coerce $ (+) @Int32
 offsetDiff :: Offset a -> Offset a -> Offset a
 offsetDiff = coerce $ (-) @Int32
 
+lineDiff :: LineNumber -> LineNumber -> LineNumber
+lineDiff = coerce $ (-) @Int32
+
 incLineNumber :: LineNumber -> LineNumber
 incLineNumber = coerce ((+) @Int32 1)
 

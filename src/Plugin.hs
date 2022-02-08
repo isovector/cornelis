@@ -23,6 +23,11 @@ import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
 import           Neovim.User.Input (input)
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans
+import Data.Map (mapMaybe)
+import Data.Maybe (catMaybes)
+import Debug.Trace (traceM)
 
 
 
@@ -77,21 +82,72 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
    (b, Just ip) -> fmap Just $ f b ip
 
 
-getExtmark :: Buffer -> (Int64, Int64) -> Neovim CornelisEnv (Maybe Extmark)
-getExtmark b (r, c) = do
+parseExtmark :: Buffer -> Object -> Neovim CornelisEnv (Maybe (Extmark, Interval' LineOffset ()))
+parseExtmark b
+  (ObjectArray ( (objectToInt -> Just ext)
+               : (objectToInt -> Just line)
+               : (objectToInt -> Just col)
+               : ObjectMap details
+               : _
+               )) = runMaybeT $ do
+  traceM "made it in"
+  lift $ traceMX "details" details
+  vim_end_col <- hoistMaybe $ objectToInt =<< M.lookup (ObjectString "end_col") details
+  -- Plus one here because our lines are 1-indexed but the results of
+  -- get_extmarks is 0-indexed.
+  lift $ traceMX "got an end col" vim_end_col
+  let start_line = LineNumber $ fromIntegral $ line + 1
+  end_line <- hoistMaybe $ fmap (LineNumber . (+1) . fromIntegral)
+            . objectToInt =<< M.lookup (ObjectString "end_row") details
+  lift $ traceMX "got an end line" end_line
+  sc <- lift $ unvimifyColumn b start_line $ fromIntegral col
+  lift $ traceMX "got an sc" sc
+  ec <- lift $ unvimifyColumn b end_line   $ fromIntegral vim_end_col
+  lift $ traceMX "got an ec" ec
+  pure ( Extmark $ fromIntegral ext
+       , Interval { iStart = posToPosition $ Pos start_line sc
+                  , iEnd   = posToPosition $ Pos end_line ec
+                  }
+       )
+parseExtmark _ _ = pure Nothing
+
+
+hoistMaybe :: Applicative m => Maybe a -> MaybeT m a
+hoistMaybe = MaybeT . pure
+
+
+getExtmark :: Buffer -> Pos -> Neovim CornelisEnv (Maybe Extmark)
+getExtmark b p = do
   ns <- asks ce_namespace
-  -- another thing off by 1??
-  let pos = ObjectArray [ObjectInt $ r - 1, ObjectInt c]
-  res <- nvim_buf_get_extmarks b ns pos pos mempty
-  pure $ case res V.!? 0 of
-    Just (ObjectArray (ObjectUInt ext : _)) -> pure $ Extmark $ fromIntegral ext
-    _ -> Nothing
+  vp <- vimifyPositionM b p
+  -- The vim API uses 0-indexed lines for buf_get_extmarks..
+  let pos0 = ObjectArray [ ObjectInt $ getVimLineNumber $ p_line vp
+                         , ObjectInt 0 -- from the beginning of the line
+                         ]
+      pos1 = ObjectArray [ ObjectInt $ getVimLineNumber $ p_line vp
+                         , ObjectInt (-1) -- to the end of the line
+                         ]
+  res <- nvim_buf_get_extmarks b ns pos0 pos1 $ M.singleton "details" $ ObjectBool True
+  marks <- fmap catMaybes $ traverse (parseExtmark b) $ V.toList res
+  traceMX "marks" marks
+  case res V.!? 0 of
+    Just (ObjectArray ( (objectToInt -> Just ext)
+                      : (objectToInt -> Just line)
+                      : (objectToInt -> Just col)
+                      : ObjectMap details
+                      : _
+                      )) -> do
+      let ecv = objectToInt =<< M.lookup (ObjectString "end_col") details
+      sc <- unvimifyColumn b (p_line p) $ fromIntegral col
+      sc <- unvimifyColumn b (p_line p) $ fromIntegral col
+      undefined
+    _ -> pure Nothing
+
 
 gotoDefinition :: CommandArguments -> Neovim CornelisEnv ()
 gotoDefinition _ = withAgda $ do
   w <- nvim_get_current_win
-  -- TODO(sandy): NO
-  rc <- window_get_cursor w
+  rc <- getWindowCursor w
   b <- window_get_buffer w
   withBufferStuff b $ \bs -> do
     getExtmark b rc >>= \case

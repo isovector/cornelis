@@ -62,7 +62,7 @@ runIOTCM i agda = do
 
 
 enableHighlighting :: HighlightingLevel
-enableHighlighting = bool Interactive None debugJson
+enableHighlighting = bool NonInteractive None debugJson
 
 buildIOTCM :: Interaction -> Buffer -> Neovim env IOTCM
 buildIOTCM i buffer = do

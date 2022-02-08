@@ -58,10 +58,12 @@ respond b (InteractionPoints ips) = do
 -- Replace a function clause
 respond b (MakeCase mkcase) = do
   doMakeCase b mkcase
+  reload
 -- Replace the interaction point with a result
 respond b (GiveAction result ip) = do
   let ip' = fmap agdaToLine ip
   replaceInterval b (positionToPos $ iStart $ ip_interval ip') (positionToPos $ iEnd $ ip_interval ip') result
+  reload
 -- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) -> do
@@ -69,6 +71,7 @@ respond b (SolveAll solutions) = do
       Nothing -> vim_report_error $ T.pack $ "Can't find interaction point " <> show i
       Just ip -> do
         replaceInterval b (positionToPos $ iStart $ ip_interval ip) (positionToPos $ iEnd $ ip_interval ip) $ parens ex
+        reload
 respond b ClearHighlighting = do
   -- delete what we know about goto positions
   modifyBufferStuff b $ #bs_goto_sites .~ mempty
@@ -146,6 +149,11 @@ mkInterval start end = Interval (posToPosition start) (posToPosition end)
 indent :: Pos -> Text -> Text
 indent (Pos _ (Offset n)) s = T.replicate (fromIntegral n - 1) " " <> "; " <> s
 
+
+reload :: Neovim CornelisEnv ()
+reload = do
+  vim_command "noautocmd w"
+  load
 
 
 cornelisInit :: Neovim env CornelisEnv

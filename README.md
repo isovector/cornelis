@@ -39,12 +39,8 @@ case splitting, and go-to definition. These are exposed via the vim commands:
 :CornelisNextGoal
 ```
 
-A note on `CornelisGoToDefinition` --- for whatever weird technical reason
-(vim's fault), goto definition only works if your cursor is on the first
-character of the identifier name.
-
-Additionally, there is minor support for agda-input via your `<LocalLeader>` in
-insert mode. See [agda-input.vim](https://github.com/isovector/cornelis/blob/master/agda-input.vim)
+There is minor support for agda-input via your `<LocalLeader>` in insert mode.
+See [agda-input.vim](https://github.com/isovector/cornelis/blob/master/agda-input.vim)
 for available bindings.
 
 

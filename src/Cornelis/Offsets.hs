@@ -15,11 +15,11 @@ import           Data.Int
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 
-positionToPos :: Position' LineOffset () -> Pos
-positionToPos (Pn _ _ ln off') = Pos {p_line = ln, p_col = off'}
+positionToPos :: Position' l -> Pos' l
+positionToPos (Pn ln off') = Pos {p_line = ln, p_col = off'}
 
-posToPosition :: Pos -> Position' LineOffset ()
-posToPosition (Pos l c) = Pn () (Offset $ error "fake buffer offset") l c
+posToPosition :: Pos' l -> Position' l
+posToPosition (Pos l c) = Pn l c
 
 
 offsetPlus :: Offset a -> Offset a -> Offset a

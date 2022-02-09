@@ -3,16 +3,13 @@
 
 module Cornelis.Types.Agda where
 
-import           Control.Monad (liftM4)
 import           Control.Monad (mplus, liftM2)
 import           Control.Monad.Except (ExceptT, throwError)
 import           Control.Monad.State.Strict (StateT, runStateT, put, get)
 import           Control.Monad.Trans (lift)
 import           Control.Monad.Trans.Except (runExceptT)
 import           Data.Aeson (FromJSON)
-import           Data.Bifunctor
 import           Data.Data
-import           Data.Function (on)
 import           Data.Functor.Identity
 import           Data.Int
 import qualified Data.List as List
@@ -52,16 +49,6 @@ data UseForce
   = WithForce     -- ^ Ignore additional checks, like termination/positivity...
   | WithoutForce  -- ^ Don't ignore any checks.
   deriving (Eq, Read, Show)
-
-
-importantPart :: Position' b a -> (a, BufferOffset)
-importantPart p = (srcFile p, posPos p)
-
-instance Eq a => Eq (Position' b a) where
-  (==) = (==) `on` importantPart
-
-instance Ord a => Ord (Position' b a) where
-  compare = compare `on` importantPart
 
 
 newtype InteractionId = InteractionId { interactionId :: Int }
@@ -113,31 +100,18 @@ instance Show a =>
               ((.)
                  showSpace (showsPrec 11 b2_a1hOm))))
 
-data Interval' b a = Interval { iStart, iEnd :: !(Position' b  a) }
+data Interval' a = Interval { iStart, iEnd :: !(Position' a) }
   deriving (Show, Data, Eq, Ord, Functor, Foldable, Traversable, Generic)
 
-instance Bifunctor Interval' where
-  bimap fab fcd (Interval a b) = Interval (bimap fab fcd a) (bimap fab fcd b)
-
-type Interval            = Interval' AgdaOffset SrcFile
-type IntervalWithoutFile = Interval' AgdaOffset ()
+type IntervalWithoutFile = Interval' AgdaOffset
 
 type SrcFile = Maybe AbsolutePath
 
-data Position' b a = Pn
-  { srcFile :: !a
-    -- ^ File.
-  , posPos  :: !BufferOffset
-    -- ^ Position, counting from 1.
-  , posLine :: !LineNumber
-    -- ^ Line number, counting from 1.
-  , posCol  :: !b
-    -- ^ Column number, counting from 1.
+data Position' a = Pn
+  { posLine :: !LineNumber
+  , posCol  :: !a
   }
-  deriving (Show, Data, Functor, Foldable, Traversable, Generic)
-
-instance Bifunctor Position' where
-  bimap fab fcd (Pn c off ln a) = Pn (fcd c) off ln $ fab a
+  deriving (Eq, Ord, Show, Data, Functor, Foldable, Traversable, Generic)
 
 
 newtype AbsolutePath = AbsolutePath { textPath :: String }
@@ -356,7 +330,7 @@ instance Read a => Read (Range' a) where
         `mplus`
       (exact "noRange" >> return noRange)
 
-instance (Read b, Read a) => Read (Interval' b a) where
+instance (Read a) => Read (Interval' a) where
     readsPrec = parseToReadsPrec $ do
         exact "Interval"
         liftM2 Interval readParse readParse
@@ -375,10 +349,10 @@ mkAbsolute f
   | otherwise    = error "impossible"
 
 
-instance (Read b, Read a) => Read (Position' b a) where
+instance (Read a) => Read (Position' a) where
     readsPrec = parseToReadsPrec $ do
         exact "Pn"
-        liftM4 Pn readParse readParse readParse readParse
+        liftM2 Pn readParse readParse
 
 type Parse a = ExceptT String (StateT String Identity) a
 

@@ -8,7 +8,7 @@ import           Control.Lens ((<>~))
 import           Cornelis.Offsets
 import           Cornelis.Pretty
 import           Cornelis.Types hiding (Type)
-import           Cornelis.Utils (criticalFailure, modifyBufferStuff)
+import           Cornelis.Utils (modifyBufferStuff)
 import           Data.Coerce (coerce)
 import           Data.IntervalMap.FingerTree (IntervalMap, Interval (Interval))
 import qualified Data.IntervalMap.FingerTree as IM
@@ -52,8 +52,11 @@ highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv ()
 highlightBuffer b hs = do
   li <- lineIntervalsForBuffer b
   zs <- fmap catMaybes . for hs $ \hl -> do
-    ext <- addHighlight b li hl
-    pure $ sequenceA (ext, hl_definitionSite hl)
+    mext <- addHighlight b li hl
+    pure $ do
+      ext <- mext
+      ds <- hl_definitionSite hl
+      pure (ext, ds)
   modifyBufferStuff b $ #bs_goto_sites <>~ M.fromList zs
 
 newtype LineIntervals = LineIntervals
@@ -83,14 +86,19 @@ lookupPoint (LineIntervals im) off = do
        )
 
 
-addHighlight :: Buffer -> LineIntervals -> Highlight -> Neovim CornelisEnv Extmark
+addHighlight :: Buffer -> LineIntervals -> Highlight -> Neovim CornelisEnv (Maybe Extmark)
 addHighlight b lis hl = do
-  (start, end)
-    <- maybe (criticalFailure "Missing buffer offset when adding highlights") pure
-     $ liftA2 (,) (lookupPoint lis (hl_start hl))
-     $ lookupPoint lis (hl_end hl)
-  setHighlight b start end $ hlGroup $ fromMaybe "" $ listToMaybe $ hl_atoms hl
-
+  -- Subtract 1 here from the end offset because unlike everywhere else in vim,
+  -- extmark ranges are inclusive...
+  case liftA2 (,) (lookupPoint lis (hl_start hl)) $ lookupPoint lis (offsetDiff (hl_end hl) (Offset 1)) of
+    Just (start, end) ->
+      fmap Just
+        $ setHighlight b start end
+        $ hlGroup
+        $ fromMaybe ""
+        $ listToMaybe
+        $ hl_atoms hl
+    Nothing -> pure Nothing
 
 setHighlight
     :: Buffer

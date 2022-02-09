@@ -52,5 +52,5 @@ fromBytes _ 0 = Offset 0
 fromBytes t i | Just (c, str) <- T.uncons t =
   Offset $ 1 + coerce (fromBytes str $ i - (BS.length $ encodeUtf8 $ T.singleton c))
 -- TODO(sandy): ??? maybe crash?
-fromBytes _ _ = error "missing bytes"
+fromBytes t i = error $ "missing bytes: " <> show (t, i)
 

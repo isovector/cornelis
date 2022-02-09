@@ -71,7 +71,7 @@ containsPoint (Interval s e) (posToPosition -> p) = s <= p && p < e
 withGoalAtCursor :: (Buffer -> InteractionPoint LineOffset -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
 withGoalAtCursor f = getGoalAtCursor >>= \case
    (_, Nothing) -> do
-     vim_report_error "No goal at cursor"
+     reportInfo "No goal at cursor"
      pure Nothing
    (b, Just ip) -> fmap Just $ f b ip
 
@@ -130,11 +130,11 @@ gotoDefinition _ = withAgda $ do
   b <- window_get_buffer w
   withBufferStuff b $ \bs -> do
     getExtmark b rc >>= \case
-      Nothing -> vim_out_write "No syntax under cursor.\n"
+      Nothing -> reportInfo "No syntax under cursor."
       Just ex -> do
         case M.lookup ex $ bs_goto_sites bs of
           Nothing -> do
-            vim_out_write "No definition under cursor.\n"
+            reportInfo "No identifier under cursor."
           Just ds -> do
             -- TODO(sandy): escape spaces
             vim_command $ "edit " <> ds_filepath ds

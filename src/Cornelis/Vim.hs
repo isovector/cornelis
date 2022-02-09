@@ -7,13 +7,13 @@ module Cornelis.Vim where
 import           Control.Lens
 import           Cornelis.Offsets
 import           Cornelis.Types
+import           Cornelis.Utils (objectToInt)
 import           Data.Int
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
-import Cornelis.Utils (objectToInt)
 
 
 vimFirstLine :: Int64
@@ -91,4 +91,8 @@ positionToVim p =
   , fromIntegral $ p_col p
   )
 
+reportError :: Text -> Neovim env ()
+reportError = vim_report_error
 
+reportInfo :: Text -> Neovim env ()
+reportInfo m = vim_out_write $ m <> "\n"

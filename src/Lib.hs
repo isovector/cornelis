@@ -66,7 +66,7 @@ respond b (GiveAction result ip) = do
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) -> do
     getInteractionPoint b i >>= \case
-      Nothing -> vim_report_error $ T.pack $ "Can't find interaction point " <> show i
+      Nothing -> reportInfo $ T.pack $ "Can't find interaction point " <> show i
       Just ip -> do
         replaceInterval b (positionToPos $ iStart $ ip_interval ip) (positionToPos $ iEnd $ ip_interval ip) $ parens ex
         reload
@@ -78,18 +78,18 @@ respond b ClearHighlighting = do
   nvim_buf_clear_namespace b ns 0 (-1)
 respond b (HighlightingInfo _remove hl) =
   highlightBuffer b hl
-respond _ (RunningInfo _ x) = vim_out_write $ x <> "\n"
-respond _ (ClearRunningInfo) = vim_out_write "\n"
+respond _ (RunningInfo _ x) = reportInfo x
+respond _ (ClearRunningInfo) = reportInfo ""
 respond b (JumpToError _ pos) = do
   buf_lines <- nvim_buf_get_lines b 0 (-1) True
   let li = getLineIntervals buf_lines
   case lookupPoint li pos of
-    Nothing -> vim_report_error "invalid error report from Agda"
+    Nothing -> reportError "invalid error report from Agda"
     Just lc -> do
       ws <- windowsForBuffer b
       for_ ws $ flip window_set_cursor $ first (+1) lc
 respond _ Status{} = pure ()
-respond _ (Unknown k _) = vim_report_error k
+respond _ (Unknown k _) = reportError k
 
 parens :: Text -> Text
 parens s = "(" <> s <> ")"
@@ -130,7 +130,7 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
   ws <- windowsForBuffer b
   case listToMaybe ws of
     Nothing ->
-      vim_report_error
+      reportError
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a limitation in cornelis."
     Just w -> do
       (start, end) <- getSurroundingMotion w b "i}" $ positionToPos $ iStart $ ip_interval ip'
@@ -170,7 +170,7 @@ findGoal hunt = withAgda $ do
                          . ip_interval
                          ) goals
     case judged_goals of
-      [] -> vim_out_write "No hole matching predicate\n"
+      [] -> reportInfo "No hole matching predicate\n"
       _ -> do
         let pos' = fst $ maximumBy (comparing snd) judged_goals
         setWindowCursor w pos'

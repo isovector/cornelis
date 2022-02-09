@@ -8,6 +8,8 @@ module Plugin where
 
 import           Control.Lens
 import           Control.Monad.State.Class
+import           Control.Monad.Trans
+import           Control.Monad.Trans.Maybe
 import           Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
 import           Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
 import           Cornelis.Offsets
@@ -18,16 +20,12 @@ import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.List
 import qualified Data.Map as M
+import           Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
 import           Neovim.User.Input (input)
-import Control.Monad.Trans.Maybe
-import Control.Monad.Trans
-import Data.Map (mapMaybe)
-import Data.Maybe (catMaybes)
-import Debug.Trace (traceM)
 
 
 
@@ -66,13 +64,9 @@ getGoalAtCursor = do
 lookupGoal :: Foldable t => t (InteractionPoint LineOffset) -> Pos -> Maybe (InteractionPoint LineOffset)
 lookupGoal ips p = flip find ips $ (\(InteractionPoint _ iv) -> containsPoint iv p)
 
-containsPoint :: Ord a => Interval' a b -> Pos' a -> Bool
-containsPoint (Interval s e) (Pos l c) = and $
-  [ posLine s <= l
-  , l <= posLine e
-  , posCol s <= c
-  , c <= posCol e
-  ]
+containsPoint :: Ord a => Interval' a -> Pos' a -> Bool
+containsPoint (Interval s e) (posToPosition -> p) = s <= p && p < e
+
 
 withGoalAtCursor :: (Buffer -> InteractionPoint LineOffset -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
 withGoalAtCursor f = getGoalAtCursor >>= \case
@@ -82,7 +76,7 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
    (b, Just ip) -> fmap Just $ f b ip
 
 
-parseExtmark :: Buffer -> Object -> Neovim CornelisEnv (Maybe (Extmark, Interval' LineOffset ()))
+parseExtmark :: Buffer -> Object -> Neovim CornelisEnv (Maybe (Extmark, Interval' LineOffset))
 parseExtmark b
   (ObjectArray ( (objectToInt -> Just ext)
                : (objectToInt -> Just line)
@@ -90,20 +84,14 @@ parseExtmark b
                : ObjectMap details
                : _
                )) = runMaybeT $ do
-  traceM "made it in"
-  lift $ traceMX "details" details
   vim_end_col <- hoistMaybe $ objectToInt =<< M.lookup (ObjectString "end_col") details
   -- Plus one here because our lines are 1-indexed but the results of
   -- get_extmarks is 0-indexed.
-  lift $ traceMX "got an end col" vim_end_col
   let start_line = LineNumber $ fromIntegral $ line + 1
   end_line <- hoistMaybe $ fmap (LineNumber . (+1) . fromIntegral)
             . objectToInt =<< M.lookup (ObjectString "end_row") details
-  lift $ traceMX "got an end line" end_line
   sc <- lift $ unvimifyColumn b start_line $ fromIntegral col
-  lift $ traceMX "got an sc" sc
   ec <- lift $ unvimifyColumn b end_line   $ fromIntegral vim_end_col
-  lift $ traceMX "got an ec" ec
   pure ( Extmark $ fromIntegral ext
        , Interval { iStart = posToPosition $ Pos start_line sc
                   , iEnd   = posToPosition $ Pos end_line ec
@@ -129,19 +117,10 @@ getExtmark b p = do
                          ]
   res <- nvim_buf_get_extmarks b ns pos0 pos1 $ M.singleton "details" $ ObjectBool True
   marks <- fmap catMaybes $ traverse (parseExtmark b) $ V.toList res
-  traceMX "marks" marks
-  case res V.!? 0 of
-    Just (ObjectArray ( (objectToInt -> Just ext)
-                      : (objectToInt -> Just line)
-                      : (objectToInt -> Just col)
-                      : ObjectMap details
-                      : _
-                      )) -> do
-      let ecv = objectToInt =<< M.lookup (ObjectString "end_col") details
-      sc <- unvimifyColumn b (p_line p) $ fromIntegral col
-      sc <- unvimifyColumn b (p_line p) $ fromIntegral col
-      undefined
-    _ -> pure Nothing
+  pure $ getFirst $ flip foldMap marks $ \(ext, i) ->
+    case containsPoint i p of
+      False -> mempty
+      True -> pure ext
 
 
 gotoDefinition :: CommandArguments -> Neovim CornelisEnv ()
@@ -151,11 +130,11 @@ gotoDefinition _ = withAgda $ do
   b <- window_get_buffer w
   withBufferStuff b $ \bs -> do
     getExtmark b rc >>= \case
-      Nothing -> vim_out_write "No syntax under cursor."
+      Nothing -> vim_out_write "No syntax under cursor.\n"
       Just ex -> do
         case M.lookup ex $ bs_goto_sites bs of
           Nothing -> do
-            vim_out_write "No definition under cursor."
+            vim_out_write "No definition under cursor.\n"
           Just ds -> do
             -- TODO(sandy): escape spaces
             vim_command $ "edit " <> ds_filepath ds

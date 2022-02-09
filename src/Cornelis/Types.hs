@@ -24,7 +24,6 @@ import Control.Monad.State.Class
 import Cornelis.Debug
 import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset, LineNumber, LineOffset, AgdaOffset)
 import Data.Aeson hiding (Error)
-import Data.Bifunctor (first)
 import Data.Generics.Labels ()
 import Data.IntMap.Strict (IntMap)
 import Data.Map (Map)
@@ -155,12 +154,9 @@ data Solution = Solution
 
 data InteractionPoint a = InteractionPoint
   { ip_id :: Int
-  , ip_interval :: Interval' a ()
+  , ip_interval :: Interval' a
   }
-  deriving (Eq, Ord, Show, Generic)
-
-instance Functor InteractionPoint where
-  fmap fab (InteractionPoint ip int) = InteractionPoint ip $ first fab int
+  deriving (Eq, Ord, Show, Generic, Functor)
 
 data NamedPoint = NamedPoint
   { np_name :: Text
@@ -172,7 +168,7 @@ instance FromJSON IntervalWithoutFile where
   parseJSON = withObject "IntervalWithoutFile" $ \obj -> do
     Interval <$> obj .: "start" <*> obj .: "end"
 
-instance FromJSON (Interval' a ()) => FromJSON (InteractionPoint a) where
+instance FromJSON (Interval' a) => FromJSON (InteractionPoint a) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range")
 
@@ -180,9 +176,9 @@ instance FromJSON NamedPoint where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     NamedPoint <$> obj .: "name" <*> fmap head (obj .: "range")
 
-instance FromJSON b => FromJSON (Position' b ()) where
+instance FromJSON b => FromJSON (Position' b) where
   parseJSON = withObject "Position" $ \obj -> do
-    Pn <$> pure () <*> obj .: "pos" <*> obj .: "line" <*> obj .: "col"
+    Pn <$> obj .: "line" <*> obj .: "col"
 
 instance FromJSON Solution where
   parseJSON = withObject "Solution" $ \obj ->

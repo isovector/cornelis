@@ -78,8 +78,8 @@ respond b ClearHighlighting = do
   nvim_buf_clear_namespace b ns 0 (-1)
 respond b (HighlightingInfo _remove hl) =
   highlightBuffer b hl
-respond _ (RunningInfo _ x) = vim_out_write x
-respond _ (ClearRunningInfo) = vim_out_write ""
+respond _ (RunningInfo _ x) = vim_out_write $ x <> "\n"
+respond _ (ClearRunningInfo) = vim_out_write "\n"
 respond b (JumpToError _ pos) = do
   buf_lines <- nvim_buf_get_lines b 0 (-1) True
   let li = getLineIntervals buf_lines
@@ -139,7 +139,7 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
       replaceInterval b (start & #p_col %~ offsetPlus (Offset 1)) end $ T.unlines $
         clauses & _tail %~ fmap (indent start)
 
-mkInterval :: Pos -> Pos -> Interval' LineOffset ()
+mkInterval :: Pos -> Pos -> Interval' LineOffset
 mkInterval start end = Interval (posToPosition start) (posToPosition end)
 
 ------------------------------------------------------------------------------
@@ -170,7 +170,7 @@ findGoal hunt = withAgda $ do
                          . ip_interval
                          ) goals
     case judged_goals of
-      [] -> vim_out_write "No hole matching predicate"
+      [] -> vim_out_write "No hole matching predicate\n"
       _ -> do
         let pos' = fst $ maximumBy (comparing snd) judged_goals
         setWindowCursor w pos'

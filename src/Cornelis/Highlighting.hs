@@ -69,7 +69,11 @@ newtype LineIntervals = LineIntervals
 getLineIntervals :: Vector Text -> LineIntervals
 getLineIntervals = LineIntervals . go (Offset 0) (LineNumber 0)
   where
-    go :: BufferOffset -> LineNumber -> Vector Text -> IntervalMap BufferOffset (LineNumber, Text)
+    go
+        :: BufferOffset
+        -> LineNumber
+        -> Vector Text
+        -> IntervalMap BufferOffset (LineNumber, Text)
     go (Offset pos) line v
       | Just (t, ss) <- V.uncons v =
         let len = T.length t
@@ -86,11 +90,16 @@ lookupPoint (LineIntervals im) off = do
        )
 
 
-addHighlight :: Buffer -> LineIntervals -> Highlight -> Neovim CornelisEnv (Maybe Extmark)
+addHighlight
+    :: Buffer
+    -> LineIntervals
+    -> Highlight
+    -> Neovim CornelisEnv (Maybe Extmark)
 addHighlight b lis hl = do
-  -- Subtract 1 here from the end offset because unlike everywhere else in vim,
-  -- extmark ranges are inclusive...
-  case liftA2 (,) (lookupPoint lis (hl_start hl)) $ lookupPoint lis (offsetDiff (hl_end hl) (Offset 1)) of
+  case (,) <$> lookupPoint lis (hl_start hl)
+               -- Subtract 1 here from the end offset because unlike everywhere
+               -- else in vim, extmark ranges are inclusive...
+           <*> lookupPoint lis (offsetDiff (hl_end hl) (Offset 1)) of
     Just (start, end) ->
       fmap Just
         $ setHighlight b start end

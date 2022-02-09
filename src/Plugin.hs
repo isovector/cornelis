@@ -104,8 +104,8 @@ hoistMaybe :: Applicative m => Maybe a -> MaybeT m a
 hoistMaybe = MaybeT . pure
 
 
-getExtmark :: Buffer -> Pos -> Neovim CornelisEnv (Maybe Extmark)
-getExtmark b p = do
+getExtmark :: Buffer -> Pos -> Neovim CornelisEnv (First DefinitionSite)
+getExtmark b p = withBufferStuff b $ \bs -> do
   ns <- asks ce_namespace
   vp <- vimifyPositionM b p
   -- The vim API uses 0-indexed lines for buf_get_extmarks..
@@ -117,32 +117,27 @@ getExtmark b p = do
                          ]
   res <- nvim_buf_get_extmarks b ns pos0 pos1 $ M.singleton "details" $ ObjectBool True
   marks <- fmap catMaybes $ traverse (parseExtmark b) $ V.toList res
-  pure $ getFirst $ flip foldMap marks $ \(ext, i) ->
+
+  pure $ flip foldMap marks $ \(ex, i) ->
     case containsPoint i p of
       False -> mempty
-      True -> pure ext
-
+      True -> First $ M.lookup ex $ bs_goto_sites bs
 
 gotoDefinition :: CommandArguments -> Neovim CornelisEnv ()
 gotoDefinition _ = withAgda $ do
   w <- nvim_get_current_win
   rc <- getWindowCursor w
   b <- window_get_buffer w
-  withBufferStuff b $ \bs -> do
-    getExtmark b rc >>= \case
-      Nothing -> reportInfo "No syntax under cursor."
-      Just ex -> do
-        case M.lookup ex $ bs_goto_sites bs of
-          Nothing -> do
-            reportInfo "No identifier under cursor."
-          Just ds -> do
-            -- TODO(sandy): escape spaces
-            vim_command $ "edit " <> ds_filepath ds
-            b' <- window_get_buffer w
-            contents <- fmap (T.unlines . V.toList) $ buffer_get_lines b' 0 (-1) False
-            let buffer_idx = toBytes contents $ ds_position ds
-            -- TODO(sandy): use window_set_cursor instead?
-            vim_command $ "normal! " <> T.pack (show buffer_idx) <> "go"
+  getExtmark b rc >>= \case
+    First Nothing -> reportInfo "No syntax under cursor."
+    First (Just ds) -> do
+      -- TODO(sandy): escape spaces
+      vim_command $ "edit " <> ds_filepath ds
+      b' <- window_get_buffer w
+      contents <- fmap (T.unlines . V.toList) $ buffer_get_lines b' 0 (-1) False
+      let buffer_idx = toBytes contents $ ds_position ds
+      -- TODO(sandy): use window_set_cursor instead?
+      vim_command $ "normal! " <> T.pack (show buffer_idx) <> "go"
 
 
 doLoad :: CommandArguments -> Neovim CornelisEnv ()

@@ -59,9 +59,9 @@ criticalFailure err = do
 modifyBufferStuff :: Buffer -> (BufferStuff -> BufferStuff) -> Neovim CornelisEnv ()
 modifyBufferStuff b f = modify' $ #cs_buffers %~ M.update (Just . f) b
 
-withBufferStuff :: Buffer -> (BufferStuff -> Neovim CornelisEnv ()) -> Neovim CornelisEnv ()
+withBufferStuff :: Monoid a => Buffer -> (BufferStuff -> Neovim CornelisEnv a) -> Neovim CornelisEnv a
 withBufferStuff b f =
   gets (M.lookup b . cs_buffers) >>= \case
-    Nothing -> vim_report_error "no buffer stuff!"
+    Nothing -> vim_report_error "no buffer stuff!" >> pure mempty
     Just bs -> f bs
 

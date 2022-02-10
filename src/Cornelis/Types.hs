@@ -16,6 +16,7 @@ module Cornelis.Types
   , Window
   , Text
   , traceMX
+  , HasCallStack
   ) where
 
 import Control.Concurrent
@@ -30,6 +31,7 @@ import Data.Map (Map)
 import Data.Text (Text)
 import Data.Tuple (swap)
 import GHC.Generics
+import GHC.Stack
 import Neovim hiding (err)
 import Neovim.API.Text (Buffer(..), Window)
 import System.IO (Handle)

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+
 module Cornelis.Offsets
   ( module Cornelis.Offsets
   , LineNumber(..)
@@ -47,10 +48,15 @@ toBytes s (Offset i) = BS.length $ encodeUtf8 $ T.take (fromIntegral i) s
 
 ------------------------------------------------------------------------------
 -- | Convert a byte-based index into a character-indexed one.
-fromBytes :: T.Text -> Int -> Offset a
+fromBytes :: HasCallStack => T.Text -> Int -> Offset a
+fromBytes t i | i < 0 = error $ "from bytes underflow" <> show (t, i)
 fromBytes _ 0 = Offset 0
 fromBytes t i | Just (c, str) <- T.uncons t =
-  Offset $ 1 + coerce (fromBytes str $ i - (BS.length $ encodeUtf8 $ T.singleton c))
--- TODO(sandy): ??? maybe crash?
+  let diff = BS.length $ encodeUtf8 $ T.singleton c
+   in case i - diff >= 0 of
+        True -> Offset $ 1 + coerce (fromBytes str $ i - diff)
+        -- We ran out of bytes in the middle of a multibyte character. Just
+        -- return the one we're on, and don't underflow!
+        False -> Offset 0
 fromBytes t i = error $ "missing bytes: " <> show (t, i)
 

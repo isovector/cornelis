@@ -19,3 +19,8 @@ unicodeTest₁ x = ?
 slap : Bool → Bool
 slap = λ { x → ? }
 
+module _ where
+  testIndent : Bool → Bool
+  testIndent true = ?
+  testIndent false = ?
+

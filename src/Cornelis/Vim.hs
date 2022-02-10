@@ -77,6 +77,12 @@ vimifyPositionM b p = do
   pure $ vimifyPosition l p
 
 
+getIndent :: Buffer -> LineNumber -> Neovim env Int
+getIndent b l = do
+  txt <- getBufferLine b l
+  pure $ T.length $ T.takeWhile (== ' ') txt
+
+
 getBufferLine :: Buffer -> LineNumber -> Neovim env Text
 getBufferLine b = buffer_get_line b . getVimLineNumber
 

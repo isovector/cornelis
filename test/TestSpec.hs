@@ -24,6 +24,13 @@ spec = do
     goto w 20 16
     caseSplit "x"
 
+  diffSpec "should preserve indents when doing case split" (Seconds 5) "test/Hello.agda"
+      [ Modify "  testIndent b = ?" "  testIndent true = ?"
+      , Insert                      "  testIndent false = ?"
+      ] $ \w _ -> do
+    goto w 24 18
+    caseSplit "b"
+
   let case_split_test name row col =
         diffSpec ("should case split (" <> T.unpack name <> ")") (Seconds 5) "test/Hello.agda"
             (fmap (fmap (name <>))

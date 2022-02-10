@@ -117,13 +117,16 @@ getSurroundingMotion w b motion p = do
       pure (start, end)
 
 doMakeCase :: Buffer -> MakeCase -> Neovim env ()
-doMakeCase b (RegularCase Function clauses ip) =
+doMakeCase b (RegularCase Function clauses ip) = do
   let int = ip_interval
           $ fmap agdaToLine
           $ ip & #ip_interval . #iStart . #posCol .~ Offset 1
       start = positionToPos $ iStart int
       end = positionToPos $ iEnd int
-   in replaceInterval b start end $ T.unlines clauses
+  ins <- getIndent b $ p_line start
+  replaceInterval b start end
+    $ T.unlines
+    $ fmap (T.replicate ins " " <>) clauses
 -- TODO(sandy): It would be nice if Agda just gave us the bounds we're supposed to replace...
 doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
   let ip' = fmap agdaToLine ip

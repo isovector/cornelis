@@ -151,12 +151,6 @@ indent :: Pos -> Text -> Text
 indent (Pos _ (Offset n)) s = T.replicate (fromIntegral n - 1) " " <> "; " <> s
 
 
-reload :: Neovim CornelisEnv ()
-reload = do
-  vim_command "noautocmd w"
-  load
-
-
 -- | Find a goal in the current window
 findGoal :: Ord a => (Pos -> Pos -> Maybe a) -> Neovim CornelisEnv ()
 findGoal hunt = withAgda $ do

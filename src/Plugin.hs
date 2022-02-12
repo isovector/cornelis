@@ -138,6 +138,12 @@ gotoDefinition _ = withAgda $ do
       let buffer_idx = toBytes contents $ ds_position ds
       -- TODO(sandy): use window_set_cursor instead?
       vim_command $ "normal! " <> T.pack (show buffer_idx) <> "go"
+      reload
+
+reload :: Neovim CornelisEnv ()
+reload = do
+  vim_command "noautocmd w"
+  load
 
 
 doLoad :: CommandArguments -> Neovim CornelisEnv ()

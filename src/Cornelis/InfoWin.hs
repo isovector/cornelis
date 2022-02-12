@@ -15,7 +15,7 @@ import           Data.Traversable (for)
 import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
-import           Prettyprinter (layoutPretty, defaultLayoutOptions)
+import           Prettyprinter (layoutPretty, defaultLayoutOptions, LayoutOptions (LayoutOptions), PageWidth (AvailablePerLine))
 import           Prettyprinter.Render.Text (renderStrict)
 
 
@@ -123,7 +123,11 @@ resizeInfoWin w ib = do
 
 writeInfoBuffer :: Int64 -> InfoBuffer -> Doc HighlightGroup -> Neovim env ()
 writeInfoBuffer ns iw doc = do
-  let sds = layoutPretty defaultLayoutOptions doc
+  -- TODO(sandy): Bad choice for a window, but good enough?
+  w <- nvim_get_current_win
+  width <- window_get_width w
+
+  let sds = layoutPretty (LayoutOptions (AvailablePerLine (fromIntegral width) 0.8)) doc
       (hls, sds') = renderWithHlGroups sds
       s = T.lines $ renderStrict sds'
 

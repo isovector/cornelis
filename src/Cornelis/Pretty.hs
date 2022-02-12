@@ -74,7 +74,7 @@ renderWithHlGroups = go [] 0 0
 
 
 prettyType :: C.Type -> Doc HighlightGroup
-prettyType (C.Type ty) = annotate Type $ pretty ty
+prettyType (C.Type ty) = annotate Type $ sep $ fmap pretty $ T.lines ty
 
 
 prettyGoals :: DisplayInfo -> Doc HighlightGroup

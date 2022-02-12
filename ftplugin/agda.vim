@@ -19,6 +19,11 @@ call textobj#user#plugin('cornelis', {
 \     'select-a': 'ai',
 \     'select-i': 'ii',
 \   },
+\   'hole': {
+\     'pattern': ['{!', '!}'],
+\     'select-a': 'ah',
+\     'select-i': 'ih',
+\   },
 \ })
 
 setlocal commentstring=--\ %s

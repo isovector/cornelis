@@ -51,6 +51,8 @@ Use the `iz`/`az` text objects to operate on text between `≡⟨` and `⟩`.
 
 Also `ii`/`ai` will operate on `⦃` and `⦄`.
 
+`ih`/`ah` will operate on `{!` and `!}`.
+
 
 
 ## Installation

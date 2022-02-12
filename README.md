@@ -67,7 +67,13 @@ Make sure you have [`stack`](https://docs.haskellstack.org/en/stable/install_and
 
 #### Installation with Nix
 
-You can install both the vim plugin and the cornelis binary using nix flakes! You can access the binary as `cornelis.packages.<my-system>.cornelis` and the vim plugin as `cornelis.packages.<my-system>.cornelis-vim`. Below is a sample configuration to help you understand where everything plugs in.
+You can install both the vim plugin and the cornelis binary using nix flakes!
+You can access the binary as `cornelis.packages.<my-system>.cornelis` and the
+vim plugin as `cornelis.packages.<my-system>.cornelis-vim`. Below is a sample
+configuration to help you understand where everything plugs in.
+
+<details>
+<summary>Nix details</summary>
 
 ```nix
 # flake.nix
@@ -127,8 +133,11 @@ You can install both the vim plugin and the cornelis binary using nix flakes! Yo
   };
 }
 ```
+</details>
 
-Make sure you enable the global binary option in your vim config. Since `/nix/store` is immutable cornelis will fail when `nvim-hs` tries to run stack, which it will do if the global binary option isn't enabled.
+Make sure you enable the global binary option in your vim config. Since
+`/nix/store` is immutable cornelis will fail when `nvim-hs` tries to run stack,
+which it will do if the global binary option isn't enabled.
 
 #### Use global binary instead of stack
 
@@ -156,6 +165,7 @@ function! AgdaFiletype()
     nnoremap <buffer> <leader>d :CornelisMakeCase<CR>
     nnoremap <buffer> <leader>, :CornelisTypeContext<CR>
     nnoremap <buffer> <leader>n :CornelisSolve<CR>
+    nnoremap <buffer> <leader>a :CornelisAuto<CR>
     nnoremap <buffer> gd        :CornelisGoToDefinition<CR>
     nnoremap <buffer> [/        :CornelisPrevGoal<CR>
     nnoremap <buffer> ]/        :CornelisNextGoal<CR>

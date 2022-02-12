@@ -170,6 +170,11 @@ solveOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
   flip runIOTCM agda $ Cmd_solveOne Simplified (InteractionId $ ip_id goal) noRange ""
 
+autoOne :: CommandArguments -> Neovim CornelisEnv ()
+autoOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
+  agda <- getAgda b
+  flip runIOTCM agda $ Cmd_autoOne (InteractionId $ ip_id goal) noRange ""
+
 typeContext :: CommandArguments -> Neovim CornelisEnv ()
 typeContext _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b

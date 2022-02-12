@@ -24,7 +24,7 @@ vimscript/lua implementations.
 
 ## Features
 
-It supports highlighting, goal listing, type-context, refinement, solving,
+It supports highlighting, goal listing, type-context, refinement, auto, solving,
 case splitting, and go-to definition. These are exposed via the vim commands:
 
 ```
@@ -32,6 +32,7 @@ case splitting, and go-to definition. These are exposed via the vim commands:
 :CornelisGoals
 :CornelisTypeContext
 :CornelisRefine
+:CornelisAuto
 :CornelisSolve
 :CornelisMakeCase
 :CornelisGoToDefinition

@@ -231,6 +231,7 @@ cornelis = do
         [ $(command "CornelisLoad" 'doLoad) [CmdSync Async]
         , $(command "CornelisGoals" 'doAllGoals) [CmdSync Async]
         , $(command "CornelisSolve" 'solveOne) [CmdSync Async]
+        , $(command "CornelisAuto" 'autoOne) [CmdSync Async]
         , $(command "CornelisTypeContext" 'typeContext) [CmdSync Async]
         , $(command "CornelisMakeCase" 'doCaseSplit) [CmdSync Async]
         , $(command "CornelisRefine" 'doRefine) [CmdSync Async]

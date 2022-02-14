@@ -137,7 +137,7 @@ gotoDefinition _ = withAgda $ do
       contents <- fmap (T.unlines . V.toList) $ buffer_get_lines b' 0 (-1) False
       let buffer_idx = toBytes contents $ ds_position ds
       -- TODO(sandy): use window_set_cursor instead?
-      vim_command $ "normal! " <> T.pack (show buffer_idx) <> "go"
+      vim_command $ "keepjumps normal! " <> T.pack (show buffer_idx) <> "go"
       reload
 
 reload :: Neovim CornelisEnv ()

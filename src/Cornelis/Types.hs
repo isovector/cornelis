@@ -238,7 +238,11 @@ instance FromJSON DisplayInfo where
   parseJSON v = flip (withObject "DisplayInfo") v $ \obj ->
     obj .: "kind" >>= \case
       "AllGoalsWarnings" ->
-        AllGoalsWarnings <$> obj .: "visibleGoals" <*> obj .: "invisibleGoals" <*> obj .: "errors" <*> obj .: "warnings"
+        AllGoalsWarnings
+          <$> obj .: "visibleGoals"
+          <*> obj .: "invisibleGoals"
+          <*> (obj .: "errors"   <|> fmap pure (obj .: "errors"))
+          <*> (obj .: "warnings" <|> fmap pure (obj .: "warnings"))
       "Error" ->
         obj .: "error" >>= \err ->
           DisplayError <$> err .: "message"
@@ -274,7 +278,9 @@ instance FromJSON Response where
         JumpToError <$> obj .: "filepath" <*> obj .: "position"
       "Status" -> do
         (obj .: "status" >>=) $ withObject "Status" $ \s ->
-          Status <$> s .: "checked" <*> s .: "showIrrelevantArguments" <*> s .: "showImplicitArguments"
+          Status <$> s .: "checked"
+                  <*> (s .: "showIrrelevantArguments"<|> pure False)
+                  <*> s .: "showImplicitArguments"
       (_ :: Text) -> Unknown <$> obj .: "kind" <*> pure v
 
 newtype Extmark = Extmark Int64

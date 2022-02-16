@@ -65,7 +65,29 @@ Plug 'isovector/cornelis'
 
 Make sure you have [`stack`](https://docs.haskellstack.org/en/stable/install_and_upgrade/) on your PATH!
 
-#### Installation with Nix
+The first time you open an agda file, nvim is going to freeze for what seems
+like forever. It's not forever; it's just building the `cornelis` Haskell code.
+
+If you'd prefer, you can build it yourself by `cd ~/.vim/plugged/cornelis`
+followed by `stack build`.
+
+
+### Agda Version
+
+`cornelis` is tested only against `agda-2.6.3`. If you run into weird error
+messages from vim, it's probably because you're running an old version of
+`agda`. If possible, try upgrading, if not, file a bug and I'll see if I can
+help.
+
+In addition, there are some bugs in the most recent version of `agda` that
+negatively affect `cornelis`. For best results, build from head, ensuring you
+have the following patches:
+
+- https://github.com/agda/agda/pull/5752
+- https://github.com/agda/agda/pull/5776
+
+
+### Installation with Nix
 
 You can install both the vim plugin and the cornelis binary using nix flakes!
 You can access the binary as `cornelis.packages.<my-system>.cornelis` and the
@@ -139,14 +161,17 @@ Make sure you enable the global binary option in your vim config. Since
 `/nix/store` is immutable cornelis will fail when `nvim-hs` tries to run stack,
 which it will do if the global binary option isn't enabled.
 
+
 #### Use global binary instead of stack
 
-Vimscript
+Vimscript:
+
 ```vimscript
 let g:cornelis_use_global_binary = 1
 ```
 
-Lua
+Lua:
+
 ```lua
 vim.g.cornelis_use_global_binary = 1
 ```

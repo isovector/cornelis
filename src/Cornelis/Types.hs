@@ -231,6 +231,7 @@ data DisplayInfo
       }
   | GoalSpecific (InteractionPoint AgdaOffset) [InScope] Type
   | DisplayError Text
+  | WhyInScope Text
   | UnknownDisplayInfo Value
   deriving (Eq, Ord, Show, Generic)
 
@@ -246,6 +247,8 @@ instance FromJSON DisplayInfo where
       "Error" ->
         obj .: "error" >>= \err ->
           DisplayError <$> err .: "message"
+      "WhyInScope" ->
+        WhyInScope <$> obj .: "message"
       "GoalSpecific" ->
         (obj .: "goalInfo") >>= \info ->
           GoalSpecific <$> obj .: "interactionPoint" <*> info .: "entries" <*> info .: "type"

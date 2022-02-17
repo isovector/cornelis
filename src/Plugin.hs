@@ -188,6 +188,13 @@ refine = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
   flip runIOTCM agda $ Cmd_refine_or_intro True (InteractionId $ ip_id goal) noRange ""
 
+doWhyInScope :: CommandArguments -> Neovim CornelisEnv ()
+doWhyInScope _ = do
+  withAgda $ void $ withCurrentBuffer $ \b -> do
+    thing <- input "Why is what in scope? " Nothing Nothing
+    agda <- getAgda b
+    flip runIOTCM agda $ Cmd_why_in_scope_toplevel thing
+
 doCaseSplit :: CommandArguments -> Neovim CornelisEnv ()
 doCaseSplit _ = do
   thing <- input @Text "Split on what?" Nothing Nothing

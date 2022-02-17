@@ -38,6 +38,7 @@ case splitting, and go-to definition. These are exposed via the vim commands:
 :CornelisGoToDefinition
 :CornelisPrevGoal
 :CornelisNextGoal
+:CornelisWhyInScope
 ```
 
 There is reasonably good support for agda-input via your `<LocalLeader>` in

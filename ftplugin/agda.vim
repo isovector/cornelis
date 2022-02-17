@@ -1,3 +1,8 @@
+if exists("b:cornelis_ftplugin")
+  finish
+endif
+let b:cornelis_ftplugin = 1
+
 if exists("g:cornelis_use_global_binary")
   call remote#host#Register('cornelis', '*', rpcstart('cornelis', []))
 else

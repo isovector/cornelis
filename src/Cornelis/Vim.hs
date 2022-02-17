@@ -7,7 +7,7 @@ module Cornelis.Vim where
 import           Control.Lens
 import           Cornelis.Offsets
 import           Cornelis.Types
-import           Cornelis.Utils (objectToInt)
+import           Cornelis.Utils (objectToInt, savingCurrentPosition, savingCurrentWindow)
 import           Data.Int
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
@@ -102,3 +102,26 @@ reportError = vim_report_error
 
 reportInfo :: Text -> Neovim env ()
 reportInfo m = vim_out_write $ m <> "\n"
+
+------------------------------------------------------------------------------
+-- | Awful function that does the motion in visual mode and gives you back
+-- where vim thinks the @'<@ and @'>@ marks are.
+--
+-- I'm so sorry.
+getSurroundingMotion
+    :: Window
+    -> Buffer
+    -> Text
+    -> Pos
+    -> Neovim env (Pos, Pos)
+getSurroundingMotion w b motion p = do
+  savingCurrentWindow $ do
+    savingCurrentPosition w $ do
+      nvim_set_current_win w
+      setWindowCursor w p
+      vim_command $ "normal v" <> motion
+      start <- getpos b 'v'
+      end <- getpos b '.'
+      void $ nvim_input "<esc>"
+      pure (start, end)
+

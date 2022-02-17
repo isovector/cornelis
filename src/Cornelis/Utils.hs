@@ -7,7 +7,9 @@ import           Control.Concurrent.Async
 import           Control.Exception (throwIO)
 import           Control.Lens ((%~))
 import           Control.Monad.IO.Unlift (MonadUnliftIO(withRunInIO))
+import           Control.Monad.Reader (withReaderT)
 import           Control.Monad.State.Class
+import           Control.Monad.Trans.Resource (transResourceT)
 import           Cornelis.Types
 import qualified Data.Map as M
 import           Data.Maybe
@@ -15,6 +17,7 @@ import           Data.Traversable
 import qualified Data.Vector as V
 import           Neovim hiding (err)
 import           Neovim.API.Text
+import           Neovim.Context.Internal (Neovim(..), retypeConfig)
 
 
 objectToInt :: Object -> Maybe Int
@@ -64,4 +67,7 @@ withBufferStuff b f =
   gets (M.lookup b . cs_buffers) >>= \case
     Nothing -> vim_report_error "no buffer stuff!" >> pure mempty
     Just bs -> f bs
+
+withLocalEnv :: env -> Neovim env a -> Neovim env' a
+withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (retypeConfig env)
 

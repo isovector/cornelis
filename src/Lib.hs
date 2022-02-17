@@ -12,9 +12,7 @@ import           Control.Concurrent.Chan.Unagi
 import           Control.Lens
 import           Control.Monad (forever)
 import           Control.Monad (when)
-import           Control.Monad.Reader (withReaderT)
 import           Control.Monad.State.Class (gets)
-import           Control.Monad.Trans.Resource (transResourceT)
 import           Cornelis.Debug (reportExceptions)
 import           Cornelis.Highlighting (highlightBuffer, getLineIntervals, lookupPoint)
 import           Cornelis.InfoWin
@@ -31,13 +29,9 @@ import           Data.Ord (comparing, Down (Down))
 import qualified Data.Text as T
 import           Neovim
 import           Neovim.API.Text
-import           Neovim.Context.Internal (Neovim(..), retypeConfig)
 import           Plugin
 
 
-
-withLocalEnv :: env -> Neovim env a -> Neovim env' a
-withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (retypeConfig env)
 
 
 getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe (InteractionPoint LineOffset))
@@ -94,28 +88,6 @@ respond _ (Unknown k _) = reportError k
 parens :: Text -> Text
 parens s = "(" <> s <> ")"
 
-------------------------------------------------------------------------------
--- | Awful function that does the motion in visual mode and gives you back
--- where vim thinks the @'<@ and @'>@ marks are.
---
--- I'm so sorry.
-getSurroundingMotion
-    :: Window
-    -> Buffer
-    -> Text
-    -> Pos
-    -> Neovim env (Pos, Pos)
-getSurroundingMotion w b motion p = do
-  savingCurrentWindow $ do
-    savingCurrentPosition w $ do
-      nvim_set_current_win w
-      setWindowCursor w p
-      vim_command $ "normal v" <> motion
-      start <- getpos b 'v'
-      end <- getpos b '.'
-      void $ nvim_input "<esc>"
-      pure (start, end)
-
 doMakeCase :: Buffer -> MakeCase -> Neovim env ()
 doMakeCase b (RegularCase Function clauses ip) = do
   let int = ip_interval
@@ -167,7 +139,7 @@ findGoal hunt = withAgda $ do
                          . ip_interval
                          ) goals
     case judged_goals of
-      [] -> reportInfo "No hole matching predicate\n"
+      [] -> reportInfo "No hole matching predicate"
       _ -> do
         let pos' = fst $ maximumBy (comparing snd) judged_goals
         setWindowCursor w pos'

@@ -15,7 +15,7 @@ import           Data.Traversable (for)
 import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
-import           Prettyprinter (layoutPretty, defaultLayoutOptions, LayoutOptions (LayoutOptions), PageWidth (AvailablePerLine))
+import           Prettyprinter (layoutPretty, LayoutOptions (LayoutOptions), PageWidth (AvailablePerLine))
 import           Prettyprinter.Render.Text (renderStrict)
 
 

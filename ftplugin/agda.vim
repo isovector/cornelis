@@ -32,5 +32,11 @@ call textobj#user#plugin('cornelis', {
 \   },
 \ })
 
+setlocal formatoptions-=t
+setlocal formatoptions+=croql
+
+setlocal comments=sfl:{-,mb1:--,ex:-},:--
 setlocal commentstring=--\ %s
+
+setlocal iskeyword=@,!-~,^\,,^\(,^\),^\",^\',192-255
 

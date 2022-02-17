@@ -38,9 +38,15 @@ getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe (InteractionPo
 getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
 
 
+respondToHelperFunction :: DisplayInfo -> Neovim env ()
+respondToHelperFunction (HelperFunction sig) = setreg "\"" sig
+respondToHelperFunction _ = pure ()
+
+
 respond :: Buffer -> Response -> Neovim CornelisEnv ()
 -- Update the buffer's goal map
 respond b (DisplayInfo dp) = do
+  respondToHelperFunction dp
   when (dp & hasn't #_GoalSpecific) $
     modifyBufferStuff b $ #bs_goals .~ dp
   goalWindow b dp
@@ -212,6 +218,7 @@ cornelis = do
         , $(command "CornelisGoToDefinition" 'gotoDefinition) [CmdSync Async]
         , $(command "CornelisWhyInScope"     'doWhyInScope)   [CmdSync Async]
         , $(command "CornelisNormalize"      'doNormalize)    [CmdSync Async]
+        , $(command "CornelisHelperFunc"     'doHelperFunc)   [CmdSync Async]
         ]
     }
 

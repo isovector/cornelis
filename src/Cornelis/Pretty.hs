@@ -92,6 +92,13 @@ prettyGoals (GoalSpecific _ scoped ty) = vcat
   , mconcat $ replicate 60 "—"
   , vcat $ fmap prettyInScope scoped
   ]
+prettyGoals (HelperFunction sig) =
+  section "Helper Function"
+    [ mempty
+    , annotate Type $ pretty sig
+    , mempty
+    , annotate Comment $ parens "copied to \" register"
+    ] id
 prettyGoals (WhyInScope msg) = pretty msg
 prettyGoals (NormalForm expr) = pretty expr
 prettyGoals (DisplayError err) = annotate Error $ pretty err

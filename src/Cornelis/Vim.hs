@@ -103,6 +103,15 @@ reportError = vim_report_error
 reportInfo :: Text -> Neovim env ()
 reportInfo m = vim_out_write $ m <> "\n"
 
+setreg :: Text -> Text -> Neovim env ()
+setreg reg val
+  = void
+  $ vim_call_function "setreg"
+  $ V.fromList
+    [ ObjectString $ encodeUtf8 reg
+    , ObjectString $ encodeUtf8 val
+    ]
+
 ------------------------------------------------------------------------------
 -- | Awful function that does the motion in visual mode and gives you back
 -- where vim thinks the @'<@ and @'>@ marks are.

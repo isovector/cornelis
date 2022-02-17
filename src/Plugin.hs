@@ -202,6 +202,13 @@ doNormalize _ = do
     agda <- getAgda b
     flip runIOTCM agda $ Cmd_compute_toplevel DefaultCompute thing
 
+doHelperFunc :: CommandArguments -> Neovim CornelisEnv ()
+doHelperFunc _ = do
+  withAgda $ void $ withGoalAtCursor $ \b goal -> do
+    expr <- input "Expression: " Nothing Nothing
+    agda <- getAgda b
+    flip runIOTCM agda $ Cmd_helper_function Simplified (InteractionId $ ip_id goal) noRange expr
+
 doCaseSplit :: CommandArguments -> Neovim CornelisEnv ()
 doCaseSplit _ = do
   thing <- input @Text "Split on what?" Nothing Nothing

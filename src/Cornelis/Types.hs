@@ -230,6 +230,7 @@ data DisplayInfo
       , di_warnings :: [Message]
       }
   | GoalSpecific (InteractionPoint AgdaOffset) [InScope] Type
+  | HelperFunction Text
   | DisplayError Text
   | WhyInScope Text
   | NormalForm Text
@@ -254,7 +255,13 @@ instance FromJSON DisplayInfo where
         NormalForm <$> obj .: "expr"
       "GoalSpecific" ->
         (obj .: "goalInfo") >>= \info ->
-          GoalSpecific <$> obj .: "interactionPoint" <*> info .: "entries" <*> info .: "type"
+          (info .: "kind") >>= \case
+            "HelperFunction" ->
+              HelperFunction <$> info .: "signature"
+            "GoalType" ->
+              GoalSpecific <$> obj .: "interactionPoint" <*> info .: "entries" <*> info .: "type"
+            (_ :: Text) ->
+              pure $ UnknownDisplayInfo v
       (_ :: Text) -> pure $ UnknownDisplayInfo v
 
 instance FromJSON Response where

@@ -25,8 +25,8 @@ vimscript/lua implementations.
 ## Features
 
 It supports highlighting, goal listing, type-context, refinement, auto, solving,
-case splitting, go-to definition, and normalization. These are exposed via the
-vim commands:
+case splitting, go-to definition, normalization, and helper functions. These are
+exposed via the vim commands:
 
 ```
 :CornelisLoad
@@ -41,6 +41,7 @@ vim commands:
 :CornelisNextGoal
 :CornelisWhyInScope
 :CornelisNormalize
+:CornelisHelperFunc
 ```
 
 There is reasonably good support for agda-input via your `<LocalLeader>` in

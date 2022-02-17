@@ -68,6 +68,12 @@ Make sure you have [`stack`](https://docs.haskellstack.org/en/stable/install_and
 The first time you open an agda file, nvim is going to freeze for what seems
 like forever. It's not forever; it's just building the `cornelis` Haskell code.
 
+If you want to instead frontload this build time during plugin installation, you can have
+```
+Plug 'isovector/cornelis', { 'do': 'stack build' }
+```
+in your config instead.
+
 If you'd prefer, you can build it yourself by `cd ~/.vim/plugged/cornelis`
 followed by `stack build`.
 

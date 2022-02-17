@@ -40,14 +40,15 @@ case splitting, and go-to definition. These are exposed via the vim commands:
 :CornelisNextGoal
 ```
 
-There is minor support for agda-input via your `<LocalLeader>` in insert mode.
-See [agda-input.vim](https://github.com/isovector/cornelis/blob/master/agda-input.vim)
-for available bindings.
+There is reasonably good support for agda-input via your `<LocalLeader>` in
+insert mode. See
+[agda-input.vim](https://github.com/isovector/cornelis/blob/master/agda-input.vim)
+for available bindings, or slap your `<LocalLeader>` while in insert mode.
 
 
 ## Text Objects
 
-Use the `iz`/`az` text objects to operate on text between `≡⟨` and `⟩`.
+Use the `iz`/`az` text objects to operate on text between `⟨` and `⟩`.
 
 Also `ii`/`ai` will operate on `⦃` and `⦄`.
 
@@ -62,6 +63,7 @@ Make sure you have [`stack`](https://docs.haskellstack.org/en/stable/install_and
 ```
 Plug 'kana/vim-textobj-user'
 Plug 'neovimhaskell/nvim-hs.vim'
+Plug 'liuchengxu/vim-which-key'
 Plug 'isovector/cornelis', { 'do': 'stack build' }
 ```
 

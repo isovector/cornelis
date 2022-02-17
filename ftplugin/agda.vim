@@ -12,6 +12,7 @@ endif
 nnoremap <F5> :call nvimhs#compileAndRestart('cornelis')<CR>
 
 runtime agda-input.vim
+runtime agda-matchpairs.vim
 
 call textobj#user#plugin('cornelis', {
 \   'zbrackets': {

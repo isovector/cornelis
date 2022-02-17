@@ -17,7 +17,10 @@ runtime agda-matchpairs.vim
 call textobj#user#plugin('cornelis', {
 \   'zbrackets': {
 \     'pattern': ['⟨', '⟩'],
-\     'select-a': 'az',
+\     'select-i': 'az',
+\   },
+\   'zspacebrackets': {
+\     'pattern': ['⟨ ', ' ⟩'],
 \     'select-i': 'iz',
 \   },
 \   'ibrackets': {

@@ -48,9 +48,13 @@ for available bindings, or slap your `<LocalLeader>` while in insert mode.
 
 ## Text Objects
 
-Use the `iz`/`az` text objects to operate on text between `⟨` and `⟩`.
+Use the `iz`/`az` text objects to operate on text between `⟨` and `⟩`. Somewhat
+surprisingly for i/a text objects, `iz` targets the _spaces_ between these
+brackets, and `az` targets the spaces. Neither textobj targets the brackets
+themselves.
 
-Also `ii`/`ai` will operate on `⦃` and `⦄`.
+Also `ii`/`ai` will operate on `⦃` and `⦄`, but in the way you'd expect
+text objects to behave.
 
 `ih`/`ah` will operate on `{!` and `!}`.
 

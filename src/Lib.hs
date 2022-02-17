@@ -211,6 +211,7 @@ cornelis = do
         , $(command "CornelisNextGoal"       'doNextGoal)     [CmdSync Async]
         , $(command "CornelisGoToDefinition" 'gotoDefinition) [CmdSync Async]
         , $(command "CornelisWhyInScope"     'doWhyInScope)   [CmdSync Async]
+        , $(command "CornelisNormalize"      'doNormalize)    [CmdSync Async]
         ]
     }
 

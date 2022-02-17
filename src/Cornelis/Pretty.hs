@@ -93,6 +93,7 @@ prettyGoals (GoalSpecific _ scoped ty) = vcat
   , vcat $ fmap prettyInScope scoped
   ]
 prettyGoals (WhyInScope msg) = pretty msg
+prettyGoals (NormalForm expr) = pretty expr
 prettyGoals (DisplayError err) = annotate Error $ pretty err
 prettyGoals (UnknownDisplayInfo v) = annotate Error $ pretty $ show v
 

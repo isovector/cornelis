@@ -195,6 +195,13 @@ doWhyInScope _ = do
     agda <- getAgda b
     flip runIOTCM agda $ Cmd_why_in_scope_toplevel thing
 
+doNormalize :: CommandArguments -> Neovim CornelisEnv ()
+doNormalize _ = do
+  withAgda $ void $ withCurrentBuffer $ \b -> do
+    thing <- input "Normalize what? " Nothing Nothing
+    agda <- getAgda b
+    flip runIOTCM agda $ Cmd_compute_toplevel DefaultCompute thing
+
 doCaseSplit :: CommandArguments -> Neovim CornelisEnv ()
 doCaseSplit _ = do
   thing <- input @Text "Split on what?" Nothing Nothing

@@ -202,12 +202,16 @@ doNormalize _ = do
     agda <- getAgda b
     flip runIOTCM agda $ Cmd_compute_toplevel DefaultCompute thing
 
+helperFunc :: Text -> Neovim CornelisEnv ()
+helperFunc expr = do
+  withAgda $ void $ withGoalAtCursor $ \b goal -> do
+    agda <- getAgda b
+    flip runIOTCM agda $ Cmd_helper_function Simplified (InteractionId $ ip_id goal) noRange $ T.unpack expr
+
 doHelperFunc :: CommandArguments -> Neovim CornelisEnv ()
 doHelperFunc _ = do
-  withAgda $ void $ withGoalAtCursor $ \b goal -> do
-    expr <- input "Expression: " Nothing Nothing
-    agda <- getAgda b
-    flip runIOTCM agda $ Cmd_helper_function Simplified (InteractionId $ ip_id goal) noRange expr
+  expr <- input "Expression: " Nothing Nothing
+  helperFunc expr
 
 doCaseSplit :: CommandArguments -> Neovim CornelisEnv ()
 doCaseSplit _ = do

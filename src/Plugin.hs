@@ -123,8 +123,11 @@ getExtmark b p = withBufferStuff b $ \bs -> do
       False -> mempty
       True -> First $ M.lookup ex $ bs_goto_sites bs
 
-gotoDefinition :: CommandArguments -> Neovim CornelisEnv ()
-gotoDefinition _ = withAgda $ do
+doGotoDefinition :: CommandArguments -> Neovim CornelisEnv ()
+doGotoDefinition _ = gotoDefinition
+
+gotoDefinition :: Neovim CornelisEnv ()
+gotoDefinition = withAgda $ do
   w <- nvim_get_current_win
   rc <- getWindowCursor w
   b <- window_get_buffer w

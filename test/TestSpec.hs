@@ -75,3 +75,12 @@ spec = do
       res <- buffer_get_lines (iw_buffer $ bs_info_win bs) vimFirstLine vimLastLine False
       liftIO $ V.toList res `shouldContain` ["zero is in scope as"]
 
+  vimSpec "should support goto definition across modules"
+          (Seconds 5) "test/Hello.agda" $ \w b -> do
+    goto w 2 18
+    gotoDefinition
+    liftIO $ threadDelay 5e5
+    b' <- nvim_get_current_buf
+    res <- buffer_get_lines b' vimFirstLine vimLastLine False
+    liftIO $ V.toList res `shouldContain` ["module Agda.Builtin.Nat where"]
+

@@ -6,6 +6,8 @@ module Utils where
 import           Control.Concurrent (threadDelay)
 import           Cornelis.Types
 import           Cornelis.Types.Agda
+import           Cornelis.Utils (withLocalEnv)
+import           Cornelis.Vim
 import           Data.Bifunctor (bimap)
 import           Data.Foldable (minimumBy)
 import           Data.Ord (comparing)
@@ -17,8 +19,6 @@ import           Neovim.API.Text
 import           Neovim.Test
 import           Plugin
 import           Test.Hspec hiding (after, before)
-import Cornelis.Types
-import Cornelis.Vim
 
 
 data Diff a

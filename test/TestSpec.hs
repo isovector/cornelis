@@ -6,11 +6,16 @@ module TestSpec where
 
 import           Control.Concurrent (threadDelay)
 import           Control.Monad (void)
+import           Cornelis.Types
+import           Cornelis.Utils (withBufferStuff)
+import           Cornelis.Vim
 import qualified Data.Text as T
+import qualified Data.Vector as V
 import           Neovim (liftIO)
 import           Neovim.API.Text
 import           Neovim.Test
 import           Plugin
+import           Plugin (whyInScope)
 import           Test.Hspec
 import           Utils
 
@@ -62,4 +67,11 @@ spec = do
 
   case_split_test "test" 14 10
   case_split_test "unicodeTest₁" 17 18
+
+  vimSpec "should support why in scope" (Seconds 5) "test/Hello.agda" $ \_ b -> do
+    withBufferStuff b $ \bs -> do
+      whyInScope "zero"
+      liftIO $ threadDelay 5e5
+      res <- buffer_get_lines (iw_buffer $ bs_info_win bs) vimFirstLine vimLastLine False
+      liftIO $ V.toList res `shouldContain` ["zero is in scope as"]
 

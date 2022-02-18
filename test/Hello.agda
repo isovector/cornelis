@@ -1,5 +1,5 @@
 module Hello where
-
+open import Agda.Builtin.Nat
 data Bool : Set where
   true : Bool
   false : Bool

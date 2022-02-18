@@ -190,10 +190,14 @@ refine = withAgda $ void $ withGoalAtCursor $ \b goal -> do
 
 doWhyInScope :: CommandArguments -> Neovim CornelisEnv ()
 doWhyInScope _ = do
+  thing <- input "Why is what in scope? " Nothing Nothing
+  whyInScope thing
+
+whyInScope :: Text -> Neovim CornelisEnv ()
+whyInScope thing = do
   withAgda $ void $ withCurrentBuffer $ \b -> do
-    thing <- input "Why is what in scope? " Nothing Nothing
     agda <- getAgda b
-    flip runIOTCM agda $ Cmd_why_in_scope_toplevel thing
+    flip runIOTCM agda $ Cmd_why_in_scope_toplevel $ T.unpack thing
 
 doNormalize :: CommandArguments -> Neovim CornelisEnv ()
 doNormalize _ = do

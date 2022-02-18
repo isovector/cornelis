@@ -73,7 +73,17 @@ diffSpec
     -> [Diff Text]
     -> (Window -> Buffer -> Neovim CornelisEnv ())
     -> Spec
-diffSpec name secs fp diffs m = do
+diffSpec name secs fp diffs m =
+  vimSpec name secs fp $ \w b -> intervention b diffs $ m w b
+
+
+vimSpec
+    :: String
+    -> Seconds
+    -> FilePath
+    -> (Window -> Buffer -> Neovim CornelisEnv ())
+    -> Spec
+vimSpec name secs fp m = do
   let withNeovimEmbedded f a = testWithEmbeddedNeovim f secs () a
   it name . withNeovimEmbedded Nothing $ do
     env <- cornelisInit
@@ -83,7 +93,7 @@ diffSpec name secs fp diffs m = do
       liftIO $ threadDelay 1e6
       w <- vim_get_current_window
       b <- nvim_win_get_buf w
-      intervention b diffs $ m w b
+      m w b
 
 
 mkPos :: Int32 -> Int32 -> Pos

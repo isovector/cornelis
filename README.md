@@ -44,13 +44,36 @@ exposed via the vim commands:
 :CornelisHelperFunc
 ```
 
+### Agda Input
+
 There is reasonably good support for agda-input via your `<LocalLeader>` in
 insert mode. See
 [agda-input.vim](https://github.com/isovector/cornelis/blob/master/agda-input.vim)
 for available bindings, or slap your `<LocalLeader>` while in insert mode.
 
 
-## Text Objects
+#### Disabling Default Bindings
+
+If you don't all of the default bindings, add the following to your `.vimrc`:
+
+```viml
+let g:cornelis_no_agda_input = 1
+```
+
+
+#### Adding Bindings
+
+Custom bindings can be added by calling the `cornelis#bind_input` function in
+`.vimrc`. For example:
+
+```viml
+call cornelis#bind_input("nat", "ℕ")
+```
+
+will add `<LocalLeader>nat` as an input remapping for `ℕ`.
+
+
+### Text Objects
 
 Use the `iz`/`az` text objects to operate on text between `⟨` and `⟩`. Somewhat
 surprisingly for i/a text objects, `iz` targets the _spaces_ between these

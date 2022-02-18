@@ -68,7 +68,7 @@ respond b (SolveAll solutions) = do
     getInteractionPoint b i >>= \case
       Nothing -> reportInfo $ T.pack $ "Can't find interaction point " <> show i
       Just ip -> do
-        replaceInterval b (positionToPos $ iStart $ ip_interval ip) (positionToPos $ iEnd $ ip_interval ip) $ parens ex
+        replaceInterval b (positionToPos $ iStart $ ip_interval ip) (positionToPos $ iEnd $ ip_interval ip) ex
         reload
 respond b ClearHighlighting = do
   -- delete what we know about goto positions
@@ -90,9 +90,6 @@ respond b (JumpToError _ pos) = do
       for_ ws $ flip window_set_cursor $ first (+1) lc
 respond _ Status{} = pure ()
 respond _ (Unknown k _) = reportError k
-
-parens :: Text -> Text
-parens s = "(" <> s <> ")"
 
 doMakeCase :: Buffer -> MakeCase -> Neovim env ()
 doMakeCase b (RegularCase Function clauses ip) = do

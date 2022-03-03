@@ -167,11 +167,15 @@ allGoals =
     withBufferStuff b $ \bs -> do
       goalWindow b $ bs_goals bs
 
+normalizationMode :: Neovim CornelisEnv Rewrite
+normalizationMode = pure Normalised
+
 
 solveOne :: CommandArguments -> Neovim CornelisEnv ()
 solveOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
-  flip runIOTCM agda $ Cmd_solveOne Simplified (InteractionId $ ip_id goal) noRange ""
+  mode <- normalizationMode
+  flip runIOTCM agda $ Cmd_solveOne mode (InteractionId $ ip_id goal) noRange ""
 
 autoOne :: CommandArguments -> Neovim CornelisEnv ()
 autoOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
@@ -181,7 +185,8 @@ autoOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
 typeContext :: CommandArguments -> Neovim CornelisEnv ()
 typeContext _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
-  flip runIOTCM agda $ Cmd_goal_type_context Simplified (InteractionId $ ip_id goal) noRange ""
+  mode <- normalizationMode
+  flip runIOTCM agda $ Cmd_goal_type_context mode (InteractionId $ ip_id goal) noRange ""
 
 doRefine :: CommandArguments -> Neovim CornelisEnv ()
 doRefine = const refine
@@ -213,7 +218,8 @@ helperFunc :: Text -> Neovim CornelisEnv ()
 helperFunc expr = do
   withAgda $ void $ withGoalAtCursor $ \b goal -> do
     agda <- getAgda b
-    flip runIOTCM agda $ Cmd_helper_function Simplified (InteractionId $ ip_id goal) noRange $ T.unpack expr
+    mode <- normalizationMode
+    flip runIOTCM agda $ Cmd_helper_function mode (InteractionId $ ip_id goal) noRange $ T.unpack expr
 
 doHelperFunc :: CommandArguments -> Neovim CornelisEnv ()
 doHelperFunc _ = do

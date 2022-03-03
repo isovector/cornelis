@@ -203,7 +203,8 @@ cornelis = do
   wrapPlugin $ Plugin
     { environment = env
     , exports =
-        [ $(command "CornelisLoad"           'doLoad)           [CmdSync Async]
+        [ $(command "CornelisRestart"        'doRestart)        [CmdSync Async]
+        , $(command "CornelisLoad"           'doLoad)           [CmdSync Async]
         , $(command "CornelisGoals"          'doAllGoals)       [CmdSync Async]
         , $(command "CornelisSolve"          'solveOne)         [CmdSync Async]
         , $(command "CornelisAuto"           'autoOne)          [CmdSync Async]

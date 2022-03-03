@@ -27,7 +27,7 @@ debugJson = False
 
 spawnAgda :: Buffer -> Neovim CornelisEnv Agda
 spawnAgda buffer = do
-  (m_in, m_out, _, _) <-
+  (m_in, m_out, _, hdl) <-
     liftIO $ createProcess $
       (proc "agda" ["--interaction-json"])
         { std_in = CreatePipe , std_out = CreatePipe }
@@ -45,7 +45,7 @@ spawnAgda buffer = do
           Left err -> vim_report_error $ T.pack err
           Right re -> liftIO $ writeChan chan $ AgdaResp buffer re
 
-      pure $ Agda buffer hin
+      pure $ Agda buffer hin hdl
     (_, _) -> error "can't start agda"
 
 

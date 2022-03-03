@@ -35,6 +35,7 @@ import GHC.Stack
 import Neovim hiding (err)
 import Neovim.API.Text (Buffer(..), Window)
 import System.IO (Handle)
+import System.Process (ProcessHandle)
 
 deriving stock instance Ord Buffer
 
@@ -49,7 +50,8 @@ type Pos = Pos' LineOffset
 
 data Agda = Agda
   { a_buffer :: Buffer
-  , a_req  :: Handle
+  , a_req    :: Handle
+  , a_hdl    :: ProcessHandle
   }
   deriving Generic
 

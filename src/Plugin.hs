@@ -18,6 +18,7 @@ import           Cornelis.Types
 import           Cornelis.Types.Agda hiding (Error)
 import           Cornelis.Utils
 import           Cornelis.Vim
+import           Data.Foldable (for_)
 import           Data.List
 import qualified Data.Map as M
 import           Data.Maybe (catMaybes)
@@ -26,6 +27,7 @@ import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
 import           Neovim.User.Input (input)
+import           System.Process (terminateProcess)
 
 
 
@@ -166,6 +168,13 @@ allGoals =
   withAgda $ withCurrentBuffer $ \b ->
     withBufferStuff b $ \bs -> do
       goalWindow b $ bs_goals bs
+
+doRestart :: CommandArguments -> Neovim CornelisEnv ()
+doRestart _ = do
+  bs <- gets cs_buffers
+  modify $ #cs_buffers .~ mempty
+  liftIO $ for_ bs $ terminateProcess . a_hdl . bs_agda_proc
+
 
 normalizationMode :: Neovim CornelisEnv Rewrite
 normalizationMode = pure Normalised

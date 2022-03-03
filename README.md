@@ -44,6 +44,10 @@ exposed via the vim commands:
 :CornelisHelperFunc
 ```
 
+If you need to restart the plugin (eg if Agda is stuck in a loop), you can
+restart everything via `:CornelisRestart`.
+
+
 ### Agda Input
 
 There is reasonably good support for agda-input via your `<LocalLeader>` in

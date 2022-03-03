@@ -28,6 +28,7 @@ import           Neovim
 import           Neovim.API.Text
 import           Neovim.User.Input (input)
 import           System.Process (terminateProcess)
+import           Text.Read (readMaybe)
 
 
 
@@ -176,26 +177,33 @@ doRestart _ = do
   liftIO $ for_ bs $ terminateProcess . a_hdl . bs_agda_proc
 
 
-normalizationMode :: Neovim CornelisEnv Rewrite
+normalizationMode :: Neovim env Rewrite
 normalizationMode = pure Normalised
 
 
-solveOne :: CommandArguments -> Neovim CornelisEnv ()
-solveOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
-  agda <- getAgda b
-  mode <- normalizationMode
-  flip runIOTCM agda $ Cmd_solveOne mode (InteractionId $ ip_id goal) noRange ""
+solveOne :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
+solveOne _ ms = withNormalizationMode ms $ \mode ->
+  withAgda $ void $ withGoalAtCursor $ \b goal -> do
+    agda <- getAgda b
+    flip runIOTCM agda $ Cmd_solveOne mode (InteractionId $ ip_id goal) noRange ""
 
 autoOne :: CommandArguments -> Neovim CornelisEnv ()
 autoOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
   flip runIOTCM agda $ Cmd_autoOne (InteractionId $ ip_id goal) noRange ""
 
-typeContext :: CommandArguments -> Neovim CornelisEnv ()
-typeContext _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
-  agda <- getAgda b
-  mode <- normalizationMode
-  flip runIOTCM agda $ Cmd_goal_type_context mode (InteractionId $ ip_id goal) noRange ""
+withNormalizationMode :: Maybe String -> (Rewrite -> Neovim e ()) -> Neovim e ()
+withNormalizationMode Nothing f = normalizationMode >>= f
+withNormalizationMode (Just s) f =
+  case readMaybe s of
+    Nothing -> reportError $ "Invalid normalization mode: " <> T.pack s
+    Just nm -> f nm
+
+typeContext :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
+typeContext _ ms = withNormalizationMode ms $ \mode ->
+  withAgda $ void $ withGoalAtCursor $ \b goal -> do
+    agda <- getAgda b
+    flip runIOTCM agda $ Cmd_goal_type_context mode (InteractionId $ ip_id goal) noRange ""
 
 doRefine :: CommandArguments -> Neovim CornelisEnv ()
 doRefine = const refine
@@ -223,17 +231,16 @@ doNormalize _ = do
     agda <- getAgda b
     flip runIOTCM agda $ Cmd_compute_toplevel DefaultCompute thing
 
-helperFunc :: Text -> Neovim CornelisEnv ()
-helperFunc expr = do
+helperFunc :: Rewrite -> Text -> Neovim CornelisEnv ()
+helperFunc mode expr = do
   withAgda $ void $ withGoalAtCursor $ \b goal -> do
     agda <- getAgda b
-    mode <- normalizationMode
     flip runIOTCM agda $ Cmd_helper_function mode (InteractionId $ ip_id goal) noRange $ T.unpack expr
 
-doHelperFunc :: CommandArguments -> Neovim CornelisEnv ()
-doHelperFunc _ = do
+doHelperFunc :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
+doHelperFunc _ ms = withNormalizationMode ms $ \mode -> do
   expr <- input "Expression: " Nothing Nothing
-  helperFunc expr
+  helperFunc mode expr
 
 doCaseSplit :: CommandArguments -> Neovim CornelisEnv ()
 doCaseSplit _ = do

@@ -31,18 +31,22 @@ exposed via the vim commands:
 ```
 :CornelisLoad
 :CornelisGoals
-:CornelisTypeContext
+:CornelisTypeContext <RW>
 :CornelisRefine
 :CornelisAuto
-:CornelisSolve
+:CornelisSolve <RW>
 :CornelisMakeCase
 :CornelisGoToDefinition
 :CornelisPrevGoal
 :CornelisNextGoal
 :CornelisWhyInScope
 :CornelisNormalize
-:CornelisHelperFunc
+:CornelisHelperFunc <RW>
 ```
+
+Commands with an `<RW>` argument take an optional normalization mode argument,
+one of `AsIs`, `Instantiated`, `HeadNormal`, `Simplified` or `Normalised`. When
+omitted, defaults to `Normalised`.
 
 If you need to restart the plugin (eg if Agda is stuck in a loop), you can
 restart everything via `:CornelisRestart`.

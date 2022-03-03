@@ -7,6 +7,7 @@ module TestSpec where
 import           Control.Concurrent (threadDelay)
 import           Control.Monad (void)
 import           Cornelis.Types
+import           Cornelis.Types.Agda (Rewrite (..))
 import           Cornelis.Utils (withBufferStuff)
 import           Cornelis.Vim
 import qualified Data.Text as T
@@ -30,7 +31,7 @@ spec = do
   diffSpec "should support helper functions" (Seconds 5) "test/Hello.agda"
       [ Modify "" "test : Unit"] $ \w _ -> do
     goto w 11 8
-    helperFunc "test"
+    helperFunc Normalised "test"
     liftIO $ threadDelay 5e5
     void $ vim_command "normal! G\"\"p"
 

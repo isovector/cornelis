@@ -234,9 +234,26 @@ endfunction
 
 Feeling spicy? Automatically run `CornelisLoad` every time you save the file.
 
-```haskell
+```viml
 au BufWritePost *.agda execute "normal! :CornelisLoad\<CR>"
 ```
+
+If you'd like to automatically load files when you open them too, try this:
+
+```viml
+function! CornelisLoadWrapper()
+  if exists(":CornelisLoad") ==# 2
+    CornelisLoad
+  endif
+endfunction
+
+au BufReadPre *.agda call CornelisLoadWrapper()
+au BufReadPre *.lagda* call CornelisLoadWrapper()
+```
+
+This won't work on the first Agda file you open due to a bug, but it will
+successfully load subsequent files.
+
 
 ## Contributing
 

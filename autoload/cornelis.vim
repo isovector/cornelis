@@ -1,5 +1,5 @@
 function! cornelis#bind_input(key, result)
-    let str = "<buffer> <LocalLeader>" . a:key . " " . a:result
+    let str = "<buffer> <LocalLeader>" . substitute(a:key, "|", "<bar>", "g") . " " . a:result
     exec "inoremap " . str
     exec "cnoremap " . str
 

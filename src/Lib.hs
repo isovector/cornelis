@@ -68,12 +68,12 @@ respond b (GiveAction result ip) = do
   reload
 -- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
-  for_ solutions $ \(Solution i ex) -> do
+  for_ solutions $ \(Solution i ex) ->
     getInteractionPoint b i >>= \case
       Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
       Just ip -> do
         replaceInterval b (positionToPos $ iStart $ ip_interval ip) (positionToPos $ iEnd $ ip_interval ip) ex
-        reload
+  reload
 respond b ClearHighlighting = do
   -- delete what we know about goto positions
   modifyBufferStuff b $ #bs_goto_sites .~ mempty

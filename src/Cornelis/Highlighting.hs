@@ -154,7 +154,7 @@ parseExtmark b
   let start_line = LineNumber $ fromIntegral $ line + 1
   end_line <- hoistMaybe $ fmap (LineNumber . (+1) . fromIntegral)
             . objectToInt =<< M.lookup (ObjectString "end_row") details
-  hlgroup <- hoistMaybe $ objectToText =<< M.lookup (ObjectString "hlgroup") details
+  hlgroup <- hoistMaybe $ objectToText =<< M.lookup (ObjectString "hl_group") details
   sc <- lift $ unvimifyColumn b start_line $ fromIntegral col
   ec <- lift $ unvimifyColumn b end_line   $ fromIntegral vim_end_col
   pure $ ExtmarkStuff

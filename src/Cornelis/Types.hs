@@ -323,4 +323,5 @@ data ExtmarkStuff = ExtmarkStuff
   , es_hlgroup  :: Text
   , es_interval :: Interval' LineOffset
   }
+  deriving (Eq, Ord, Show)
 

@@ -27,6 +27,8 @@ import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
 
+holeHlGroup :: HighlightGroup
+holeHlGroup = Todo
 
 hlGroup :: Text -> HighlightGroup
 hlGroup "keyword"              = Keyword
@@ -38,7 +40,7 @@ hlGroup "bound"                = Identifier
 hlGroup "inductiveconstructor" = Constant
 hlGroup "number"               = Number
 hlGroup "comment"              = Comment
-hlGroup "hole"                 = Todo
+hlGroup "hole"                 = holeHlGroup
 hlGroup "unsolvedmeta"         = Todo
 hlGroup "string"               = String
 hlGroup "catchallclause"       = Folded

@@ -1,22 +1,24 @@
+{-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Cornelis.Goals where
 
 import           Control.Arrow ((&&&))
 import           Control.Lens
-import           Control.Monad.State.Class
 import           Cornelis.Agda (withAgda)
+import           Cornelis.Highlighting (getExtmarks, holeHlGroup)
 import           Cornelis.Offsets
 import           Cornelis.Types
 import           Cornelis.Types.Agda
 import           Cornelis.Utils
 import           Cornelis.Vim
-import           Data.Foldable (toList)
+import           Data.Foldable (toList, fold)
+import qualified Data.IntMap as IM
 import           Data.List
-import qualified Data.Map as M
 import           Data.Maybe
 import           Data.Ord
 import qualified Data.Text as T
+import           Data.Traversable (for)
 import           Neovim
 import           Neovim.API.Text
 
@@ -60,13 +62,34 @@ nextGoal =
                           , offsetDiff (p_col goal) (p_col pos)
                           )
 
+------------------------------------------------------------------------------
+-- | Uses highlighting extmarks to determine what a hole is; since the user
+-- might have typed inside of a {! !} goal since they last saved.
 getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe (InteractionPoint Identity LineOffset))
 getGoalAtCursor = do
   w <- nvim_get_current_win
   b <- window_get_buffer w
-  p <- getWindowCursor w
-  ips <- fmap bs_ips . M.lookup b <$> gets cs_buffers
-  pure (b, ips >>= flip lookupGoal p)
+  z <- withBufferStuff b $ \bs -> do
+    p <- getWindowCursor w
+    marks <- getExtmarks b p
+    let todo = T.pack $ show holeHlGroup
+
+    fmap fold $ for marks $ \es -> do
+      case es_hlgroup es == todo of
+        False -> pure mempty
+        True -> do
+          case find ((== (iStart $ es_interval es)) . iStart . ip_interval)
+                  $ toList (bs_ips bs) of
+            Nothing -> pure mempty
+            Just ip -> do
+              let ip' = ip { ip_interval' = Identity $ es_interval es }
+              -- BIG HACK!!
+              -- This is a convenient place to update our global mapping of
+              -- where our holes are, since we just found one.
+              modifyBufferStuff b $ #bs_ips %~ IM.insert (ip_id ip') ip'
+              pure $ pure ip'
+
+  pure (b, getFirst z)
 
 
 lookupGoal :: Foldable t => t (InteractionPoint Identity LineOffset) -> Pos -> Maybe (InteractionPoint Identity LineOffset)

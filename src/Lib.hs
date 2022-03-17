@@ -34,7 +34,7 @@ import           Plugin
 
 
 
-getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe (InteractionPoint LineOffset))
+getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe (InteractionPoint Identity LineOffset))
 getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
 
 
@@ -52,7 +52,8 @@ respond b (DisplayInfo dp) = do
   goalWindow b dp
 -- Update the buffer's interaction points map
 respond b (InteractionPoints ips) = do
-  modifyBufferStuff b $ #bs_ips .~ (IM.fromList $ fmap (ip_id &&& id) $ fmap (fmap agdaToLine) ips)
+  let ips' = mapMaybe sequenceInteractionPoint ips
+  modifyBufferStuff b $ #bs_ips .~ (IM.fromList $ fmap (ip_id &&& id) $ fmap (fmap agdaToLine) ips')
 -- Replace a function clause
 respond b (MakeCase mkcase) = do
   doMakeCase b mkcase
@@ -95,7 +96,7 @@ doMakeCase :: Buffer -> MakeCase -> Neovim env ()
 doMakeCase b (RegularCase Function clauses ip) = do
   let int = ip_interval
           $ fmap agdaToLine
-          $ ip & #ip_interval . #iStart . #posCol .~ Offset 1
+          $ ip & #ip_interval' . #_Identity . #iStart . #posCol .~ Offset 1
       start = positionToPos $ iStart int
       end = positionToPos $ iEnd int
   ins <- getIndent b $ p_line start

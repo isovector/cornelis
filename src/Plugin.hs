@@ -55,7 +55,7 @@ getAgda :: Buffer -> Neovim CornelisEnv Agda
 getAgda buffer = gets $ bs_agda_proc . (M.! buffer) . cs_buffers
 
 
-getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe (InteractionPoint LineOffset))
+getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe (InteractionPoint Identity LineOffset))
 getGoalAtCursor = do
   w <- nvim_get_current_win
   b <- window_get_buffer w
@@ -64,14 +64,14 @@ getGoalAtCursor = do
   pure (b, ips >>= flip lookupGoal p)
 
 
-lookupGoal :: Foldable t => t (InteractionPoint LineOffset) -> Pos -> Maybe (InteractionPoint LineOffset)
-lookupGoal ips p = flip find ips $ (\(InteractionPoint _ iv) -> containsPoint iv p)
+lookupGoal :: Foldable t => t (InteractionPoint Identity LineOffset) -> Pos -> Maybe (InteractionPoint Identity LineOffset)
+lookupGoal ips p = flip find ips $ (\(InteractionPoint _ (Identity iv)) -> containsPoint iv p)
 
 containsPoint :: Ord a => Interval' a -> Pos' a -> Bool
 containsPoint (Interval s e) (posToPosition -> p) = s <= p && p < e
 
 
-withGoalAtCursor :: (Buffer -> InteractionPoint LineOffset -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
+withGoalAtCursor :: (Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
 withGoalAtCursor f = getGoalAtCursor >>= \case
    (_, Nothing) -> do
      reportInfo "No goal at cursor"
@@ -79,7 +79,7 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
    (b, Just ip) -> fmap Just $ f b ip
 
 
-getGoalContents :: Buffer -> InteractionPoint LineOffset -> Neovim CornelisEnv Text
+getGoalContents :: Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv Text
 getGoalContents b ip = do
   iv <- getBufferInterval b $ ip_interval ip
   -- Chop off {!, !} and trim any spaces.

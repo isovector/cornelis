@@ -28,6 +28,7 @@ import Data.Aeson hiding (Error)
 import Data.Generics.Labels ()
 import Data.IntMap.Strict (IntMap)
 import Data.Map (Map)
+import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import Data.Tuple (swap)
 import GHC.Generics
@@ -36,6 +37,7 @@ import Neovim hiding (err)
 import Neovim.API.Text (Buffer(..), Window)
 import System.IO (Handle)
 import System.Process (ProcessHandle)
+import Data.Functor.Identity
 
 deriving stock instance Ord Buffer
 
@@ -57,7 +59,7 @@ data Agda = Agda
 
 data BufferStuff = BufferStuff
   { bs_agda_proc  :: Agda
-  , bs_ips        :: IntMap (InteractionPoint LineOffset)
+  , bs_ips        :: IntMap (InteractionPoint Identity LineOffset)
   , bs_goto_sites :: Map Extmark DefinitionSite
   , bs_goals      :: DisplayInfo
   , bs_info_win   :: InfoBuffer
@@ -104,8 +106,8 @@ data Response
     , status_showImplicits :: Bool
     }
   | JumpToError FilePath BufferOffset
-  | InteractionPoints [InteractionPoint AgdaOffset]
-  | GiveAction Text (InteractionPoint AgdaOffset)
+  | InteractionPoints [InteractionPoint Maybe AgdaOffset]
+  | GiveAction Text (InteractionPoint Identity AgdaOffset)
   | MakeCase MakeCase
   | SolveAll [Solution]
   | Unknown Text Value
@@ -138,7 +140,7 @@ instance FromJSON Highlight where
       <*> fmap (!! 1) (obj .: "range")
 
 data MakeCase
-  = RegularCase MakeCaseVariant [Text] (InteractionPoint AgdaOffset)
+  = RegularCase MakeCaseVariant [Text] (InteractionPoint Identity AgdaOffset)
   deriving (Eq, Ord, Show, Generic)
 
 data MakeCaseVariant = Function | ExtendedLambda
@@ -156,15 +158,26 @@ data Solution = Solution
   }
   deriving (Eq, Ord, Show)
 
-data InteractionPoint a = InteractionPoint
+data InteractionPoint f a = InteractionPoint
   { ip_id :: Int
-  , ip_interval :: Interval' a
+  , ip_interval' :: f (Interval' a)
   }
-  deriving (Eq, Ord, Show, Generic, Functor)
+  deriving stock (Generic, Functor)
+
+ip_interval :: InteractionPoint Identity a -> Interval' a
+ip_interval (InteractionPoint _ (Identity i)) = i
+
+sequenceInteractionPoint :: Applicative f => InteractionPoint f a -> f (InteractionPoint Identity a)
+sequenceInteractionPoint (InteractionPoint n f) = InteractionPoint <$> pure n <*> fmap Identity f
+
+
+deriving instance Eq (f (Interval' a)) => Eq (InteractionPoint f a)
+deriving instance Ord (f (Interval' a)) => Ord (InteractionPoint f a)
+deriving instance Show (f (Interval' a)) => Show (InteractionPoint f a)
 
 data NamedPoint = NamedPoint
   { np_name :: Text
-  , np_interval :: IntervalWithoutFile
+  , np_interval :: Maybe (IntervalWithoutFile)
   }
   deriving (Eq, Ord, Show)
 
@@ -172,13 +185,17 @@ instance FromJSON IntervalWithoutFile where
   parseJSON = withObject "IntervalWithoutFile" $ \obj -> do
     Interval <$> obj .: "start" <*> obj .: "end"
 
-instance FromJSON (Interval' a) => FromJSON (InteractionPoint a) where
+instance FromJSON (Interval' a) => FromJSON (InteractionPoint Maybe a) where
+  parseJSON = withObject "InteractionPoint" $ \obj -> do
+    InteractionPoint <$> obj .: "id" <*> fmap listToMaybe (obj .: "range")
+
+instance FromJSON (Interval' a) => FromJSON (InteractionPoint Identity a) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range")
 
 instance FromJSON NamedPoint where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
-    NamedPoint <$> obj .: "name" <*> fmap head (obj .: "range")
+    NamedPoint <$> obj .: "name" <*> fmap listToMaybe (obj .: "range")
 
 instance FromJSON b => FromJSON (Position' b) where
   parseJSON = withObject "Position" $ \obj -> do
@@ -226,12 +243,12 @@ instance FromJSON Message where
 
 data DisplayInfo
   = AllGoalsWarnings
-      { di_all_visible :: [GoalInfo (InteractionPoint AgdaOffset)]
+      { di_all_visible :: [GoalInfo (InteractionPoint Identity AgdaOffset)]
       , di_all_invisible :: [GoalInfo NamedPoint]
       , di_errors :: [Message]
       , di_warnings :: [Message]
       }
-  | GoalSpecific (InteractionPoint AgdaOffset) [InScope] Type
+  | GoalSpecific (InteractionPoint Identity AgdaOffset) [InScope] Type
   | HelperFunction Text
   | DisplayError Text
   | WhyInScope Text

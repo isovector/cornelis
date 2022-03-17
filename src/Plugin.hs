@@ -9,9 +9,10 @@ module Plugin where
 import           Control.Lens
 import           Control.Monad.State.Class
 import           Control.Monad.Trans
-import           Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
+import           Cornelis.Agda (withCurrentBuffer, runIOTCM, withAgda, getAgda)
+import           Cornelis.Goals
 import           Cornelis.Highlighting (getExtmarks)
-import           Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
+import           Cornelis.InfoWin (showInfoWindow)
 import           Cornelis.Offsets
 import           Cornelis.Pretty (prettyGoals)
 import           Cornelis.Types
@@ -21,7 +22,6 @@ import           Cornelis.Vim
 import           Data.Foldable (for_, toList, fold)
 import           Data.List
 import qualified Data.Map as M
-import           Data.Maybe (fromMaybe)
 import           Data.Ord
 import qualified Data.Text as T
 import           Data.Traversable (for)
@@ -34,58 +34,6 @@ import           Text.Read (readMaybe)
 
 
 
-------------------------------------------------------------------------------
--- | Ensure we have a 'BufferStuff' attached to the current buffer.
-withAgda :: Neovim CornelisEnv a -> Neovim CornelisEnv a
-withAgda m = do
-  buffer <- vim_get_current_buffer
-  gets (M.lookup buffer . cs_buffers) >>= \case
-    Just _ -> m
-    Nothing -> do
-      agda <- spawnAgda buffer
-      iw <- buildInfoBuffer
-      modify' $ #cs_buffers %~ M.insert buffer BufferStuff
-        { bs_agda_proc = agda
-        , bs_ips = mempty
-        , bs_goto_sites = mempty
-        , bs_goals = AllGoalsWarnings [] [] [] []
-        , bs_info_win = iw
-        }
-      m
-
-getAgda :: Buffer -> Neovim CornelisEnv Agda
-getAgda buffer = gets $ bs_agda_proc . (M.! buffer) . cs_buffers
-
-
-getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe (InteractionPoint Identity LineOffset))
-getGoalAtCursor = do
-  w <- nvim_get_current_win
-  b <- window_get_buffer w
-  p <- getWindowCursor w
-  ips <- fmap bs_ips . M.lookup b <$> gets cs_buffers
-  pure (b, ips >>= flip lookupGoal p)
-
-
-lookupGoal :: Foldable t => t (InteractionPoint Identity LineOffset) -> Pos -> Maybe (InteractionPoint Identity LineOffset)
-lookupGoal ips p = flip find ips $ (\(InteractionPoint _ (Identity iv)) -> containsPoint iv p)
-
-
-withGoalAtCursor :: (Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
-withGoalAtCursor f = getGoalAtCursor >>= \case
-   (_, Nothing) -> do
-     reportInfo "No goal at cursor"
-     pure Nothing
-   (b, Just ip) -> fmap Just $ f b ip
-
-
-getGoalContents :: Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv Text
-getGoalContents b ip = do
-  iv <- getBufferInterval b $ ip_interval ip
-  -- Chop off {!, !} and trim any spaces.
-  -- Unclear why this is dropEnd 3 instead of 2, but it works.
-  pure $ T.strip $ T.dropEnd 3 $ T.drop 2 $ iv
-
-
 getDefinitionSites :: Buffer -> Pos -> Neovim CornelisEnv (First DefinitionSite)
 getDefinitionSites b p = withBufferStuff b $ \bs -> do
   marks <- getExtmarks b p
@@ -95,6 +43,7 @@ getDefinitionSites b p = withBufferStuff b $ \bs -> do
 
 doGotoDefinition :: CommandArguments -> Neovim CornelisEnv ()
 doGotoDefinition _ = gotoDefinition
+
 
 gotoDefinition :: Neovim CornelisEnv ()
 gotoDefinition = withAgda $ do
@@ -112,6 +61,7 @@ gotoDefinition = withAgda $ do
       -- TODO(sandy): use window_set_cursor instead?
       vim_command $ "keepjumps normal! " <> T.pack (show buffer_idx) <> "go"
 
+
 reload :: Neovim CornelisEnv ()
 reload = do
   vim_command "noautocmd w"
@@ -120,6 +70,7 @@ reload = do
 
 doLoad :: CommandArguments -> Neovim CornelisEnv ()
 doLoad = const load
+
 
 load :: Neovim CornelisEnv ()
 load = withAgda $ do
@@ -130,11 +81,13 @@ load = withAgda $ do
 doAllGoals :: CommandArguments -> Neovim CornelisEnv ()
 doAllGoals = const allGoals
 
+
 allGoals :: Neovim CornelisEnv ()
 allGoals =
   withAgda $ withCurrentBuffer $ \b ->
     withBufferStuff b $ \bs -> do
       goalWindow b $ bs_goals bs
+
 
 doRestart :: CommandArguments -> Neovim CornelisEnv ()
 doRestart _ = do

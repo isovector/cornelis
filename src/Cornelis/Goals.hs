@@ -2,18 +2,24 @@
 
 module Cornelis.Goals where
 
-import Control.Arrow ((&&&))
-import Cornelis.Offsets
-import Cornelis.Types
-import Cornelis.Types.Agda
-import Cornelis.Utils
-import Cornelis.Vim
-import Data.Foldable (toList, maximumBy)
-import Data.Maybe
-import Data.Ord (comparing, Down (Down))
-import Neovim
-import Neovim.API.Text
-import Plugin
+import           Control.Arrow ((&&&))
+import           Control.Lens
+import           Control.Monad.State.Class
+import           Cornelis.Agda (withAgda)
+import           Cornelis.Offsets
+import           Cornelis.Types
+import           Cornelis.Types.Agda
+import           Cornelis.Utils
+import           Cornelis.Vim
+import           Data.Foldable (toList)
+import           Data.List
+import qualified Data.Map as M
+import           Data.Maybe
+import           Data.Ord
+import qualified Data.Text as T
+import           Neovim
+import           Neovim.API.Text
+
 
 -- | Find a goal in the current window
 findGoal :: Ord a => (Pos -> Pos -> Maybe a) -> Neovim CornelisEnv ()
@@ -53,4 +59,37 @@ nextGoal =
       True -> Just $ Down ( lineDiff (p_line goal) (p_line pos)
                           , offsetDiff (p_col goal) (p_col pos)
                           )
+
+getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe (InteractionPoint Identity LineOffset))
+getGoalAtCursor = do
+  w <- nvim_get_current_win
+  b <- window_get_buffer w
+  p <- getWindowCursor w
+  ips <- fmap bs_ips . M.lookup b <$> gets cs_buffers
+  pure (b, ips >>= flip lookupGoal p)
+
+
+lookupGoal :: Foldable t => t (InteractionPoint Identity LineOffset) -> Pos -> Maybe (InteractionPoint Identity LineOffset)
+lookupGoal ips p = flip find ips $ (\(InteractionPoint _ (Identity iv)) -> containsPoint iv p)
+
+
+withGoalAtCursor :: (Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
+withGoalAtCursor f = getGoalAtCursor >>= \case
+   (_, Nothing) -> do
+     reportInfo "No goal at cursor"
+     pure Nothing
+   (b, Just ip) -> fmap Just $ f b ip
+
+
+getGoalContents_maybe :: Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv (Maybe Text)
+getGoalContents_maybe b ip = do
+  iv <- fmap T.strip $ getBufferInterval b $ ip_interval ip
+  traceMX "iv" $ show iv
+  pure $ case iv of
+    "?" -> Nothing
+         -- Chop off {!, !} and trim any spaces.
+    _ -> Just $ T.strip $ T.dropEnd 2 $ T.drop 2 $ iv
+
+getGoalContents :: Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv Text
+getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 

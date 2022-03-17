@@ -158,6 +158,17 @@ setHighlight b (sl, sc) (el, ec) hl = do
       )
     ]
 
+highlightInterval
+    :: Buffer
+    -> Interval' LineOffset
+    -> HighlightGroup
+    -> Neovim CornelisEnv Extmark
+highlightInterval b int hl = do
+  Interval (Pos sl sc) (Pos el ec) <- traverseInterval (vimifyPositionM b) int
+  let to_vim = subtract 1 . fromIntegral . getOneIndexedLineNumber
+  setHighlight b (to_vim sl, sc) (to_vim el, ec) hl
+
+
 parseExtmark :: Buffer -> Object -> Neovim CornelisEnv (Maybe ExtmarkStuff)
 parseExtmark b
   (ObjectArray ( (objectToInt -> Just ext)

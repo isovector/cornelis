@@ -11,10 +11,10 @@ import           Control.Monad.State.Class
 import           Control.Monad.Trans
 import           Cornelis.Agda (withCurrentBuffer, runIOTCM, withAgda, getAgda)
 import           Cornelis.Goals
-import           Cornelis.Highlighting (getExtmarks)
+import           Cornelis.Highlighting (getExtmarks, highlightInterval)
 import           Cornelis.InfoWin (showInfoWindow)
 import           Cornelis.Offsets
-import           Cornelis.Pretty (prettyGoals)
+import           Cornelis.Pretty (prettyGoals, HighlightGroup (Todo))
 import           Cornelis.Types
 import           Cornelis.Types.Agda hiding (Error)
 import           Cornelis.Utils
@@ -85,6 +85,14 @@ questionMarkToMeta b ips = do
         -- We only don't have a goal contents if we are a ? goal
         Nothing -> do
           replaceInterval b (iStart int) (iEnd int) "{! !}"
+          let int' = int
+                   { iEnd = (iStart int)
+                                -- Inclusive, so we add only 4 offset, rather
+                                -- than the 5 for the characters
+                      { p_col = offsetPlus (p_col $ iStart int) (Offset 4)
+                      }
+                   }
+          void $ highlightInterval b int' Todo
           pure $ Any True
         Just _ -> pure $ Any False
 

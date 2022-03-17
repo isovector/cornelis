@@ -79,6 +79,14 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
    (b, Just ip) -> fmap Just $ f b ip
 
 
+getGoalContents :: Buffer -> InteractionPoint LineOffset -> Neovim CornelisEnv Text
+getGoalContents b ip = do
+  iv <- getBufferInterval b $ ip_interval ip
+  -- Chop off {!, !} and trim any spaces.
+  -- Unclear why this is dropEnd 3 instead of 2, but it works.
+  pure $ T.strip $ T.dropEnd 3 $ T.drop 2 $ iv
+
+
 parseExtmark :: Buffer -> Object -> Neovim CornelisEnv (Maybe (Extmark, Interval' LineOffset))
 parseExtmark b
   (ObjectArray ( (objectToInt -> Just ext)
@@ -189,7 +197,8 @@ solveOne _ ms = withNormalizationMode ms $ \mode ->
 autoOne :: CommandArguments -> Neovim CornelisEnv ()
 autoOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
-  flip runIOTCM agda $ Cmd_autoOne (InteractionId $ ip_id goal) noRange ""
+  t <- getGoalContents b goal
+  flip runIOTCM agda $ Cmd_autoOne (InteractionId $ ip_id goal) noRange $ T.unpack t
 
 withNormalizationMode :: Maybe String -> (Rewrite -> Neovim e ()) -> Neovim e ()
 withNormalizationMode Nothing f = normalizationMode >>= f
@@ -210,7 +219,8 @@ doRefine = const refine
 refine :: Neovim CornelisEnv ()
 refine = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
-  flip runIOTCM agda $ Cmd_refine_or_intro True (InteractionId $ ip_id goal) noRange ""
+  t <- getGoalContents b goal
+  flip runIOTCM agda $ Cmd_refine_or_intro True (InteractionId $ ip_id goal) noRange $ T.unpack t
 
 doWhyInScope :: CommandArguments -> Neovim CornelisEnv ()
 doWhyInScope _ = do

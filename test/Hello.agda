@@ -24,3 +24,7 @@ module _ where
   testIndent true = ?
   testIndent false = ?
 
+isEven∘ : Nat → Set
+isEven∘ zero = Nat
+isEven∘ (suc n) = {! isEven∘ !}
+

@@ -56,6 +56,11 @@ spec = do
     goto w 24 18
     caseSplit "b"
 
+  diffSpec "should refine with hints" (Seconds 5) "test/Hello.agda"
+      [ Modify "isEven∘ (suc n) = {! isEven∘ !}" "isEven∘ (suc n) = isEven∘ ?"] $ \w _ -> do
+    goto w 29 24
+    refine
+
   let case_split_test name row col =
         diffSpec ("should case split (" <> T.unpack name <> ")") (Seconds 5) "test/Hello.agda"
             (fmap (fmap (name <>))

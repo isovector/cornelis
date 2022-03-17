@@ -69,8 +69,21 @@ getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe (InteractionPoint Identity 
 getGoalAtCursor = do
   w <- nvim_get_current_win
   b <- window_get_buffer w
+  p <- getWindowCursor w
+  fmap (b, ) $ getGoalAtPos b p
+
+
+------------------------------------------------------------------------------
+-- | VERY BIG HACK
+--
+-- Not only does this get the goal at the position, it also updates the
+-- internal state tracking where the goal is!!!
+getGoalAtPos
+    :: Buffer
+    -> Pos
+    -> Neovim CornelisEnv (Maybe (InteractionPoint Identity LineOffset))
+getGoalAtPos b p = do
   z <- withBufferStuff b $ \bs -> do
-    p <- getWindowCursor w
     marks <- getExtmarks b p
     let todo = T.pack $ show holeHlGroup
 
@@ -89,11 +102,7 @@ getGoalAtCursor = do
               modifyBufferStuff b $ #bs_ips %~ IM.insert (ip_id ip') ip'
               pure $ pure ip'
 
-  pure (b, getFirst z)
-
-
-lookupGoal :: Foldable t => t (InteractionPoint Identity LineOffset) -> Pos -> Maybe (InteractionPoint Identity LineOffset)
-lookupGoal ips p = flip find ips $ (\(InteractionPoint _ (Identity iv)) -> containsPoint iv p)
+  pure $ getFirst z
 
 
 withGoalAtCursor :: (Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
@@ -104,15 +113,14 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
    (b, Just ip) -> fmap Just $ f b ip
 
 
-getGoalContents_maybe :: Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv (Maybe Text)
+getGoalContents_maybe :: Buffer -> Interval' LineOffset -> Neovim CornelisEnv (Maybe Text)
 getGoalContents_maybe b ip = do
-  iv <- fmap T.strip $ getBufferInterval b $ ip_interval ip
-  traceMX "iv" $ show iv
+  iv <- fmap T.strip $ getBufferInterval b ip
   pure $ case iv of
     "?" -> Nothing
          -- Chop off {!, !} and trim any spaces.
     _ -> Just $ T.strip $ T.dropEnd 2 $ T.drop 2 $ iv
 
-getGoalContents :: Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv Text
+getGoalContents :: Buffer -> Interval' LineOffset -> Neovim CornelisEnv Text
 getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 

@@ -11,9 +11,10 @@ import           Control.Monad.Trans.Maybe
 import           Cornelis.Offsets
 import           Cornelis.Pretty
 import           Cornelis.Types hiding (Type)
-import           Cornelis.Types.Agda (Interval'(..))
+import           Cornelis.Types.Agda (Interval'(..), Position' (..))
 import           Cornelis.Utils
 import           Cornelis.Vim (unvimifyColumn, vimifyPositionM)
+import           Data.Bifunctor (first)
 import           Data.Coerce (coerce)
 import           Data.IntervalMap.FingerTree (IntervalMap)
 import qualified Data.IntervalMap.FingerTree as IM
@@ -56,16 +57,22 @@ lineIntervalsForBuffer b = do
   buf_lines <- nvim_buf_get_lines b 0 (-1) True
   pure $ getLineIntervals buf_lines
 
-highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv ()
+highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv [Interval' Int64]
 highlightBuffer b hs = do
   li <- lineIntervalsForBuffer b
-  zs <- fmap catMaybes . for hs $ \hl -> do
-    mext <- addHighlight b li hl
-    pure $ do
-      ext <- mext
-      ds <- hl_definitionSite hl
-      pure (ext, ds)
+  (holes, exts) <- fmap unzip $ for hs $ \hl -> do
+    (hole, mext) <- addHighlight b li hl
+    pure (hole, (hl, mext))
+
+  let zs = catMaybes $ do
+        (hl, mext) <- exts
+        pure $ do
+          ext <- mext
+          ds <- hl_definitionSite hl
+          pure (ext, ds)
+
   modifyBufferStuff b $ #bs_goto_sites <>~ M.fromList zs
+  pure $ concat holes
 
 newtype LineIntervals = LineIntervals
   { li_intervalMap :: IntervalMap BufferOffset (LineNumber, Text)
@@ -90,32 +97,42 @@ getLineIntervals = LineIntervals . go (Offset 0) (LineNumber 0)
               <> go (coerce $ pos' + 1) (incLineNumber line) ss
       | otherwise = mempty
 
-lookupPoint :: LineIntervals -> BufferOffset -> Maybe (Int64, Int64)
+lookupPoint :: LineIntervals -> BufferOffset -> Maybe (LineNumber, Int64)
 lookupPoint (LineIntervals im) off = do
   (IM.Interval scs _, (startline, s)) <- listToMaybe $ IM.search off im
-  pure ( fromIntegral $ getOneIndexedLineNumber startline
+  pure ( startline
        , fromIntegral $ toBytes s (offsetDiff off scs) - 1
        )
 
 
+------------------------------------------------------------------------------
+-- | Returns any holes it tried to highlight on the left
 addHighlight
     :: Buffer
     -> LineIntervals
     -> Highlight
-    -> Neovim CornelisEnv (Maybe Extmark)
+    -> Neovim CornelisEnv ([Interval' Int64], Maybe Extmark)
 addHighlight b lis hl = do
-  case (,) <$> lookupPoint lis (hl_start hl)
+  case (,)
+          <$> lookupPoint lis (hl_start hl)
                -- Subtract 1 here from the end offset because unlike everywhere
                -- else in vim, extmark ranges are inclusive...
            <*> lookupPoint lis (offsetDiff (hl_end hl) (Offset 1)) of
-    Just (start, end) ->
-      fmap Just
-        $ setHighlight b start end
-        $ hlGroup
-        $ fromMaybe ""
-        $ listToMaybe
-        $ hl_atoms hl
-    Nothing -> pure Nothing
+    Just (start@(sl, sc), end@(el, ec)) -> do
+      let atom = fromMaybe "" $ listToMaybe $ hl_atoms hl
+      ext <- setHighlight b (first (fromIntegral . getOneIndexedLineNumber) start)
+                            (first (fromIntegral . getOneIndexedLineNumber) end)
+                          $ hlGroup atom
+
+      pure $ (, Just ext) $ case atom == "hole" of
+        False -> []
+        True ->
+          pure $ Interval
+            { iStart = Pn (incLineNumber sl) sc
+            , iEnd   = Pn (incLineNumber el) (ec + 1)
+            }
+    Nothing -> pure ([], Nothing)
+
 
 setHighlight
     :: Buffer

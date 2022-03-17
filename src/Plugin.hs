@@ -19,7 +19,7 @@ import           Cornelis.Types
 import           Cornelis.Types.Agda hiding (Error)
 import           Cornelis.Utils
 import           Cornelis.Vim
-import           Data.Foldable (for_, toList, fold)
+import           Data.Foldable (for_, fold)
 import           Data.List
 import qualified Data.Map as M
 import           Data.Ord
@@ -73,10 +73,31 @@ doLoad = const load
 
 
 load :: Neovim CornelisEnv ()
-load = withAgda $ do
-  agda <- withCurrentBuffer getAgda
+load = withAgda $ withCurrentBuffer $ \b -> do
+  agda <- getAgda b
   name <- buffer_get_name $ a_buffer agda
   flip runIOTCM agda $ Cmd_load name []
+
+intervalFromVim :: Buffer -> Interval' Int64 -> Neovim env (Interval' LineOffset)
+intervalFromVim b (Interval s e) =
+  Interval <$> unvimifyColumnPos b s  <*> unvimifyColumnPos b e
+
+questionMarkToMeta :: Buffer -> [Interval' LineOffset] -> Neovim CornelisEnv ()
+questionMarkToMeta b ips = do
+  res <- fmap fold $ for (sortOn (Down . iStart) ips) $ \int ->
+      getGoalContents_maybe b int >>= \case
+        -- We only don't have a goal contents if we are a ? goal
+        Nothing -> do
+          replaceInterval b (positionToPos $ iStart int) (positionToPos $ iEnd int) "{! !}"
+          pure $ Any True
+        Just z -> pure $ Any False
+
+  -- Force a save if we replaced any goals
+  case getAny res of
+    True -> do
+      vim_command "noautocmd w"
+    False -> pure ()
+
 
 doAllGoals :: CommandArguments -> Neovim CornelisEnv ()
 doAllGoals = const allGoals
@@ -109,7 +130,7 @@ solveOne _ ms = withNormalizationMode ms $ \mode ->
 autoOne :: CommandArguments -> Neovim CornelisEnv ()
 autoOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
-  t <- getGoalContents b goal
+  t <- getGoalContents b $ ip_interval goal
   flip runIOTCM agda $ Cmd_autoOne (InteractionId $ ip_id goal) noRange $ T.unpack t
 
 withNormalizationMode :: Maybe String -> (Rewrite -> Neovim e ()) -> Neovim e ()
@@ -131,7 +152,7 @@ doRefine = const refine
 refine :: Neovim CornelisEnv ()
 refine = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
-  t <- getGoalContents b goal
+  t <- getGoalContents b $ ip_interval goal
   flip runIOTCM agda $ Cmd_refine_or_intro True (InteractionId $ ip_id goal) noRange $ T.unpack t
 
 doWhyInScope :: CommandArguments -> Neovim CornelisEnv ()

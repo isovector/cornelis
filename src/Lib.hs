@@ -80,8 +80,10 @@ respond b ClearHighlighting = do
   -- remove the extmarks and highlighting
   ns <- asks ce_namespace
   nvim_buf_clear_namespace b ns 0 (-1)
-respond b (HighlightingInfo _remove hl) =
-  highlightBuffer b hl
+respond b (HighlightingInfo _remove hl) = do
+  goals <- highlightBuffer b hl
+  goals' <- traverse (intervalFromVim b) goals
+  questionMarkToMeta b goals'
 respond _ (RunningInfo _ x) = reportInfo x
 respond _ (ClearRunningInfo) = reportInfo ""
 respond b (JumpToError _ pos) = do
@@ -91,7 +93,7 @@ respond b (JumpToError _ pos) = do
     Nothing -> reportError "invalid error report from Agda"
     Just lc -> do
       ws <- windowsForBuffer b
-      for_ ws $ flip window_set_cursor $ first (+1) lc
+      for_ ws $ flip window_set_cursor $ first (fromIntegral . getOneIndexedLineNumber . incLineNumber) lc
 respond _ Status{} = pure ()
 respond _ (Unknown k _) = reportError k
 

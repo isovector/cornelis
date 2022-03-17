@@ -7,7 +7,7 @@ module Cornelis.Vim where
 import           Control.Lens
 import           Cornelis.Offsets
 import           Cornelis.Types
-import           Cornelis.Types.Agda (Interval' (..), posCol)
+import           Cornelis.Types.Agda (Interval' (..), posCol, Position' (..))
 import           Cornelis.Utils (objectToInt, savingCurrentPosition, savingCurrentWindow)
 import           Data.Foldable (toList)
 import           Data.Int
@@ -72,6 +72,11 @@ unvimifyColumn :: Buffer -> LineNumber -> Int64 -> Neovim env LineOffset
 unvimifyColumn b l c = do
   lstr <- getBufferLine b l
   pure $ fromBytes lstr $ fromIntegral c
+
+unvimifyColumnPos :: Buffer -> Position' Int64 -> Neovim env (Position' LineOffset)
+unvimifyColumnPos b (Pn l c) = do
+  c' <- unvimifyColumn b l c
+  pure $ Pn l c'
 
 vimifyPositionM :: Buffer -> Pos -> Neovim env (Pos' Int64)
 vimifyPositionM b p = do

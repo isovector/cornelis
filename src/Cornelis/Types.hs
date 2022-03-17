@@ -107,7 +107,7 @@ data Response
     }
   | JumpToError FilePath BufferOffset
   | InteractionPoints [InteractionPoint Maybe AgdaOffset]
-  | GiveAction Text (InteractionPoint Identity AgdaOffset)
+  | GiveAction Text (InteractionPoint (Const ()) AgdaOffset)
   | MakeCase MakeCase
   | SolveAll [Solution]
   | Unknown Text Value
@@ -164,16 +164,16 @@ data InteractionPoint f a = InteractionPoint
   }
   deriving stock (Generic, Functor)
 
+deriving instance Eq (f (Interval' a)) => Eq (InteractionPoint f a)
+deriving instance Ord (f (Interval' a)) => Ord (InteractionPoint f a)
+deriving instance Show (f (Interval' a)) => Show (InteractionPoint f a)
+
 ip_interval :: InteractionPoint Identity a -> Interval' a
 ip_interval (InteractionPoint _ (Identity i)) = i
 
 sequenceInteractionPoint :: Applicative f => InteractionPoint f a -> f (InteractionPoint Identity a)
 sequenceInteractionPoint (InteractionPoint n f) = InteractionPoint <$> pure n <*> fmap Identity f
 
-
-deriving instance Eq (f (Interval' a)) => Eq (InteractionPoint f a)
-deriving instance Ord (f (Interval' a)) => Ord (InteractionPoint f a)
-deriving instance Show (f (Interval' a)) => Show (InteractionPoint f a)
 
 data NamedPoint = NamedPoint
   { np_name :: Text
@@ -192,6 +192,10 @@ instance FromJSON (Interval' a) => FromJSON (InteractionPoint Maybe a) where
 instance FromJSON (Interval' a) => FromJSON (InteractionPoint Identity a) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range")
+
+instance FromJSON (Interval' a) => FromJSON (InteractionPoint (Const ()) a) where
+  parseJSON = withObject "InteractionPoint" $ \obj -> do
+    InteractionPoint <$> obj .: "id" <*> pure (Const ())
 
 instance FromJSON NamedPoint where
   parseJSON = withObject "InteractionPoint" $ \obj -> do

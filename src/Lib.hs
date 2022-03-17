@@ -60,14 +60,17 @@ respond b (MakeCase mkcase) = do
   reload
 -- Replace the interaction point with a result
 respond b (GiveAction result ip) = do
-  let ip' = fmap agdaToLine ip
-  replaceInterval b (positionToPos $ iStart $ ip_interval ip') (positionToPos $ iEnd $ ip_interval ip') result
+  let i = ip_id ip
+  getInteractionPoint b i >>= \case
+    Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
+    Just ip' ->
+      replaceInterval b (positionToPos $ iStart $ ip_interval ip') (positionToPos $ iEnd $ ip_interval ip') result
   reload
 -- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) -> do
     getInteractionPoint b i >>= \case
-      Nothing -> reportInfo $ T.pack $ "Can't find interaction point " <> show i
+      Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
       Just ip -> do
         replaceInterval b (positionToPos $ iStart $ ip_interval ip) (positionToPos $ iEnd $ ip_interval ip) ex
         reload

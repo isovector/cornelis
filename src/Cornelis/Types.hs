@@ -12,6 +12,10 @@
 
 module Cornelis.Types
   ( module Cornelis.Types
+  , Interval' (..)
+  , Pos' (..)
+  , BufferOffset
+  , LineOffset
   , Buffer
   , Window
   , Text
@@ -23,7 +27,7 @@ import Control.Concurrent
 import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
 import Cornelis.Debug
-import Cornelis.Types.Agda (IntervalWithoutFile, Position'(..), Interval' (Interval), BufferOffset, LineNumber, LineOffset, AgdaOffset)
+import Cornelis.Types.Agda (IntervalWithoutFile, Interval' (..), BufferOffset, LineOffset, AgdaOffset, Pos' (..))
 import Data.Aeson hiding (Error)
 import Data.Generics.Labels ()
 import Data.IntMap.Strict (IntMap)
@@ -40,12 +44,6 @@ import System.Process (ProcessHandle)
 import Data.Functor.Identity
 
 deriving stock instance Ord Buffer
-
-data Pos' l = Pos
-  { p_line :: LineNumber
-  , p_col :: l
-  }
-  deriving (Eq, Ord, Show, Generic)
 
 type Pos = Pos' LineOffset
 
@@ -201,9 +199,9 @@ instance FromJSON NamedPoint where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     NamedPoint <$> obj .: "name" <*> fmap listToMaybe (obj .: "range")
 
-instance FromJSON b => FromJSON (Position' b) where
+instance FromJSON b => FromJSON (Pos' b) where
   parseJSON = withObject "Position" $ \obj -> do
-    Pn <$> obj .: "line" <*> obj .: "col"
+    Pos <$> obj .: "line" <*> obj .: "col"
 
 instance FromJSON Solution where
   parseJSON = withObject "Solution" $ \obj ->

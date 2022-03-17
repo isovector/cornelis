@@ -11,7 +11,6 @@ import           Control.Monad.Trans.Maybe
 import           Cornelis.Offsets
 import           Cornelis.Pretty
 import           Cornelis.Types hiding (Type)
-import           Cornelis.Types.Agda (Interval'(..), Position' (..))
 import           Cornelis.Utils
 import           Cornelis.Vim (unvimifyColumn, vimifyPositionM)
 import           Data.Bifunctor (first)
@@ -128,8 +127,8 @@ addHighlight b lis hl = do
         False -> []
         True ->
           pure $ Interval
-            { iStart = Pn (incLineNumber sl) sc
-            , iEnd   = Pn (incLineNumber el) (ec + 1)
+            { iStart = Pos (incLineNumber sl) sc
+            , iEnd   = Pos (incLineNumber el) (ec + 1)
             }
     Nothing -> pure ([], Nothing)
 
@@ -180,8 +179,8 @@ parseExtmark b
     { es_mark = Extmark $ fromIntegral ext
     , es_hlgroup = hlgroup
     , es_interval =
-       Interval { iStart = posToPosition $ Pos start_line sc
-                , iEnd   = posToPosition $ Pos end_line ec
+       Interval { iStart = Pos start_line sc
+                , iEnd   = Pos end_line ec
                 }
     }
 parseExtmark _ _ = pure Nothing

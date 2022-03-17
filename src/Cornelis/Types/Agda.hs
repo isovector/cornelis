@@ -20,6 +20,7 @@ import           Data.Text (Text)
 import           GHC.Generics
 import           GHC.Show (showSpace)
 import           System.FilePath
+import Control.Applicative (liftA2)
 
 ------------------------------------------------------------------------------
 -- | Line numbers are always 1-indexed
@@ -100,16 +101,16 @@ instance Show a =>
               ((.)
                  showSpace (showsPrec 11 b2_a1hOm))))
 
-data Interval' a = Interval { iStart, iEnd :: !(Position' a) }
+data Interval' a = Interval { iStart, iEnd :: !(Pos' a) }
   deriving (Show, Data, Eq, Ord, Functor, Foldable, Traversable, Generic)
 
 type IntervalWithoutFile = Interval' AgdaOffset
 
 type SrcFile = Maybe AbsolutePath
 
-data Position' a = Pn
-  { posLine :: !LineNumber
-  , posCol  :: !a
+data Pos' a = Pos
+  { p_line :: !LineNumber
+  , p_col  :: !a
   }
   deriving (Eq, Ord, Show, Data, Functor, Foldable, Traversable, Generic)
 
@@ -349,10 +350,10 @@ mkAbsolute f
   | otherwise    = error "impossible"
 
 
-instance (Read a) => Read (Position' a) where
+instance (Read a) => Read (Pos' a) where
     readsPrec = parseToReadsPrec $ do
         exact "Pn"
-        liftM2 Pn readParse readParse
+        liftA2 Pos readParse readParse
 
 type Parse a = ExceptT String (StateT String Identity) a
 

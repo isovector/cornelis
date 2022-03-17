@@ -16,12 +16,6 @@ import           Data.Int
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 
-positionToPos :: Position' l -> Pos' l
-positionToPos (Pn ln off') = Pos {p_line = ln, p_col = off'}
-
-posToPosition :: Pos' l -> Position' l
-posToPosition (Pos l c) = Pn l c
-
 
 offsetPlus :: Offset a -> Offset a -> Offset a
 offsetPlus = coerce $ (+) @Int32

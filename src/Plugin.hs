@@ -78,19 +78,15 @@ load = withAgda $ withCurrentBuffer $ \b -> do
   name <- buffer_get_name $ a_buffer agda
   flip runIOTCM agda $ Cmd_load name []
 
-intervalFromVim :: Buffer -> Interval' Int64 -> Neovim env (Interval' LineOffset)
-intervalFromVim b (Interval s e) =
-  Interval <$> unvimifyColumnPos b s  <*> unvimifyColumnPos b e
-
 questionMarkToMeta :: Buffer -> [Interval' LineOffset] -> Neovim CornelisEnv ()
 questionMarkToMeta b ips = do
   res <- fmap fold $ for (sortOn (Down . iStart) ips) $ \int ->
       getGoalContents_maybe b int >>= \case
         -- We only don't have a goal contents if we are a ? goal
         Nothing -> do
-          replaceInterval b (positionToPos $ iStart int) (positionToPos $ iEnd int) "{! !}"
+          replaceInterval b (iStart int) (iEnd int) "{! !}"
           pure $ Any True
-        Just z -> pure $ Any False
+        Just _ -> pure $ Any False
 
   -- Force a save if we replaced any goals
   case getAny res of

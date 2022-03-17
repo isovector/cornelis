@@ -9,7 +9,6 @@ import           Cornelis.Agda (withAgda)
 import           Cornelis.Highlighting (getExtmarks, holeHlGroup)
 import           Cornelis.Offsets
 import           Cornelis.Types
-import           Cornelis.Types.Agda
 import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Foldable (toList, fold)
@@ -34,7 +33,6 @@ findGoal hunt = withAgda $ do
         judged_goals
               = mapMaybe ( sequenceA
                          . (id &&& hunt pos)
-                         . positionToPos
                          . iStart
                          . ip_interval
                          ) goals

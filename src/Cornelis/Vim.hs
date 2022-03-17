@@ -7,7 +7,6 @@ module Cornelis.Vim where
 import           Control.Lens
 import           Cornelis.Offsets
 import           Cornelis.Types
-import           Cornelis.Types.Agda (Interval' (..), posCol, Position' (..))
 import           Cornelis.Utils (objectToInt, savingCurrentPosition, savingCurrentWindow)
 import           Data.Foldable (toList)
 import           Data.Int
@@ -73,10 +72,10 @@ unvimifyColumn b l c = do
   lstr <- getBufferLine b l
   pure $ fromBytes lstr $ fromIntegral c
 
-unvimifyColumnPos :: Buffer -> Position' Int64 -> Neovim env (Position' LineOffset)
-unvimifyColumnPos b (Pn l c) = do
+unvimifyColumnPos :: Buffer -> Pos' Int64 -> Neovim env (Pos' LineOffset)
+unvimifyColumnPos b (Pos l c) = do
   c' <- unvimifyColumn b l c
-  pure $ Pn l c'
+  pure $ Pos l c'
 
 vimifyPositionM :: Buffer -> Pos -> Neovim env (Pos' Int64)
 vimifyPositionM b p = do
@@ -99,14 +98,14 @@ vimifyPosition t = #p_col %~ fromIntegral . toBytes t
 
 getBufferInterval :: Buffer -> Interval' LineOffset -> Neovim env Text
 getBufferInterval b (Interval start end) = do
-    (sl, _) <- fmap positionToVim $ vimifyPositionM b $ positionToPos start
-    (el, _) <- fmap positionToVim $ vimifyPositionM b $ positionToPos end
+    (sl, _) <- fmap positionToVim $ vimifyPositionM b start
+    (el, _) <- fmap positionToVim $ vimifyPositionM b end
     -- nvim_buf_get_lines is exclusive in its end line, thus the plus 1
     ls <- fmap toList $ nvim_buf_get_lines b sl (el + 1) False
     let unoffset (Offset i) = i
     pure $ T.unlines $
-      ls & _last %~ T.take (fromIntegral $ unoffset $ posCol end)
-         & _head %~ T.drop (fromIntegral $ unoffset $ posCol start)
+      ls & _last %~ T.take (fromIntegral $ unoffset $ p_col end)
+         & _head %~ T.drop (fromIntegral $ unoffset $ p_col start)
 
 positionToVim :: Pos' Int64 -> (Int64, Int64)
 positionToVim p =

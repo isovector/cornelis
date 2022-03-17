@@ -11,9 +11,7 @@ import           Control.Monad.IO.Unlift (MonadUnliftIO(withRunInIO))
 import           Control.Monad.Reader (withReaderT)
 import           Control.Monad.State.Class
 import           Control.Monad.Trans.Resource (transResourceT)
-import           Cornelis.Offsets (posToPosition)
 import           Cornelis.Types
-import           Cornelis.Types.Agda (Interval' (..))
 import qualified Data.Map as M
 import           Data.Maybe
 import           Data.Text.Encoding (decodeUtf8)
@@ -80,5 +78,9 @@ withLocalEnv :: env -> Neovim env a -> Neovim env' a
 withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (retypeConfig env)
 
 containsPoint :: Ord a => Interval' a -> Pos' a -> Bool
-containsPoint (Interval s e) (posToPosition -> p) = s <= p && p < e
+containsPoint (Interval s e) p = s <= p && p < e
+
+traverseInterval :: Applicative f => (Pos' a -> f (Pos' b)) -> Interval' a -> f (Interval' b)
+traverseInterval f (Interval s e) =
+  Interval <$> f s <*> f e
 

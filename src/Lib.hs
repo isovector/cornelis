@@ -19,7 +19,6 @@ import           Cornelis.Highlighting (highlightBuffer, getLineIntervals, looku
 import           Cornelis.InfoWin
 import           Cornelis.Offsets
 import           Cornelis.Types
-import           Cornelis.Types.Agda
 import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Bifunctor
@@ -64,7 +63,7 @@ respond b (GiveAction result ip) = do
   getInteractionPoint b i >>= \case
     Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
     Just ip' ->
-      replaceInterval b (positionToPos $ iStart $ ip_interval ip') (positionToPos $ iEnd $ ip_interval ip') result
+      replaceInterval b (iStart $ ip_interval ip') (iEnd $ ip_interval ip') result
   reload
 -- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
@@ -72,7 +71,7 @@ respond b (SolveAll solutions) = do
     getInteractionPoint b i >>= \case
       Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
       Just ip -> do
-        replaceInterval b (positionToPos $ iStart $ ip_interval ip) (positionToPos $ iEnd $ ip_interval ip) ex
+        replaceInterval b (iStart $ ip_interval ip) (iEnd $ ip_interval ip) ex
   reload
 respond b ClearHighlighting = do
   -- delete what we know about goto positions
@@ -82,7 +81,7 @@ respond b ClearHighlighting = do
   nvim_buf_clear_namespace b ns 0 (-1)
 respond b (HighlightingInfo _remove hl) = do
   goals <- highlightBuffer b hl
-  goals' <- traverse (intervalFromVim b) goals
+  goals' <- traverse (traverseInterval (unvimifyColumnPos b)) goals
   questionMarkToMeta b goals'
 respond _ (RunningInfo _ x) = reportInfo x
 respond _ (ClearRunningInfo) = reportInfo ""
@@ -101,9 +100,9 @@ doMakeCase :: Buffer -> MakeCase -> Neovim env ()
 doMakeCase b (RegularCase Function clauses ip) = do
   let int = ip_interval
           $ fmap agdaToLine
-          $ ip & #ip_interval' . #_Identity . #iStart . #posCol .~ Offset 1
-      start = positionToPos $ iStart int
-      end = positionToPos $ iEnd int
+          $ ip & #ip_interval' . #_Identity . #iStart . #p_col .~ Offset 1
+      start = iStart int
+      end = iEnd int
   ins <- getIndent b $ p_line start
   replaceInterval b start end
     $ T.unlines
@@ -117,14 +116,12 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
       reportError
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a limitation in cornelis."
     Just w -> do
-      (start, end) <- getSurroundingMotion w b "i}" $ positionToPos $ iStart $ ip_interval ip'
+      (start, end) <- getSurroundingMotion w b "i}" $ iStart $ ip_interval ip'
       -- Add an extra character to the start so we leave a space after the
       -- opening brace
       replaceInterval b (start & #p_col %~ offsetPlus (Offset 1)) end $ T.unlines $
         clauses & _tail %~ fmap (indent start)
 
-mkInterval :: Pos -> Pos -> Interval' LineOffset
-mkInterval start end = Interval (posToPosition start) (posToPosition end)
 
 ------------------------------------------------------------------------------
 -- | Indent a string with the given offset.

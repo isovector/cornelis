@@ -27,6 +27,7 @@ library
   exposed-modules:
       Cornelis.Agda
       Cornelis.Debug
+      Cornelis.Goals
       Cornelis.Highlighting
       Cornelis.InfoWin
       Cornelis.Offsets

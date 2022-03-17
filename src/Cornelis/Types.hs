@@ -318,3 +318,9 @@ instance FromJSON Response where
 newtype Extmark = Extmark Int64
   deriving (Eq, Ord, Show)
 
+data ExtmarkStuff = ExtmarkStuff
+  { es_mark     :: Extmark
+  , es_hlgroup  :: Text
+  , es_interval :: Interval' LineOffset
+  }
+

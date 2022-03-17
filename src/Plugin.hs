@@ -9,8 +9,8 @@ module Plugin where
 import           Control.Lens
 import           Control.Monad.State.Class
 import           Control.Monad.Trans
-import           Control.Monad.Trans.Maybe
 import           Cornelis.Agda (spawnAgda, withCurrentBuffer, runIOTCM)
+import           Cornelis.Highlighting (getExtmarks)
 import           Cornelis.InfoWin (buildInfoBuffer, showInfoWindow)
 import           Cornelis.Offsets
 import           Cornelis.Pretty (prettyGoals)
@@ -18,11 +18,13 @@ import           Cornelis.Types
 import           Cornelis.Types.Agda hiding (Error)
 import           Cornelis.Utils
 import           Cornelis.Vim
-import           Data.Foldable (for_)
+import           Data.Foldable (for_, toList, fold)
 import           Data.List
 import qualified Data.Map as M
-import           Data.Maybe (catMaybes)
+import           Data.Maybe (fromMaybe)
+import           Data.Ord
 import qualified Data.Text as T
+import           Data.Traversable (for)
 import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
@@ -67,9 +69,6 @@ getGoalAtCursor = do
 lookupGoal :: Foldable t => t (InteractionPoint Identity LineOffset) -> Pos -> Maybe (InteractionPoint Identity LineOffset)
 lookupGoal ips p = flip find ips $ (\(InteractionPoint _ (Identity iv)) -> containsPoint iv p)
 
-containsPoint :: Ord a => Interval' a -> Pos' a -> Bool
-containsPoint (Interval s e) (posToPosition -> p) = s <= p && p < e
-
 
 withGoalAtCursor :: (Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
 withGoalAtCursor f = getGoalAtCursor >>= \case
@@ -87,52 +86,12 @@ getGoalContents b ip = do
   pure $ T.strip $ T.dropEnd 3 $ T.drop 2 $ iv
 
 
-parseExtmark :: Buffer -> Object -> Neovim CornelisEnv (Maybe (Extmark, Interval' LineOffset))
-parseExtmark b
-  (ObjectArray ( (objectToInt -> Just ext)
-               : (objectToInt -> Just line)
-               : (objectToInt -> Just col)
-               : ObjectMap details
-               : _
-               )) = runMaybeT $ do
-  vim_end_col <- hoistMaybe $ objectToInt =<< M.lookup (ObjectString "end_col") details
-  -- Plus one here because our lines are 1-indexed but the results of
-  -- get_extmarks is 0-indexed.
-  let start_line = LineNumber $ fromIntegral $ line + 1
-  end_line <- hoistMaybe $ fmap (LineNumber . (+1) . fromIntegral)
-            . objectToInt =<< M.lookup (ObjectString "end_row") details
-  sc <- lift $ unvimifyColumn b start_line $ fromIntegral col
-  ec <- lift $ unvimifyColumn b end_line   $ fromIntegral vim_end_col
-  pure ( Extmark $ fromIntegral ext
-       , Interval { iStart = posToPosition $ Pos start_line sc
-                  , iEnd   = posToPosition $ Pos end_line ec
-                  }
-       )
-parseExtmark _ _ = pure Nothing
+getDefinitionSites :: Buffer -> Pos -> Neovim CornelisEnv (First DefinitionSite)
+getDefinitionSites b p = withBufferStuff b $ \bs -> do
+  marks <- getExtmarks b p
+  pure $ flip foldMap marks $ \es ->
+    First $ M.lookup (es_mark es) $ bs_goto_sites bs
 
-
-hoistMaybe :: Applicative m => Maybe a -> MaybeT m a
-hoistMaybe = MaybeT . pure
-
-
-getExtmark :: Buffer -> Pos -> Neovim CornelisEnv (First DefinitionSite)
-getExtmark b p = withBufferStuff b $ \bs -> do
-  ns <- asks ce_namespace
-  vp <- vimifyPositionM b p
-  -- The vim API uses 0-indexed lines for buf_get_extmarks..
-  let pos0 = ObjectArray [ ObjectInt $ getVimLineNumber $ p_line vp
-                         , ObjectInt 0 -- from the beginning of the line
-                         ]
-      pos1 = ObjectArray [ ObjectInt $ getVimLineNumber $ p_line vp
-                         , ObjectInt (-1) -- to the end of the line
-                         ]
-  res <- nvim_buf_get_extmarks b ns pos0 pos1 $ M.singleton "details" $ ObjectBool True
-  marks <- fmap catMaybes $ traverse (parseExtmark b) $ V.toList res
-
-  pure $ flip foldMap marks $ \(ex, i) ->
-    case containsPoint i p of
-      False -> mempty
-      True -> First $ M.lookup ex $ bs_goto_sites bs
 
 doGotoDefinition :: CommandArguments -> Neovim CornelisEnv ()
 doGotoDefinition _ = gotoDefinition
@@ -142,7 +101,7 @@ gotoDefinition = withAgda $ do
   w <- nvim_get_current_win
   rc <- getWindowCursor w
   b <- window_get_buffer w
-  getExtmark b rc >>= \case
+  getDefinitionSites b rc >>= \case
     First Nothing -> reportInfo "No syntax under cursor."
     First (Just ds) -> do
       -- TODO(sandy): escape spaces

@@ -1,5 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module Cornelis.Utils where
 
@@ -10,9 +11,12 @@ import           Control.Monad.IO.Unlift (MonadUnliftIO(withRunInIO))
 import           Control.Monad.Reader (withReaderT)
 import           Control.Monad.State.Class
 import           Control.Monad.Trans.Resource (transResourceT)
+import           Cornelis.Offsets (posToPosition)
 import           Cornelis.Types
+import           Cornelis.Types.Agda (Interval' (..))
 import qualified Data.Map as M
 import           Data.Maybe
+import           Data.Text.Encoding (decodeUtf8)
 import           Data.Traversable
 import qualified Data.Vector as V
 import           Neovim hiding (err)
@@ -24,6 +28,10 @@ objectToInt :: Object -> Maybe Int
 objectToInt (ObjectUInt w) = Just $ fromIntegral w
 objectToInt (ObjectInt w) = Just $ fromIntegral w
 objectToInt _ = Nothing
+
+objectToText :: Object -> Maybe Text
+objectToText (ObjectString w) = Just $ decodeUtf8 w
+objectToText _ = Nothing
 
 neovimAsync :: (MonadUnliftIO m) => m a -> m (Async a)
 neovimAsync m =
@@ -70,4 +78,7 @@ withBufferStuff b f =
 
 withLocalEnv :: env -> Neovim env a -> Neovim env' a
 withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (retypeConfig env)
+
+containsPoint :: Ord a => Interval' a -> Pos' a -> Bool
+containsPoint (Interval s e) (posToPosition -> p) = s <= p && p < e
 

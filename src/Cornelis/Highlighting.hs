@@ -1,16 +1,21 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedLabels   #-}
 {-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Cornelis.Highlighting where
 
 import           Control.Lens ((<>~))
+import           Control.Monad.Trans (lift)
+import           Control.Monad.Trans.Maybe
 import           Cornelis.Offsets
 import           Cornelis.Pretty
 import           Cornelis.Types hiding (Type)
-import           Cornelis.Utils (modifyBufferStuff)
+import           Cornelis.Types.Agda (Interval'(..))
+import           Cornelis.Utils
+import           Cornelis.Vim (unvimifyColumn, vimifyPositionM)
 import           Data.Coerce (coerce)
-import           Data.IntervalMap.FingerTree (IntervalMap, Interval (Interval))
+import           Data.IntervalMap.FingerTree (IntervalMap)
 import qualified Data.IntervalMap.FingerTree as IM
 import qualified Data.Map as M
 import           Data.Maybe (listToMaybe, fromMaybe, catMaybes)
@@ -21,6 +26,7 @@ import           Data.Vector (Vector)
 import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
+
 
 hlGroup :: Text -> HighlightGroup
 hlGroup "keyword"              = Keyword
@@ -78,13 +84,13 @@ getLineIntervals = LineIntervals . go (Offset 0) (LineNumber 0)
       | Just (t, ss) <- V.uncons v =
         let len = T.length t
             pos' = pos + fromIntegral len
-        in IM.singleton (Interval (coerce pos) $ coerce pos') (line, t)
+        in IM.singleton (IM.Interval (coerce pos) $ coerce pos') (line, t)
               <> go (coerce $ pos' + 1) (incLineNumber line) ss
       | otherwise = mempty
 
 lookupPoint :: LineIntervals -> BufferOffset -> Maybe (Int64, Int64)
 lookupPoint (LineIntervals im) off = do
-  (Interval scs _, (startline, s)) <- listToMaybe $ IM.search off im
+  (IM.Interval scs _, (startline, s)) <- listToMaybe $ IM.search off im
   pure ( fromIntegral $ getOneIndexedLineNumber startline
        , fromIntegral $ toBytes s (offsetDiff off scs) - 1
        )
@@ -133,4 +139,55 @@ setHighlight b (sl, sc) (el, ec) hl = do
           $ show hl
       )
     ]
+
+parseExtmark :: Buffer -> Object -> Neovim CornelisEnv (Maybe ExtmarkStuff)
+parseExtmark b
+  (ObjectArray ( (objectToInt -> Just ext)
+               : (objectToInt -> Just line)
+               : (objectToInt -> Just col)
+               : ObjectMap details
+               : _
+               )) = runMaybeT $ do
+  vim_end_col <- hoistMaybe $ objectToInt =<< M.lookup (ObjectString "end_col") details
+  -- Plus one here because our lines are 1-indexed but the results of
+  -- get_extmarks is 0-indexed.
+  let start_line = LineNumber $ fromIntegral $ line + 1
+  end_line <- hoistMaybe $ fmap (LineNumber . (+1) . fromIntegral)
+            . objectToInt =<< M.lookup (ObjectString "end_row") details
+  hlgroup <- hoistMaybe $ objectToText =<< M.lookup (ObjectString "hlgroup") details
+  sc <- lift $ unvimifyColumn b start_line $ fromIntegral col
+  ec <- lift $ unvimifyColumn b end_line   $ fromIntegral vim_end_col
+  pure $ ExtmarkStuff
+    { es_mark = Extmark $ fromIntegral ext
+    , es_hlgroup = hlgroup
+    , es_interval =
+       Interval { iStart = posToPosition $ Pos start_line sc
+                , iEnd   = posToPosition $ Pos end_line ec
+                }
+    }
+parseExtmark _ _ = pure Nothing
+
+
+hoistMaybe :: Applicative m => Maybe a -> MaybeT m a
+hoistMaybe = MaybeT . pure
+
+
+getExtmarks :: Buffer -> Pos -> Neovim CornelisEnv [ExtmarkStuff]
+getExtmarks b p = do
+  ns <- asks ce_namespace
+  vp <- vimifyPositionM b p
+  -- The vim API uses 0-indexed lines for buf_get_extmarks..
+  let pos0 = ObjectArray [ ObjectInt $ getVimLineNumber $ p_line vp
+                         , ObjectInt 0 -- from the beginning of the line
+                         ]
+      pos1 = ObjectArray [ ObjectInt $ getVimLineNumber $ p_line vp
+                         , ObjectInt (-1) -- to the end of the line
+                         ]
+  res <- nvim_buf_get_extmarks b ns pos0 pos1 $ M.singleton "details" $ ObjectBool True
+  marks <- fmap catMaybes $ traverse (parseExtmark b) $ V.toList res
+
+  pure $ marks >>= \es ->
+    case containsPoint (es_interval es) p of
+      False -> mempty
+      True -> [es]
 

@@ -1,6 +1,4 @@
-let b:has_whichkey = 1
-
-if b:has_whichkey
+if exists("*which_key#register")
   inoremap <buffer> <localleader> <C-O>:WhichKey "agda"<CR>
   call which_key#register('agda', "g:agda_input")
 endif

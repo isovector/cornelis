@@ -6,10 +6,12 @@ module TestSpec where
 
 import           Control.Concurrent (threadDelay)
 import           Control.Monad (void)
+import           Cornelis.Debug (testingMode)
 import           Cornelis.Types
 import           Cornelis.Types.Agda (Rewrite (..))
 import           Cornelis.Utils (withBufferStuff)
 import           Cornelis.Vim
+import           Data.IORef (writeIORef)
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import           Neovim (liftIO)
@@ -22,7 +24,7 @@ import           Utils
 
 
 spec :: Spec
-spec = do
+spec = before_ (liftIO $ writeIORef testingMode True) $ do
   diffSpec "should refine" (Seconds 5) "test/Hello.agda"
       [ Modify "unit = ?" "unit = one"] $ \w _ -> do
     goto w 11 8

@@ -8,21 +8,21 @@ data Unit : Set where
   one : Unit
 
 unit : Unit
-unit = ?
+unit = {! !}
 
 test : Bool → Bool
-test x = ?
+test x = {! !}
 
 unicodeTest₁ : Bool → Bool
-unicodeTest₁ x = ?
+unicodeTest₁ x = {! !}
 
 slap : Bool → Bool
-slap = λ { x → ? }
+slap = λ { x → {! !} }
 
 module _ where
   testIndent : Bool → Bool
-  testIndent true = ?
-  testIndent false = ?
+  testIndent true = {! !}
+  testIndent false = {! !}
 
 isEven∘ : Nat → Set
 isEven∘ zero = Nat

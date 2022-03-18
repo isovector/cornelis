@@ -103,6 +103,7 @@ library
     , generic-lens
     , hspec
     , lens
+    , levenshtein
     , mtl
     , nvim-hs
     , nvim-hs-contrib
@@ -185,6 +186,7 @@ executable cornelis
     , generic-lens
     , hspec
     , lens
+    , levenshtein
     , mtl
     , nvim-hs
     , nvim-hs-contrib
@@ -271,6 +273,7 @@ test-suite test
     , generic-lens
     , hspec
     , lens
+    , levenshtein
     , mtl
     , nvim-hs
     , nvim-hs-contrib

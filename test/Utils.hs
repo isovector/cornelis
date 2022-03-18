@@ -1,7 +1,11 @@
 {-# LANGUAGE NumDecimals       #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
 
-module Utils where
+module Utils
+  ( module Utils
+  , Edit (..)
+  ) where
 
 import           Control.Concurrent (threadDelay)
 import           Control.Lens (set, _head)
@@ -9,9 +13,7 @@ import           Cornelis.Types
 import           Cornelis.Types.Agda
 import           Cornelis.Utils (withLocalEnv)
 import           Cornelis.Vim
-import           Data.Bifunctor (bimap)
-import           Data.Foldable (minimumBy)
-import           Data.Ord (comparing)
+import           Data.Foldable.Levenshtein (levenshtein, Edit(..))
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import           Lib
@@ -23,37 +25,42 @@ import           System.Random (randomIO)
 import           Test.Hspec hiding (after, before)
 
 
-data Diff a
-  = Insert a
-  | Delete a
-  | Modify a a
-  deriving (Eq, Ord, Show, Functor)
+-- data Diff a
+--   = Insert a
+--   | Delete a
+--   | Modify a a
+--   deriving (Eq, Ord, Show, Functor)
+
+isCopy :: Edit a -> Bool
+isCopy Copy{} = True
+isCopy _ = False
+
+diff :: Show a => Eq a => [a] -> [a] -> [Edit a]
+diff = ((filter (not . isCopy) . snd) .) . levenshtein @_ @_ @_ @Int
+  -- (snd .) . go
+  -- where
+  --   go ([]) as = (length as, fmap Insert as)
+  --   go bs [] = (length bs, fmap Delete bs)
+  --   go (b : bs) (a : as)
+  --     | b == a = go bs as
+  --     | otherwise = do
+  --         let x = traceShowId $ bimap (+1) (Delete b :) $ go bs (a : as)
+  --             y = traceShowId $ bimap (+1) (Insert a :) $ go (b : bs) as
+  --             z = traceShowId $ bimap (+1) (Modify b a :) $ go bs as
+  --         minimumBy (comparing fst) [z, x, y]
 
 
-diff :: Eq a => [a] -> [a] -> [Diff a]
-diff = (snd .) . go
-  where
-    go [] as = (length as, fmap Insert as)
-    go bs [] = (length bs, fmap Delete bs)
-    go (b : bs) (a : as)
-      | b == a = go bs as
-      | otherwise = do
-          let x = bimap (+1) (Delete b :) $ go bs (a : as)
-              y = bimap (+1) (Insert a :) $ go (b : bs) as
-              z = bimap (+1) (Modify b a :) $ go bs as
-          minimumBy (comparing fst) [z, x, y]
-
-
-differing :: Buffer -> Neovim env () -> Neovim env [Diff Text]
+differing :: Buffer -> Neovim env () -> Neovim env [Edit Text]
 differing b m = do
   before <- fmap V.toList $ buffer_get_lines b 0 (-1) False
   m
   liftIO $ threadDelay 1e5
   after <- fmap V.toList $ buffer_get_lines b 0 (-1) False
+  liftIO $ writeFile "/tmp/done.agda" $ T.unpack $ T.unlines after
   pure $ diff before after
 
 
-intervention :: Buffer -> [Diff Text] -> Neovim env () -> Neovim env ()
+intervention :: Buffer -> [Edit Text] -> Neovim env () -> Neovim env ()
 intervention b d m = do
   d' <- differing b m
   liftIO $ d' `shouldBe` d
@@ -72,7 +79,7 @@ diffSpec
     :: String
     -> Seconds
     -> FilePath
-    -> [Diff Text]
+    -> [Edit Text]
     -> (Window -> Buffer -> Neovim CornelisEnv ())
     -> Spec
 diffSpec name secs fp diffs m =

@@ -5,3 +5,4 @@ packages:
 
 extra-deps:
 - nvim-hs-2.2.0.0
+- levenshtein-0.1.3.0

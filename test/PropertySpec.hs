@@ -20,7 +20,7 @@ import           Utils
 
 
 spec :: Spec
-spec = do
+spec = parallel $ do
   prop "fromBytes is an inverse of toBytes" $ do
     UnicodeString str <- arbitrary
     let len = length str
@@ -68,7 +68,7 @@ spec = do
     pure $
       withVim (Seconds 1) $ \_ b -> do
         buffer_set_lines b 0 (-1) False $ V.fromList $ pure str
-        intervention b (mapMaybe simplify [Modify str expected]) $
+        intervention b (mapMaybe simplify [Swap str expected]) $
           replaceInterval b spn epn rep
 
 
@@ -158,8 +158,8 @@ agdaChar = elements $ mconcat
   ]
 
 
-simplify :: Eq a => Diff a -> Maybe (Diff a)
-simplify x@(Modify b a) = bool Nothing (Just x) $ b /= a
+simplify :: Eq a => Edit a -> Maybe (Edit a)
+simplify x@(Swap b a) = bool Nothing (Just x) $ b /= a
 simplify x = Just x
 
 subsets :: Ord a => [a] -> [[a]]

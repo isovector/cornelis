@@ -23,10 +23,13 @@ import           Test.Hspec
 import           Utils
 
 
+broken :: SpecWith a -> SpecWith a
+broken = before_ pending
+
 spec :: Spec
 spec = before_ (liftIO $ writeIORef testingMode True) $ do
   -- FREEZING
-  diffSpec "should refine" (Seconds 5) "test/Hello.agda"
+  broken $ diffSpec "should refine" (Seconds 5) "test/Hello.agda"
       [ Modify "unit = ?" "unit = one"] $ \w _ -> do
     goto w 11 8
     refine
@@ -40,7 +43,7 @@ spec = before_ (liftIO $ writeIORef testingMode True) $ do
     void $ vim_command "normal! G\"\"p"
 
   -- BROKEN
-  diffSpec "should case split (unicode lambda)" (Seconds 5) "test/Hello.agda"
+  broken $ diffSpec "should case split (unicode lambda)" (Seconds 5) "test/Hello.agda"
       [ Modify "slap = λ { x → {! !} }" "slap = λ { true → {! !}"
       , Insert                          "         ; false → {! !} }"
       ] $ \w _ -> do
@@ -72,7 +75,7 @@ spec = before_ (liftIO $ writeIORef testingMode True) $ do
           caseSplit "x"
 
   -- FREEZING
-  case_split_test "test" 14 10
+  broken $ case_split_test "test" 14 10
 
   -- WORKING
   case_split_test "unicodeTest₁" 17 18

@@ -45,22 +45,15 @@ spec = before_ (liftIO $ writeIORef testingMode True) $ do
     caseSplit "x"
 
   diffSpec "should preserve indents when doing case split" (Seconds 5) "test/Hello.agda"
-      [ Modify "  testIndent b = ?" "  testIndent true = ?"
-      , Insert                      "  testIndent false = ?"
-      ] $ \w _ -> do
-    goto w 24 18
-    caseSplit "b"
-
-  diffSpec "should preserve indents when doing case split" (Seconds 5) "test/Hello.agda"
-      [ Modify "  testIndent b = ?" "  testIndent true = ?"
-      , Insert                      "  testIndent false = ?"
+      [ Modify "  testIndent b = {! !}" "  testIndent true = ?"
+      , Insert                         "  testIndent false = ?"
       ] $ \w _ -> do
     goto w 24 18
     caseSplit "b"
 
   diffSpec "should refine with hints" (Seconds 5) "test/Hello.agda"
       [ Modify "isEven∘ (suc n) = {! isEven∘ !}" "isEven∘ (suc n) = isEven∘ ?"] $ \w _ -> do
-    goto w 29 24
+    goto w 28 24
     refine
 
   let case_split_test name row col =

@@ -21,8 +21,7 @@ slap = λ { x → {! !} }
 
 module _ where
   testIndent : Bool → Bool
-  testIndent true = {! !}
-  testIndent false = {! !}
+  testIndent b = {! !}
 
 isEven∘ : Nat → Set
 isEven∘ zero = Nat

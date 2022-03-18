@@ -27,3 +27,6 @@ isEven∘ : Nat → Set
 isEven∘ zero = Nat
 isEven∘ (suc n) = {! isEven∘ !}
 
+copattern : Bool → Bool
+copattern = {! !}
+

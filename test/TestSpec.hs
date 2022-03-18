@@ -6,6 +6,7 @@ module TestSpec where
 
 import           Control.Concurrent (threadDelay)
 import           Control.Monad (void)
+import           Cornelis.Goals (nextGoal)
 import           Cornelis.Types
 import           Cornelis.Types.Agda (Rewrite (..))
 import           Cornelis.Utils (withBufferStuff)
@@ -16,7 +17,6 @@ import           Neovim (liftIO)
 import           Neovim.API.Text
 import           Neovim.Test
 import           Plugin
-import           Plugin (whyInScope)
 import           Test.Hspec
 import           Utils
 
@@ -79,11 +79,22 @@ spec = parallel $ do
       liftIO $ V.toList res `shouldContain` ["zero is in scope as"]
 
   vimSpec "should support goto definition across modules"
-          (Seconds 5) "test/Hello.agda" $ \w b -> do
+          (Seconds 5) "test/Hello.agda" $ \w _ -> do
     goto w 2 18
     gotoDefinition
     liftIO $ threadDelay 5e5
     b' <- nvim_get_current_buf
     res <- buffer_get_lines b' vimFirstLine vimLastLine False
     liftIO $ V.toList res `shouldContain` ["module Agda.Builtin.Nat where"]
+
+  diffSpec "work with multiple" (Seconds 5) "test/Hello.agda"
+      [ Add "copattern true = {! !}"
+      , Swap "copattern = {! !}" "copattern false = {! !}"
+      ] $ \w _ -> do
+    goto w 31 14
+    caseSplit ""
+    liftIO $ threadDelay 1e6
+    nextGoal
+    liftIO $ threadDelay 5e5
+    caseSplit "x"
 

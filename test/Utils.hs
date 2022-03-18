@@ -54,9 +54,8 @@ differing :: Buffer -> Neovim env () -> Neovim env [Edit Text]
 differing b m = do
   before <- fmap V.toList $ buffer_get_lines b 0 (-1) False
   m
-  liftIO $ threadDelay 1e5
+  liftIO $ threadDelay 1e6
   after <- fmap V.toList $ buffer_get_lines b 0 (-1) False
-  liftIO $ writeFile "/tmp/done.agda" $ T.unpack $ T.unlines after
   pure $ diff before after
 
 

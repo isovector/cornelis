@@ -41,6 +41,7 @@ dependencies:
 - fingertree
 - prettyprinter
 - vector
+- random
 
 - hspec
 - QuickCheck

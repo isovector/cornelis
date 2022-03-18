@@ -10,7 +10,6 @@ import           Control.Lens
 import           Control.Monad.State.Class
 import           Control.Monad.Trans
 import           Cornelis.Agda (withCurrentBuffer, runIOTCM, withAgda, getAgda)
-import           Cornelis.Debug (isBeingTested)
 import           Cornelis.Goals
 import           Cornelis.Highlighting (getExtmarks, highlightInterval)
 import           Cornelis.InfoWin (showInfoWindow)
@@ -64,11 +63,9 @@ gotoDefinition = withAgda $ do
 
 
 reload :: Neovim CornelisEnv ()
-reload =
-  unlessM (liftIO isBeingTested) $ do
-    vim_command "noautocmd w"
-    load
-
+reload = do
+  vim_command "noautocmd w"
+  load
 
 
 doLoad :: CommandArguments -> Neovim CornelisEnv ()

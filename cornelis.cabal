@@ -108,6 +108,7 @@ library
     , nvim-hs-contrib
     , prettyprinter
     , process
+    , random
     , resourcet
     , text
     , transformers
@@ -189,6 +190,7 @@ executable cornelis
     , nvim-hs-contrib
     , prettyprinter
     , process
+    , random
     , resourcet
     , text
     , transformers
@@ -274,6 +276,7 @@ test-suite test
     , nvim-hs-contrib
     , prettyprinter
     , process
+    , random
     , resourcet
     , text
     , transformers

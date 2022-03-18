@@ -4,6 +4,7 @@
 module Utils where
 
 import           Control.Concurrent (threadDelay)
+import           Control.Lens (set, _head)
 import           Cornelis.Types
 import           Cornelis.Types.Agda
 import           Cornelis.Utils (withLocalEnv)
@@ -18,6 +19,7 @@ import           Neovim
 import           Neovim.API.Text
 import           Neovim.Test
 import           Plugin
+import           System.Random (randomIO)
 import           Test.Hspec hiding (after, before)
 
 
@@ -77,6 +79,12 @@ diffSpec name secs fp diffs m =
   vimSpec name secs fp $ \w b -> intervention b diffs $ m w b
 
 
+randomModuleName :: IO String
+randomModuleName = do
+  x <- randomIO @Int
+  pure $ "test-" <> show x
+
+
 vimSpec
     :: String
     -> Seconds
@@ -85,16 +93,24 @@ vimSpec
     -> Spec
 vimSpec name secs fp m = do
   let withNeovimEmbedded f a = testWithEmbeddedNeovim f secs () a
-  it name . withNeovimEmbedded Nothing $ do
-    env <- cornelisInit
-    withLocalEnv env $ do
-      vim_command $ "edit " <> T.pack fp
-      load
-      liftIO $ threadDelay 1e6
-      w <- vim_get_current_window
-      b <- nvim_win_get_buf w
-      m w b
-      liftIO $ threadDelay 5e6
+  it name $ do
+    modName <- randomModuleName
+    fc <- fmap ( unlines
+               . set _head ("module " <> modName <> " where")
+               . lines
+               ) $ readFile fp
+    let fp' = "/tmp/" <> modName <> ".agda"
+    writeFile fp' fc
+    withNeovimEmbedded Nothing $ do
+      env <- cornelisInit
+      withLocalEnv env $ do
+        vim_command $ "edit " <> T.pack fp'
+        load
+        liftIO $ threadDelay 1e6
+        w <- vim_get_current_window
+        b <- nvim_win_get_buf w
+        m w b
+        liftIO $ threadDelay 5e6
 
 
 mkPos :: Int32 -> Int32 -> Pos

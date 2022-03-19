@@ -105,8 +105,7 @@ questionToMeta b = withBufferStuff b $ \bs -> do
 
   -- Force a save if we replaced any goals
   case getAny res of
-    True -> do
-      vim_command "noautocmd w"
+    True -> reload
     False -> pure ()
 
 
@@ -204,6 +203,9 @@ caseSplit :: Text -> Neovim CornelisEnv ()
 caseSplit thing = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
   flip runIOTCM agda $ Cmd_make_case (InteractionId $ ip_id goal) noRange $ T.unpack thing
+
+doQuestionToMeta :: CommandArguments -> Neovim CornelisEnv ()
+doQuestionToMeta _ = withCurrentBuffer questionToMeta
 
 goalWindow :: Buffer -> DisplayInfo ->  Neovim CornelisEnv ()
 goalWindow b = showInfoWindow b . prettyGoals

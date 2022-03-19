@@ -42,6 +42,7 @@ exposed via the vim commands:
 :CornelisWhyInScope
 :CornelisNormalize
 :CornelisHelperFunc <RW>
+:CornelisQuestionToMeta
 ```
 
 Commands with an `<RW>` argument take an optional normalization mode argument,
@@ -50,6 +51,8 @@ omitted, defaults to `Normalised`.
 
 If you need to restart the plugin (eg if Agda is stuck in a loop), you can
 restart everything via `:CornelisRestart`.
+
+`:CornelisQuestionToMeta` will replace any `?` goals with `{! !}`s.
 
 
 ### Agda Input

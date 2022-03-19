@@ -178,6 +178,7 @@ cornelis = do
         , $(command "CornelisWhyInScope"     'doWhyInScope)     [CmdSync Async]
         , $(command "CornelisNormalize"      'doNormalize)      [CmdSync Async]
         , $(command "CornelisHelperFunc"     'doHelperFunc)     [CmdSync Async]
+        , $(command "CornelisQuestionToMeta" 'doQuestionToMeta) [CmdSync Async]
         ]
     }
 

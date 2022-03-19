@@ -97,3 +97,12 @@ spec = parallel $ do
     liftIO $ threadDelay 5e5
     caseSplit "x"
 
+  diffSpec "question to meta" (Seconds 5) "test/Hello.agda"
+       [ Swap "unit = ?" "unit = {! !}"
+       , Swap "test x = ?" "test x = {! !}"
+       , Swap "unicodeTest\8321 x = ?" "unicodeTest\8321 x = {! !}"
+       , Swap "slap = \955 { x \8594 ? }" "slap = \955 { x \8594 {! !} }"
+       , Swap "  testIndent b = ?" "  testIndent b = {! !}"
+       , Swap "copattern = ?" "copattern = {! !}"
+       ] $ \_ b -> do
+    questionToMeta b

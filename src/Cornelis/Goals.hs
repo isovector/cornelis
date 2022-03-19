@@ -122,3 +122,6 @@ getGoalContents_maybe b ip = do
 getGoalContents :: Buffer -> Interval' LineOffset -> Neovim CornelisEnv Text
 getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 
+replaceQuestion :: Text -> Text
+replaceQuestion = T.replace "?" "{! !}"
+

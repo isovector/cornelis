@@ -62,7 +62,8 @@ respond b (GiveAction result ip) = do
   getInteractionPoint b i >>= \case
     Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
     Just ip' ->
-      replaceInterval b (iStart $ ip_interval ip') (iEnd $ ip_interval ip') result
+      replaceInterval b (iStart $ ip_interval ip') (iEnd $ ip_interval ip')
+        $ replaceQuestion result
   reload
 -- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
@@ -70,7 +71,8 @@ respond b (SolveAll solutions) = do
     getInteractionPoint b i >>= \case
       Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
       Just ip -> do
-        replaceInterval b (iStart $ ip_interval ip) (iEnd $ ip_interval ip) ex
+        replaceInterval b (iStart $ ip_interval ip) (iEnd $ ip_interval ip)
+          $ replaceQuestion ex
   reload
 respond b ClearHighlighting = do
   -- delete what we know about goto positions
@@ -103,7 +105,8 @@ doMakeCase b (RegularCase Function clauses ip) = do
   ins <- getIndent b $ p_line start
   replaceInterval b start end
     $ T.unlines
-    $ fmap (T.replicate ins " " <>) clauses
+    $ fmap (T.replicate ins " " <>)
+    $ fmap replaceQuestion clauses
 -- TODO(sandy): It would be nice if Agda just gave us the bounds we're supposed to replace...
 doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
   let ip' = fmap agdaToLine ip
@@ -116,8 +119,10 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
       (start, end) <- getSurroundingMotion w b "i}" $ iStart $ ip_interval ip'
       -- Add an extra character to the start so we leave a space after the
       -- opening brace
-      replaceInterval b (start & #p_col %~ offsetPlus (Offset 1)) end $ T.unlines $
-        clauses & _tail %~ fmap (indent start)
+      replaceInterval b (start & #p_col %~ offsetPlus (Offset 1)) end
+        $ T.unlines
+        $ fmap replaceQuestion
+        $ clauses & _tail %~ fmap (indent start)
 
 
 ------------------------------------------------------------------------------

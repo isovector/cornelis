@@ -14,7 +14,6 @@ import           Cornelis.Types
 import           Cornelis.Types.Agda
 import           Cornelis.Utils
 import           Data.Aeson
-import           Data.Bool (bool)
 import qualified Data.Map as M
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
@@ -44,10 +43,13 @@ spawnAgda buffer = do
       void $ neovimAsync $ forever $ reportExceptions $ do
         resp <- liftIO $ hGetLine hout
         chan <- asks ce_stream
-        when debugJson $ vim_report_error $ T.pack $ show resp
         case eitherDecode @Response $ encodeUtf8 $ (dropPrefix "JSON> ") resp of
           Left err -> vim_report_error $ T.pack err
-          Right res -> liftIO $ writeChan chan $ AgdaResp buffer res
+          Right res -> do
+            case res of
+              HighlightingInfo _ _ -> pure ()
+              _ -> when debugJson $ vim_report_error $ T.pack $ show resp
+            liftIO $ writeChan chan $ AgdaResp buffer res
 
       pure $ Agda buffer hin hdl
     (_, _) -> error "can't start agda"
@@ -66,7 +68,7 @@ runIOTCM i agda = do
 
 
 enableHighlighting :: HighlightingLevel
-enableHighlighting = bool NonInteractive None debugJson
+enableHighlighting = NonInteractive
 
 
 buildIOTCM :: Interaction -> Buffer -> Neovim env IOTCM

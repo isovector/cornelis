@@ -6,7 +6,6 @@ module TestSpec where
 
 import           Control.Concurrent (threadDelay)
 import           Control.Monad (void)
-import           Cornelis.Goals (nextGoal)
 import           Cornelis.Types
 import           Cornelis.Types.Agda (Rewrite (..))
 import           Cornelis.Utils (withBufferStuff)
@@ -27,7 +26,7 @@ broken = before_ pending
 spec :: Spec
 spec = parallel $ do
   diffSpec "should refine" (Seconds 5) "test/Hello.agda"
-      [ Swap "unit = {! !}" "unit = one"] $ \w _ -> do
+      [ Swap "unit = ?" "unit = one"] $ \w _ -> do
     goto w 11 8
     refine
 
@@ -38,30 +37,30 @@ spec = parallel $ do
     liftIO $ threadDelay 5e5
     void $ vim_command "normal! G\"\"p"
 
-  diffSpec "should case split (unicode lambda)" (Seconds 5) "test/Hello.agda"
-      [ Add                           "slap = λ { true → {! !}"
-      , Swap "slap = λ { x → {! !} }" "         ; false → {! !} }"
+  broken $ diffSpec "should case split (unicode lambda)" (Seconds 5) "test/Hello.agda"
+      [ Add                       "slap = λ { true → ?"
+      , Swap "slap = λ { x → ? }" "         ; false → ? }"
       ] $ \w _ -> do
     goto w 20 16
     caseSplit "x"
 
   diffSpec "should preserve indents when doing case split" (Seconds 5) "test/Hello.agda"
-      [ Add                           "  testIndent true = {! !}"
-      , Swap "  testIndent b = {! !}" "  testIndent false = {! !}"
+      [ Add                       "  testIndent true = ?"
+      , Swap "  testIndent b = ?" "  testIndent false = ?"
       ] $ \w _ -> do
     goto w 24 18
     caseSplit "b"
 
   diffSpec "should refine with hints" (Seconds 5) "test/Hello.agda"
-      [ Swap "isEven∘ (suc n) = {! isEven∘ !}" "isEven∘ (suc n) = isEven∘ {! !}"] $ \w _ -> do
+      [ Swap "isEven∘ (suc n) = {! isEven∘ !}" "isEven∘ (suc n) = isEven∘ ?"] $ \w _ -> do
     goto w 28 24
     refine
 
   let case_split_test name row col =
         diffSpec ("should case split (" <> T.unpack name <> ")") (Seconds 5) "test/Hello.agda"
             (fmap (fmap (name <>))
-              [ Add " true = {! !}"
-              , Swap " x = {! !}" " false = {! !}"
+              [ Add           " true = ?"
+              , Swap " x = ?" " false = ?"
               ]
             ) $ \w _ -> do
           goto w row col
@@ -88,13 +87,13 @@ spec = parallel $ do
     liftIO $ V.toList res `shouldContain` ["module Agda.Builtin.Nat where"]
 
   diffSpec "work with multiple" (Seconds 5) "test/Hello.agda"
-      [ Add "copattern true = {! !}"
-      , Swap "copattern = {! !}" "copattern false = {! !}"
+      [ Add                  "copattern true = ?"
+      , Swap "copattern = ?" "copattern false = ?"
       ] $ \w _ -> do
-    goto w 31 14
+    goto w 31 13
     caseSplit ""
-    liftIO $ threadDelay 1e6
-    nextGoal
+    liftIO $ threadDelay 5e5
+    goto w 31 15
     liftIO $ threadDelay 5e5
     caseSplit "x"
 

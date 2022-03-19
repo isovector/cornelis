@@ -32,7 +32,6 @@ import           Plugin
 
 
 
-
 getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe (InteractionPoint Identity LineOffset))
 getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
 
@@ -79,10 +78,8 @@ respond b ClearHighlighting = do
   -- remove the extmarks and highlighting
   ns <- asks ce_namespace
   nvim_buf_clear_namespace b ns 0 (-1)
-respond b (HighlightingInfo _remove hl) = do
-  goals <- highlightBuffer b hl
-  goals' <- traverse (traverseInterval (unvimifyColumnPos b)) goals
-  questionMarkToMeta b goals'
+respond b (HighlightingInfo _remove hl) =
+  void $ highlightBuffer b hl
 respond _ (RunningInfo _ x) = reportInfo x
 respond _ (ClearRunningInfo) = reportInfo ""
 respond b (JumpToError _ pos) = do
@@ -96,11 +93,11 @@ respond b (JumpToError _ pos) = do
 respond _ Status{} = pure ()
 respond _ (Unknown k _) = reportError k
 
-doMakeCase :: Buffer -> MakeCase -> Neovim env ()
+doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
 doMakeCase b (RegularCase Function clauses ip) = do
-  let int = ip_interval
-          $ fmap agdaToLine
-          $ ip & #ip_interval' . #_Identity . #iStart . #p_col .~ Offset 1
+  int' <- traverseInterval (pure . fmap agdaToLine) $ ip_interval ip
+  let int :: Interval' LineOffset
+      int = int' & #iStart . #p_col .~ Offset 0
       start = iStart int
       end = iEnd int
   ins <- getIndent b $ p_line start

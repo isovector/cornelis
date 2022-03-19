@@ -112,11 +112,10 @@ vimSpec name secs fp m = do
       withLocalEnv env $ do
         vim_command $ "edit " <> T.pack fp'
         load
-        liftIO $ threadDelay 1e6
+        liftIO $ threadDelay 5e5
         w <- vim_get_current_window
         b <- nvim_win_get_buf w
         m w b
-        liftIO $ threadDelay 5e6
 
 
 mkPos :: Int32 -> Int32 -> Pos

@@ -19,7 +19,8 @@ import           Cornelis.Types
 import           Cornelis.Types.Agda hiding (Error)
 import           Cornelis.Utils
 import           Cornelis.Vim
-import           Data.Foldable (for_, fold)
+import           Data.Foldable (for_, fold, toList)
+import qualified Data.IntMap as IM
 import           Data.List
 import qualified Data.Map as M
 import           Data.Ord
@@ -78,23 +79,29 @@ load = withAgda $ withCurrentBuffer $ \b -> do
   name <- buffer_get_name $ a_buffer agda
   flip runIOTCM agda $ Cmd_load name []
 
-questionMarkToMeta :: Buffer -> [Interval' LineOffset] -> Neovim CornelisEnv ()
-questionMarkToMeta b ips = do
-  res <- fmap fold $ for (sortOn (Down . iStart) ips) $ \int ->
-      getGoalContents_maybe b int >>= \case
-        -- We only don't have a goal contents if we are a ? goal
-        Nothing -> do
-          replaceInterval b (iStart int) (iEnd int) "{! !}"
-          let int' = int
-                   { iEnd = (iStart int)
-                                -- Inclusive, so we add only 4 offset, rather
-                                -- than the 5 for the characters
-                      { p_col = offsetPlus (p_col $ iStart int) (Offset 4)
-                      }
-                   }
-          void $ highlightInterval b int' Todo
-          pure $ Any True
-        Just _ -> pure $ Any False
+questionToMeta :: Buffer -> Neovim CornelisEnv ()
+questionToMeta b = withBufferStuff b $ \bs -> do
+  let ips = toList $ bs_ips bs
+
+  res <- fmap fold $ for (sortOn (Down . iStart . ip_interval) ips) $ \ip -> do
+    let int = ip_interval ip
+    getGoalContents_maybe b int >>= \case
+      -- We only don't have a goal contents if we are a ? goal
+      Nothing -> do
+        replaceInterval b (iStart int) (iEnd int) "{! !}"
+        let int' = int
+                  { iEnd = (iStart int)
+                              -- Inclusive, so we add only 4 offset, rather
+                              -- than the 5 for the characters
+                    { p_col = offsetPlus (p_col $ iStart int) (Offset 4)
+                    }
+                  }
+        void $ highlightInterval b int' Todo
+        modifyBufferStuff b $
+          #bs_ips %~ IM.insert (ip_id ip) (ip & #ip_interval' . #_Identity .~ int')
+
+        pure $ Any True
+      Just _ -> pure $ Any False
 
   -- Force a save if we replaced any goals
   case getAny res of

@@ -15,7 +15,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, }:
+  outputs = { self, nixpkgs, flake-utils, ... }:
     let
       ghcVersion = "8107";
       compiler = "ghc${ghcVersion}";

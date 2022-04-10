@@ -124,9 +124,9 @@ prettyName = annotate Identifier . pretty
 
 
 prettyInScope :: InScope -> Doc HighlightGroup
-prettyInScope (InScope _ orig in_scope ty) =
+prettyInScope (InScope reified _ in_scope ty) =
   hsep
-    [ prettyGoal $ GoalInfo orig ty
+    [ prettyGoal $ GoalInfo reified ty
     , bool
         (pretty (replicate 6 ' ') <+> annotate Comment (parens "not in scope"))
         mempty

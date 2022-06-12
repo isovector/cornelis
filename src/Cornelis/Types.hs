@@ -250,13 +250,21 @@ data DisplayInfo
       , di_errors :: [Message]
       , di_warnings :: [Message]
       }
-  | GoalSpecific (InteractionPoint Identity AgdaOffset) [InScope] Type
+  | GoalSpecific (InteractionPoint Identity AgdaOffset) [InScope] Type (Maybe Type)
   | HelperFunction Text
   | DisplayError Text
   | WhyInScope Text
   | NormalForm Text
   | UnknownDisplayInfo Value
   deriving (Eq, Ord, Show, Generic)
+
+data TypeAux = TypeAux
+  { ta_expr :: Type
+  }
+
+instance FromJSON TypeAux where
+  parseJSON = withObject "TypeAux" $ \obj ->
+    (TypeAux . Type) <$> obj .: "expr"
 
 instance FromJSON DisplayInfo where
   parseJSON v = flip (withObject "DisplayInfo") v $ \obj ->
@@ -280,7 +288,11 @@ instance FromJSON DisplayInfo where
             "HelperFunction" ->
               HelperFunction <$> info .: "signature"
             "GoalType" ->
-              GoalSpecific <$> obj .: "interactionPoint" <*> info .: "entries" <*> info .: "type"
+              GoalSpecific
+                <$> obj .: "interactionPoint"
+                <*> info .: "entries"
+                <*> info .: "type"
+                <*> (fmap (fmap ta_expr) (info .: "typeAux") <|> pure Nothing)
             (_ :: Text) ->
               pure $ UnknownDisplayInfo v
       (_ :: Text) -> pure $ UnknownDisplayInfo v

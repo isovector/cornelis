@@ -87,8 +87,14 @@ prettyGoals (AllGoalsWarnings vis invis _ warns) =
         prettyGoal . fmap (mappend "?" . T.pack . show . ip_id)
     , section "Invisible Goals" invis $ prettyGoal . fmap np_name
     ]
-prettyGoals (GoalSpecific _ scoped ty) = vcat
-  [ annotate Title "Goal:" <+>  prettyType ty
+prettyGoals (GoalSpecific _ scoped ty Nothing) = vcat
+  [ annotate Title "Goal:" <+> prettyType ty
+  , mconcat $ replicate 60 "—"
+  , vcat $ fmap prettyInScope scoped
+  ]
+prettyGoals (GoalSpecific _ scoped ty (Just have)) = vcat
+  [ annotate Title "Goal:" <+> prettyType ty
+  , annotate Title "Have:" <+> prettyType have
   , mconcat $ replicate 60 "—"
   , vcat $ fmap prettyInScope scoped
   ]

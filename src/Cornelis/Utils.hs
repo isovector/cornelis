@@ -66,7 +66,7 @@ criticalFailure err = do
   liftIO $ throwIO $ ErrorResult "critical error" ObjectNil
 
 modifyBufferStuff :: Buffer -> (BufferStuff -> BufferStuff) -> Neovim CornelisEnv ()
-modifyBufferStuff b f = modify' $ #cs_buffers %~ M.update (Just . f) b
+modifyBufferStuff b f = modify' $! #cs_buffers %~ M.update (Just . f) b
 
 withBufferStuff :: Monoid a => Buffer -> (BufferStuff -> Neovim CornelisEnv a) -> Neovim CornelisEnv a
 withBufferStuff b f =

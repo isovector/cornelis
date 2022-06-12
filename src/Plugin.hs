@@ -156,6 +156,15 @@ typeContext _ ms = withNormalizationMode ms $ \mode ->
     agda <- getAgda b
     flip runIOTCM agda $ Cmd_goal_type_context mode (InteractionId $ ip_id goal) noRange ""
 
+typeContextInfer :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
+typeContextInfer _ ms = withNormalizationMode ms $ \mode ->
+  withAgda $ void $ withGoalAtCursor $ \b goal -> do
+    agda <- getAgda b
+    contents <- getGoalContents b $ ip_interval goal
+    flip runIOTCM agda
+      $ Cmd_goal_type_context_infer mode (InteractionId $ ip_id goal) noRange
+      $ T.unpack contents
+
 doRefine :: CommandArguments -> Neovim CornelisEnv ()
 doRefine = const refine
 

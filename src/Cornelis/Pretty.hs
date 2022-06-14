@@ -4,9 +4,12 @@ module Cornelis.Pretty where
 
 import           Cornelis.Offsets (toBytes, Offset (Offset))
 import qualified Cornelis.Types as C
+import qualified Cornelis.Types as X
 import           Cornelis.Types hiding (Type)
 import           Data.Bool (bool)
+import           Data.Function (on)
 import           Data.Int
+import           Data.List (sortOn, groupBy)
 import qualified Data.Text as T
 import           Prettyprinter
 import           Prettyprinter.Internal.Type
@@ -77,6 +80,14 @@ prettyType :: C.Type -> Doc HighlightGroup
 prettyType (C.Type ty) = annotate Type $ sep $ fmap pretty $ T.lines ty
 
 
+groupScopeSet :: [InScope] -> [[InScope]]
+groupScopeSet
+  = sortOn (is_refied_name . head)
+  . fmap (sortOn is_refied_name)
+  . groupBy (on (==) is_type)
+  . sortOn is_type
+
+
 prettyGoals :: DisplayInfo -> Doc HighlightGroup
 prettyGoals (AllGoalsWarnings _ _ errs _) | not $ null errs =
   annotate Error $ vcat $ fmap (pretty . getMessage) errs
@@ -90,13 +101,13 @@ prettyGoals (AllGoalsWarnings vis invis _ warns) =
 prettyGoals (GoalSpecific _ scoped ty Nothing) = vcat
   [ annotate Title "Goal:" <+> prettyType ty
   , mconcat $ replicate 60 "—"
-  , vcat $ fmap prettyInScope scoped
+  , vcat $ fmap prettyInScopeSet $ groupScopeSet scoped
   ]
 prettyGoals (GoalSpecific _ scoped ty (Just have)) = vcat
   [ annotate Title "Goal:" <+> prettyType ty
   , annotate Title "Have:" <+> prettyType have
   , mconcat $ replicate 60 "—"
-  , vcat $ fmap prettyInScope scoped
+  , vcat $ fmap prettyInScopeSet $ groupScopeSet scoped
   ]
 prettyGoals (HelperFunction sig) =
   section "Helper Function"
@@ -126,8 +137,12 @@ section doc as f = vcat $
 
 
 prettyName :: Text -> Doc HighlightGroup
-prettyName = annotate Identifier . pretty
+prettyName = prettyVisibleName True
 
+
+prettyVisibleName :: Bool -> Text -> Doc HighlightGroup
+prettyVisibleName False t = annotate Comment $ "(" <> pretty t <> ")"
+prettyVisibleName True t = annotate Identifier $ pretty t
 
 prettyInScope :: InScope -> Doc HighlightGroup
 prettyInScope (InScope reified _ in_scope ty) =
@@ -139,10 +154,23 @@ prettyInScope (InScope reified _ in_scope ty) =
         in_scope
     ]
 
+prettyInScopeSet :: [InScope] -> Doc HighlightGroup
+prettyInScopeSet is =
+  let ty = is_type $ head is
+   in prettyManyGoals is ty
+
+prettyManyGoals :: [InScope] -> X.Type -> Doc HighlightGroup
+prettyManyGoals is ty =
+  hang 4 $ sep
+    [ hsep $
+        fmap (\i -> prettyVisibleName (is_in_scope i) $ is_refied_name i) is <> [":"]
+    , prettyType ty
+    ]
+
 prettyGoal :: GoalInfo Text -> Doc HighlightGroup
-prettyGoal (GoalInfo name ty) = hsep
-  [ prettyName name
-  , ":"
-  , align $ prettyType ty
-  ]
+prettyGoal (GoalInfo name ty) =
+  hang 4 $ sep
+    [ prettyName name <+> ":"
+    , prettyType ty
+    ]
 

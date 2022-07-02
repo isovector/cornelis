@@ -380,6 +380,23 @@ You can now align justifications by visually selecting the proof, and then
 typing `<leader><space>r`.
 
 
+### Customizing Syntax Highlighting
+
+Syntax highlighting is controlled by syntax groups named `Cornelis*`,
+defined in [`syntax/agda.vim`](./syntax/agda.vim).
+These groups are linked to default highlighting groups
+([`:h group-name`](https://neovim.io/doc/user/syntax.html#group-name)),
+and can be customized by overriding them in user configuration.
+
+```viml
+" Highlight holes with a yellow undercurl/underline:
+highlight CornelisHole ctermfg=yellow ctermbg=NONE cterm=undercurl
+
+" Highlight "generalizables" (declarations in `variable` blocks) like constants:
+highlight link CornelisGeneralizable Constant
+```
+
+
 ## Contributing
 
 I'm a noob at Agda, and I don't know what I don't know. If this plugin doesn't

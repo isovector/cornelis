@@ -16,7 +16,7 @@ import           Cornelis.Goals
 import           Cornelis.Highlighting (getExtmarks, highlightInterval, updateLineIntervals)
 import           Cornelis.InfoWin (showInfoWindow)
 import           Cornelis.Offsets
-import           Cornelis.Pretty (prettyGoals, HighlightGroup (Todo))
+import           Cornelis.Pretty (prettyGoals, HighlightGroup (CornelisHole))
 import           Cornelis.Types
 import           Cornelis.Types.Agda hiding (Error)
 import           Cornelis.Utils
@@ -100,7 +100,7 @@ questionToMeta b = withBufferStuff b $ \bs -> do
       Nothing -> do
         replaceInterval b int "{! !}"
         let int' = int { iEnd = (iStart int) `addCol` Offset 5 }
-        void $ highlightInterval b int' Todo
+        void $ highlightInterval b int' CornelisHole
         modifyBufferStuff b $
           #bs_ips %~ M.insert (ip_id ip) (ip & #ip_intervalM . #_Identity .~ int')
 

@@ -12,14 +12,15 @@ import           Control.Monad.Trans.Maybe
 import           Cornelis.Diff
 import           Cornelis.Offsets
 import           Cornelis.Pretty
-import           Cornelis.Types hiding (Type)
+import           Cornelis.Types
 import           Cornelis.Utils
 import           Cornelis.Vim (unvimify, vimify)
 import           Data.Coerce (coerce)
+import           Data.Functor ((<&>))
 import           Data.IntervalMap.FingerTree (IntervalMap)
 import qualified Data.IntervalMap.FingerTree as IM
 import qualified Data.Map as M
-import           Data.Maybe (listToMaybe, fromMaybe, catMaybes)
+import           Data.Maybe (listToMaybe, catMaybes)
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import           Data.Traversable (for)
@@ -27,30 +28,6 @@ import           Data.Vector (Vector)
 import qualified Data.Vector as V
 import           Neovim
 import           Neovim.API.Text
-
-holeHlGroup :: HighlightGroup
-holeHlGroup = Todo
-
-hlGroup :: Text -> HighlightGroup
-hlGroup "keyword"              = Keyword
-hlGroup "symbol"               = Normal
-hlGroup "datatype"             = Type
-hlGroup "primitivetype"        = Type
-hlGroup "function"             = Operator
-hlGroup "bound"                = Identifier
-hlGroup "inductiveconstructor" = Constant
-hlGroup "number"               = Number
-hlGroup "comment"              = Comment
-hlGroup "hole"                 = holeHlGroup
-hlGroup "unsolvedmeta"         = Todo
-hlGroup "string"               = String
-hlGroup "catchallclause"       = Folded
-hlGroup "typechecks"           = Normal
-hlGroup "module"               = Structure
-hlGroup "postulate"            = PreProc
-hlGroup "primitive"            = PreProc
-hlGroup "error"                = Error
-hlGroup _                      = Normal
 
 lineIntervalsForBuffer :: Buffer -> Neovim CornelisEnv LineIntervals
 lineIntervalsForBuffer b = do
@@ -113,21 +90,38 @@ addHighlight b lis hl = do
            <$> lookupPoint lis (hl_start hl)
            <*> lookupPoint lis (hl_end hl) of
     Just (int@(Interval start end)) -> do
-      let atom = fromMaybe "" $ listToMaybe $ hl_atoms hl
-      ext <- setHighlight b int $ hlGroup atom
+      ext <- setHighlight b int $ parseHighlightGroup hl
 
-      fmap (, ext) $ case atom == "hole" of
+      fmap (, ext) $ case isHole hl of
         False -> pure mempty
         True -> do
           let vint = Interval start end
           aint <- traverse (unvimify b) vint
           pure $ maybe mempty (M.singleton aint) ext
     Nothing -> pure (mempty, Nothing)
+  where
+    -- Convert the first atom in a reply to a custom highlight
+    -- group, and return whether it is a hole or not.
+    --
+    -- Note that Agda returns both "aspects" for regular syntax
+    -- and "other aspects" for error messages, warnings and hints.
+    -- Currently, the latter kind takes precedence, since it is
+    -- located first in the message returned by Agda.
+    --
+    -- See 'Cornelis.Pretty.HighlightGroup' for more details.
+    --
+    -- TODO: Investigate whether is is possible/feasible to
+    -- attach multiple HL groups to buffer locations.
+    parseHighlightGroup :: Highlight -> Maybe HighlightGroup
+    parseHighlightGroup = listToMaybe . catMaybes . map atomToHlGroup . hl_atoms
+
+    isHole :: Highlight -> Bool
+    isHole = any (== "hole") . hl_atoms
 
 setHighlight
     :: Buffer
     -> Interval VimPos
-    -> HighlightGroup
+    -> Maybe HighlightGroup
     -> Neovim CornelisEnv (Maybe Extmark)
 setHighlight b i hl = do
   bn <- buffer_get_number b
@@ -139,26 +133,34 @@ setHighlight b i hl = do
 setHighlight'
     :: Buffer
     -> Interval VimPos
-    -> HighlightGroup
+    -> Maybe HighlightGroup
     -> Neovim CornelisEnv (Maybe Extmark)
 setHighlight' b (Interval (Pos sl sc) (Pos el ec)) hl = do
   ns <- asks ce_namespace
   let from0 = fromZeroIndexed
   flip catchNeovimException (const (pure Nothing))
-    $ fmap (Just . coerce) $ nvim_buf_set_extmark b ns (from0 sl) (from0 sc) $ M.fromList
-    [ ( "end_line"
-      , ObjectInt (from0 el)
-      )
-    , ( "end_col"
-      , ObjectInt $ from0 ec
-      )
-    , ( "hl_group"
-      , ObjectString
-          $ encodeUtf8
-          $ T.pack
-          $ show hl
-      )
-    ]
+    $ fmap (Just . coerce)
+    $ nvim_buf_set_extmark b ns (from0 sl) (from0 sc)
+    $ M.fromList
+    $ catMaybes
+    $ [ Just
+          ( "end_line"
+          , ObjectInt $ from0 el
+          )
+      , Just
+          ( "end_col"
+          , ObjectInt $ from0 ec
+          )
+      , hl <&> (\hl' ->
+          ( "hl_group"
+          , ObjectString
+            $ encodeUtf8
+            $ T.pack
+            $ show hl'
+          )
+        )
+      ]
+      
 
 highlightInterval
     :: Buffer
@@ -167,7 +169,7 @@ highlightInterval
     -> Neovim CornelisEnv (Maybe Extmark)
 highlightInterval b int hl = do
   int' <- traverse (vimify b) int
-  setHighlight b int' hl
+  setHighlight b int' $ Just hl
 
 
 parseExtmark :: Buffer -> Object -> Neovim CornelisEnv (Maybe ExtmarkStuff)

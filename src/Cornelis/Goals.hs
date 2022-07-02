@@ -104,7 +104,6 @@ getGoalAtPos b p = do
         False -> mempty
         True -> pure $ ip { ip_intervalM = Identity int }
 
-
 ------------------------------------------------------------------------------
 -- | Run a continuation on a goal at the current position in the current
 -- buffer, if it exists.

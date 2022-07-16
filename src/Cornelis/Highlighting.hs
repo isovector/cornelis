@@ -180,14 +180,14 @@ parseExtmark b
   vim_end_col <- hoistMaybe $ objectToInt =<< M.lookup (ObjectString "end_col") details
   -- Plus one here because our lines are 1-indexed but the results of
   -- get_extmarks is 0-indexed.
-  let start_line = LineNumber $ fromIntegral $ line + 1
-  end_line <- hoistMaybe $ fmap (LineNumber . (+1) . fromIntegral)
+  let start_line = LineNumber $ line + 1
+  end_line <- hoistMaybe $ fmap (LineNumber . (+1))
             . objectToInt =<< M.lookup (ObjectString "end_row") details
   hlgroup <- hoistMaybe $ objectToText =<< M.lookup (ObjectString "hl_group") details
-  sc <- lift $ unvimifyColumn b start_line $ fromIntegral col
-  ec <- lift $ unvimifyColumn b end_line   $ fromIntegral vim_end_col
+  sc <- lift $ unvimifyColumn b start_line $ col
+  ec <- lift $ unvimifyColumn b end_line   $ vim_end_col
   pure $ ExtmarkStuff
-    { es_mark = Extmark $ fromIntegral ext
+    { es_mark = Extmark ext
     , es_hlgroup = hlgroup
     , es_interval =
        Interval { iStart = Pos start_line sc

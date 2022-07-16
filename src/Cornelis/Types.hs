@@ -74,10 +74,16 @@ data CornelisState = CornelisState
   }
   deriving Generic
 
+data CornelisConfig = CornelisConfig
+  { cc_max_height :: Int64
+  }
+  deriving Generic
+
 data CornelisEnv = CornelisEnv
   { ce_state :: MVar CornelisState
   , ce_stream :: InChan AgdaResp
   , ce_namespace :: Int64
+  , ce_config :: CornelisConfig
   }
   deriving Generic
 

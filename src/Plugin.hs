@@ -128,7 +128,7 @@ doRestart _ = do
 
 
 normalizationMode :: Neovim env Rewrite
-normalizationMode = pure Normalised
+normalizationMode = pure HeadNormal
 
 
 solveOne :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()

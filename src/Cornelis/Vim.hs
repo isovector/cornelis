@@ -42,8 +42,8 @@ getpos b mark = do
     <- vim_call_function "getpos" $ V.fromList [ObjectString $ encodeUtf8 $ T.singleton mark]
   -- getpos gives us a 1-indexed line, but that is the same way that
   -- lines are indexed.
-  let line = LineNumber $ fromIntegral row
-  col' <- unvimifyColumn b line $ fromIntegral col
+  let line = LineNumber row
+  col' <- unvimifyColumn b line col
   -- but the columns are one indexed!
   pure $ Pos line $ offsetDiff col' $ Offset 1
 

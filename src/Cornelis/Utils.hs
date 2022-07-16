@@ -22,7 +22,7 @@ import           Neovim.API.Text
 import           Neovim.Context.Internal (Neovim(..), retypeConfig)
 
 
-objectToInt :: Object -> Maybe Int
+objectToInt :: Num a => Object -> Maybe a
 objectToInt (ObjectUInt w) = Just $ fromIntegral w
 objectToInt (ObjectInt w) = Just $ fromIntegral w
 objectToInt _ = Nothing

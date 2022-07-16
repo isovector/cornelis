@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Cornelis.Agda
+      Cornelis.Config
       Cornelis.Debug
       Cornelis.Goals
       Cornelis.Highlighting

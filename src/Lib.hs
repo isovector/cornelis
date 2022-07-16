@@ -29,6 +29,7 @@ import qualified Data.Text as T
 import           Neovim
 import           Neovim.API.Text
 import           Plugin
+import Cornelis.Config (getConfig)
 
 
 
@@ -144,7 +145,9 @@ cornelisInit = do
   ns <- nvim_create_namespace "cornelis"
   mvar <- liftIO $ newMVar $ CornelisState mempty
 
-  let env = CornelisEnv mvar inchan ns
+  cfg <- getConfig
+
+  let env = CornelisEnv mvar inchan ns cfg
   void $ withLocalEnv env $
     neovimAsync $ do
       forever $ reportExceptions $ do

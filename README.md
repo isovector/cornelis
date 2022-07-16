@@ -260,6 +260,15 @@ This won't work on the first Agda file you open due to a bug, but it will
 successfully load subsequent files.
 
 
+### Configuring Cornelis' Behavior
+
+The max size of the info window can be set via:
+
+```viml
+let g:cornelis_max_size = 30
+```
+
+
 ## Contributing
 
 I'm a noob at Agda, and I don't know what I don't know. If this plugin doesn't

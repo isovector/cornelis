@@ -268,6 +268,12 @@ The max size of the info window can be set via:
 let g:cornelis_max_size = 30
 ```
 
+If you'd prefer your info window to be split vertically, you can set:
+
+```viml
+let g:cornelis_split_direction = 'Vertical'
+```
+
 
 ## Contributing
 

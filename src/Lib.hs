@@ -13,6 +13,7 @@ import           Control.Lens
 import           Control.Monad (forever)
 import           Control.Monad (when)
 import           Control.Monad.State.Class (gets)
+import           Cornelis.Config (getConfig)
 import           Cornelis.Debug (reportExceptions)
 import           Cornelis.Goals
 import           Cornelis.Highlighting (highlightBuffer, getLineIntervals, lookupPoint)
@@ -29,7 +30,6 @@ import qualified Data.Text as T
 import           Neovim
 import           Neovim.API.Text
 import           Plugin
-import Cornelis.Config (getConfig)
 
 
 

@@ -102,7 +102,9 @@ buildInfoBuffer = do
 buildInfoWindow :: InfoBuffer -> Window -> Neovim CornelisEnv Window
 buildInfoWindow (InfoBuffer split_buf) w = savingCurrentWindow $ do
   nvim_set_current_win w
-  vim_command "split"
+  asks (cc_split_direction . ce_config) >>= \case
+    Vertical -> vim_command "vsplit"
+    Horizontal -> vim_command "split"
   split_win <- nvim_get_current_win
   nvim_win_set_buf split_win split_buf
 
@@ -117,8 +119,11 @@ buildInfoWindow (InfoBuffer split_buf) w = savingCurrentWindow $ do
 resizeInfoWin :: Window -> InfoBuffer -> Neovim CornelisEnv ()
 resizeInfoWin w ib = do
   t <- nvim_buf_get_lines (iw_buffer ib) 0 (-1) False
-  height <- asks $ cc_max_height . ce_config
-  window_set_height w $ min height $ fromIntegral $ V.length t
+  max_size <- asks $ cc_max_height . ce_config
+  let size = min max_size $ fromIntegral $ V.length t
+  asks (cc_split_direction . ce_config) >>= \case
+    Vertical -> pure ()
+    Horizontal -> window_set_height w size
 
 
 

@@ -2,18 +2,19 @@
 
 module Cornelis.Config where
 
-import Cornelis.Types
-import Cornelis.Utils (objectToInt)
-import Data.Functor.Compose
-import Data.Maybe (fromMaybe)
-import Neovim
-import Neovim.API.Text
+import           Cornelis.Types
+import           Cornelis.Utils (objectToInt, objectToText)
+import           Data.Functor.Compose
+import           Data.Maybe (fromMaybe)
+import qualified Data.Text as T
+import           Neovim
+import           Neovim.API.Text
+import           Text.Read (readMaybe)
 
 
-getVar :: Text -> Compose (Neovim env) Maybe Object
+getVar :: Text -> Neovim env (Maybe Object)
 getVar v
-  = Compose
-  $ catchNeovimException (fmap Just $ vim_get_var v)
+  = catchNeovimException (fmap Just $ vim_get_var v)
   $ const
   $ pure Nothing
 
@@ -24,13 +25,9 @@ traverseCompose f (Compose fga) = Compose $ fmap (f =<<) fga
 
 getConfig :: Neovim env CornelisConfig
 getConfig
-  = fmap (fromMaybe defConfig)
-  $ getCompose
-  $ CornelisConfig
-    <$> traverseCompose objectToInt (getVar "cornelis_max_size")
-
-defConfig :: CornelisConfig
-defConfig = CornelisConfig
-  { cc_max_height = 50
-  }
+  = CornelisConfig
+    <$> fmap (fromMaybe 31 . (objectToInt =<<))
+        (getVar "cornelis_max_size")
+    <*> fmap (fromMaybe Horizontal . (readMaybe =<<) . fmap T.unpack . (objectToText =<<))
+        (getVar "cornelis_split_direction")
 

@@ -74,10 +74,14 @@ data CornelisState = CornelisState
   }
   deriving Generic
 
+data SplitDirection = Vertical | Horizontal
+  deriving (Eq, Ord, Show, Enum, Bounded, Read)
+
 data CornelisConfig = CornelisConfig
   { cc_max_height :: Int64
+  , cc_split_direction :: SplitDirection
   }
-  deriving Generic
+  deriving (Show, Generic)
 
 data CornelisEnv = CornelisEnv
   { ce_state :: MVar CornelisState

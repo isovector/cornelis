@@ -1,12 +1,8 @@
 function! cornelis#bind_input(key, result)
     let str = "<buffer> <LocalLeader>" . substitute(a:key, "|", "<bar>", "g") . " " . a:result
-    if exists("g:cornelis_silent_remap") 
-	exec "silent inoremap" . str
-    	exec "silent cnoremap" . str
-    else
-	exec "inoremap" . str
-    	exec "cnoremap" . str
-    end
+    exec "silent inoremap" . str
+    exec "silent cnoremap" . str
+
     if !exists("g:agda_input")
       let g:agda_input = {}
     endif

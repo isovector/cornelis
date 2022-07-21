@@ -84,14 +84,6 @@ call cornelis#bind_input("nat", "ℕ")
 
 will add `<LocalLeader>nat` as an input remapping for `ℕ`.
 
-#### Silent remaps
-When opening an Agda file, a list of all the registered bindings will appear
-on the screen. To silence these messages add the following to your `.vimrc`:
-
-```viml
-let g:cornelis_silent_remap = 1
-```
-
 ### Text Objects
 
 Use the `iz`/`az` text objects to operate on text between `⟨` and `⟩`. Somewhat

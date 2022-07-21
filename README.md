@@ -66,7 +66,7 @@ for available bindings, or slap your `<LocalLeader>` while in insert mode.
 
 #### Disabling Default Bindings
 
-If you don't all of the default bindings, add the following to your `.vimrc`:
+If you don't want any of the default bindings, add the following to your `.vimrc`:
 
 ```viml
 let g:cornelis_no_agda_input = 1
@@ -83,7 +83,6 @@ call cornelis#bind_input("nat", "ℕ")
 ```
 
 will add `<LocalLeader>nat` as an input remapping for `ℕ`.
-
 
 ### Text Objects
 
@@ -285,7 +284,6 @@ learn how to use Agda better! I can move quickly on feature requests.
 If you'd like to get involved, feel free to tackle an issue on the tracker and
 send a PR. I'd love to have you on board!
 
-
 ## Architecture
 
 Cornelis spins up a new `BufferStuff` for each Agda buffer it encounters.
@@ -297,5 +295,3 @@ For each `BufferStuff`, we also spin up a new thread, blocking on responses
 from `agda`. These responses all get redirected to a global worker thread, which
 is responsible for dispatching on each command. Commands are typesafe, parsed
 from JSON, and associated with the buffer they came from.
-
-

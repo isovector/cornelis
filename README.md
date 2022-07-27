@@ -41,7 +41,7 @@ exposed via the vim commands:
 :CornelisPrevGoal
 :CornelisNextGoal
 :CornelisWhyInScope
-:CornelisNormalize
+:CornelisNormalize <CM>
 :CornelisHelperFunc <RW>
 :CornelisQuestionToMeta
 ```
@@ -49,6 +49,10 @@ exposed via the vim commands:
 Commands with an `<RW>` argument take an optional normalization mode argument,
 one of `AsIs`, `Instantiated`, `HeadNormal`, `Simplified` or `Normalised`. When
 omitted, defaults to `Normalised`.
+
+Commands with a `<CM>` argument take an optional compute mode argument,
+one of `DefaultCompute`, `HeadCompute`, `IgnoreAbstract` or `UseShowInstance`.
+When omitted, defaults to `DefaultCompute`.
 
 If you need to restart the plugin (eg if Agda is stuck in a loop), you can
 restart everything via `:CornelisRestart`.

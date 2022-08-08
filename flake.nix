@@ -24,7 +24,7 @@
       let
         pkgs = import nixpkgs { inherit system; };
 
-        hsPkgs = pkgs.haskell.packages.${compiler}.override {
+        haskellPackages = pkgs.haskell.packages.${compiler}.override {
           overrides = hfinal: hprev: {
             cornelis = hfinal.callCabal2nix "cornelis" ./. { };
           };
@@ -32,7 +32,7 @@
       in
       rec {
         packages = flake-utils.lib.flattenTree {
-          cornelis = hsPkgs.cornelis;
+          cornelis = haskellPackages.cornelis;
           cornelis-vim = pkgs.vimUtils.buildVimPlugin {
             name = "cornelis";
             src = ./.;
@@ -44,5 +44,10 @@
           cornelis = flake-utils.lib.mkApp { name = "cornelis"; drv = packages.cornelis; };
         };
         defaultApp = app.cornelis;
+
+        devShells = import ./nix/dev-shells.nix {
+          inherit pkgs haskellPackages;
+          packages = p: [ defaultPackage ];
+        };
       });
 }

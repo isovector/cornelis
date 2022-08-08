@@ -78,6 +78,7 @@
           default = app.cornelis;
         };
         defaultApp = app.default;
+        devShells.default = pkgs.callPackage ./nix/dev-shells.nix { };
       }
     );
 }

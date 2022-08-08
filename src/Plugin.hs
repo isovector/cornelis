@@ -199,10 +199,16 @@ whyInScope thing = do
 
 doNormalize :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
 doNormalize _ ms = withComputeMode ms $ \mode ->
-  withAgda $ void $ withCurrentBuffer $ \b -> do
-    thing <- input "Normalize what? " Nothing Nothing
+  withAgda $ void $ do
+    (b , goal) <- getGoalAtCursor
     agda <- getAgda b
-    flip runIOTCM agda $ Cmd_compute_toplevel mode thing
+    case goal of
+        Nothing -> do
+            thing <- input "Normalize what? " Nothing Nothing
+            flip runIOTCM agda $ Cmd_compute_toplevel mode thing
+        Just ip -> do
+            t <- getGoalContents b $ ip_interval ip
+            flip runIOTCM agda $ Cmd_compute mode (InteractionId $ ip_id ip) noRange $ T.unpack t
 
 helperFunc :: Rewrite -> Text -> Neovim CornelisEnv ()
 helperFunc mode expr = do

@@ -44,7 +44,7 @@ data Rewrite =  AsIs | Instantiated | HeadNormal | Simplified | Normalised
 
 
 data ComputeMode = DefaultCompute | HeadCompute | IgnoreAbstract | UseShowInstance
-  deriving (Show, Read, Eq)
+  deriving (Show, Read, Eq, Enum, Bounded)
 
 data UseForce
   = WithForce     -- ^ Ignore additional checks, like termination/positivity...

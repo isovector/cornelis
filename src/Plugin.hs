@@ -130,6 +130,8 @@ doRestart _ = do
 normalizationMode :: Neovim env Rewrite
 normalizationMode = pure HeadNormal
 
+computeMode :: Neovim env ComputeMode
+computeMode = pure DefaultCompute
 
 solveOne :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
 solveOne _ ms = withNormalizationMode ms $ \mode ->
@@ -149,6 +151,16 @@ withNormalizationMode (Just s) f =
   case readMaybe s of
     Nothing -> reportError $ "Invalid normalization mode: " <> T.pack s
     Just nm -> f nm
+
+withComputeMode :: Maybe String -> (ComputeMode -> Neovim e ()) -> Neovim e ()
+withComputeMode Nothing f = computeMode >>= f
+withComputeMode (Just s) f =
+  case readMaybe s of
+    Nothing -> reportError $ "Invalid compute mode: "
+      <> T.pack s
+      <> ", expected one of "
+      <> T.pack (show [(minBound :: ComputeMode) .. ])
+    (Just cm) -> f cm
 
 typeContext :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
 typeContext _ ms = withNormalizationMode ms $ \mode ->
@@ -185,12 +197,18 @@ whyInScope thing = do
     agda <- getAgda b
     flip runIOTCM agda $ Cmd_why_in_scope_toplevel $ T.unpack thing
 
-doNormalize :: CommandArguments -> Neovim CornelisEnv ()
-doNormalize _ = do
-  withAgda $ void $ withCurrentBuffer $ \b -> do
-    thing <- input "Normalize what? " Nothing Nothing
+doNormalize :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
+doNormalize _ ms = withComputeMode ms $ \mode ->
+  withAgda $ void $ do
+    (b , goal) <- getGoalAtCursor
     agda <- getAgda b
-    flip runIOTCM agda $ Cmd_compute_toplevel DefaultCompute thing
+    case goal of
+        Nothing -> do
+            thing <- input "Normalize what? " Nothing Nothing
+            flip runIOTCM agda $ Cmd_compute_toplevel mode thing
+        Just ip -> do
+            t <- getGoalContents b $ ip_interval ip
+            flip runIOTCM agda $ Cmd_compute mode (InteractionId $ ip_id ip) noRange $ T.unpack t
 
 helperFunc :: Rewrite -> Text -> Neovim CornelisEnv ()
 helperFunc mode expr = do

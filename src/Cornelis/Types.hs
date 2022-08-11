@@ -260,7 +260,14 @@ data DisplayInfo
       , di_errors :: [Message]
       , di_warnings :: [Message]
       }
-  | GoalSpecific (InteractionPoint Identity AgdaOffset) [InScope] Type (Maybe Type)
+  | GoalSpecific
+      { di_ips :: InteractionPoint Identity AgdaOffset
+      , di_in_scope :: [InScope]
+      , di_type :: Type
+      , di_type_aux :: Maybe Type
+      , di_boundary :: Maybe [Text]
+      , di_output_forms :: Maybe [Text]
+      }
   | HelperFunction Text
   | DisplayError Text
   | WhyInScope Text
@@ -303,6 +310,8 @@ instance FromJSON DisplayInfo where
                 <*> info .: "entries"
                 <*> info .: "type"
                 <*> (fmap (fmap ta_expr) (info .: "typeAux") <|> pure Nothing)
+                <*> info .:? "boundary"
+                <*> info .:? "outputForms"
             (_ :: Text) ->
               pure $ UnknownDisplayInfo v
       (_ :: Text) -> pure $ UnknownDisplayInfo v

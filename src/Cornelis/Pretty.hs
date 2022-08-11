@@ -9,7 +9,9 @@ import           Cornelis.Types hiding (Type)
 import           Data.Bool (bool)
 import           Data.Function (on)
 import           Data.Int
-import           Data.List (sortOn, groupBy)
+import           Data.List (sortOn, groupBy, intersperse)
+import           Data.Maybe (maybeToList, fromMaybe)
+import           Data.Semigroup (stimes)
 import qualified Data.Text as T
 import           Prettyprinter
 import           Prettyprinter.Internal.Type
@@ -98,17 +100,19 @@ prettyGoals (AllGoalsWarnings vis invis _ warns) =
         prettyGoal . fmap (mappend "?" . T.pack . show . ip_id)
     , section "Invisible Goals" invis $ prettyGoal . fmap np_name
     ]
-prettyGoals (GoalSpecific _ scoped ty Nothing) = vcat
-  [ annotate Title "Goal:" <+> prettyType ty
-  , mconcat $ replicate 60 "—"
-  , vcat $ fmap prettyInScopeSet $ groupScopeSet scoped
-  ]
-prettyGoals (GoalSpecific _ scoped ty (Just have)) = vcat
-  [ annotate Title "Goal:" <+> prettyType ty
-  , annotate Title "Have:" <+> prettyType have
-  , mconcat $ replicate 60 "—"
-  , vcat $ fmap prettyInScopeSet $ groupScopeSet scoped
-  ]
+prettyGoals (GoalSpecific _ scoped ty mhave mboundary mconstraints) =
+  vcat $ intersperse (stimes @_ @Int 60 "—") $
+    [ section "Boundary" (fromMaybe [] mboundary) pretty
+    ] <>
+    [ annotate Title "Goal:" <+> prettyType ty
+    ] <>
+    [ annotate Title "Have:" <+> prettyType have
+    | have <- maybeToList mhave
+    ] <>
+    [ vcat $ fmap prettyInScopeSet $ groupScopeSet scoped
+    ] <>
+    [ section "Constraints" (fromMaybe [] mconstraints) pretty
+    ]
 prettyGoals (HelperFunction sig) =
   section "Helper Function"
     [ mempty

@@ -18,6 +18,17 @@ getVar v
   $ const
   $ pure Nothing
 
+-- Maybe we should batch these to avoid making too many RPC requests and/or display
+-- a deprecation message?
+getVarWithAlternatives :: [Text] -> Neovim env (Maybe Object)
+getVarWithAlternatives [] = pure Nothing
+getVarWithAlternatives (v : vs) =
+  do
+    t <- getVar v
+    case t of
+      Just _ -> return t
+      Nothing -> getVarWithAlternatives vs
+
 
 traverseCompose :: (Functor f, Monad g) => (a -> g b) -> Compose f g a -> Compose f g b
 traverseCompose f (Compose fga) = Compose $ fmap (f =<<) fga
@@ -29,5 +40,5 @@ getConfig
     <$> fmap (fromMaybe 31 . (objectToInt =<<))
         (getVar "cornelis_max_size")
     <*> fmap (fromMaybe Horizontal . (readMaybe =<<) . fmap T.unpack . (objectToText =<<))
-        (getVar "cornelis_split_direction")
+        (getVarWithAlternatives ["cornelis_split_location", "cornelis_split_direction"])
 

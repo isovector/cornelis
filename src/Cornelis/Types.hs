@@ -42,6 +42,7 @@ import Neovim.API.Text (Buffer(..), Window)
 import System.IO (Handle)
 import System.Process (ProcessHandle)
 import Data.Functor.Identity
+import Data.Char (toLower)
 
 deriving stock instance Ord Buffer
 
@@ -74,8 +75,33 @@ data CornelisState = CornelisState
   }
   deriving Generic
 
-data SplitLocation = Vertical | Horizontal | Left | Right | Top | Bottom
-  deriving (Eq, Ord, Show, Enum, Bounded, Read)
+data SplitLocation
+  = Vertical
+  | Horizontal
+  | OnLeft
+  | OnRight
+  | OnTop
+  | OnBottom
+  deriving (Eq, Ord, Enum, Bounded)
+
+instance Show SplitLocation where
+  show Vertical   = "vertical"
+  show Horizontal = "horizontal"
+  show OnLeft     = "left"
+  show OnRight    = "right"
+  show OnTop      = "top"
+  show OnBottom   = "bottom"
+
+readSplitLocation :: String -> Maybe SplitLocation
+readSplitLocation s = case fmap toLower s of
+  "vertical"   -> Just Vertical
+  "horizontal" -> Just Horizontal
+  "left"       -> Just OnLeft
+  "right"      -> Just OnRight
+  "top"        -> Just OnTop
+  "bottom"     -> Just OnBottom
+  _            -> Nothing
+
 
 data CornelisConfig = CornelisConfig
   { cc_max_height :: Int64

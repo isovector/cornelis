@@ -19,7 +19,7 @@ import           Cornelis.Goals
 import           Cornelis.Highlighting (highlightBuffer, getLineIntervals, lookupPoint)
 import           Cornelis.InfoWin
 import           Cornelis.Offsets
-import           Cornelis.Types hiding (Left, Right)
+import           Cornelis.Types
 import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Bifunctor

@@ -9,7 +9,6 @@ import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import           Neovim
 import           Neovim.API.Text
-import           Text.Read (readMaybe)
 
 
 getVar :: Text -> Neovim env (Maybe Object)
@@ -39,6 +38,6 @@ getConfig
   = CornelisConfig
     <$> fmap (fromMaybe 31 . (objectToInt =<<))
         (getVar "cornelis_max_size")
-    <*> fmap (fromMaybe Horizontal . (readMaybe =<<) . fmap T.unpack . (objectToText =<<))
+    <*> fmap (fromMaybe Horizontal . (readSplitLocation =<<) . fmap T.unpack . (objectToText =<<))
         (getVarWithAlternatives ["cornelis_split_location", "cornelis_split_direction"])
 

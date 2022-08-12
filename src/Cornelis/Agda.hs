@@ -10,7 +10,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.State
 import           Cornelis.Debug (reportExceptions)
 import           Cornelis.InfoWin (buildInfoBuffer)
-import           Cornelis.Types
+import           Cornelis.Types hiding (Left, Right)
 import           Cornelis.Types.Agda
 import           Cornelis.Utils
 import           Data.Aeson

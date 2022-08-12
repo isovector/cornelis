@@ -271,11 +271,21 @@ The max size of the info window can be set via:
 let g:cornelis_max_size = 30
 ```
 
-If you'd prefer your info window to be split vertically, you can set:
+If you'd prefer your info window to appear somewhere else, you can set
+`g:cornelis_split_location` (previously `g:cornelis_split_direction`), e.g.
 
 ```viml
-let g:cornelis_split_direction = 'Vertical'
+let g:cornelis_split_location = 'Vertical'
 ```
+
+The following configuration options are available:
+
+- `Horizontal`: The default, opens in a horizontal split respecting `splitbelow`.
+- `Vertical`: Opens in a vertical split respecting `splitright`.
+- `Top`: Opens at the top of the window.
+- `Bottom`: Opens at the bottom of the window.
+- `Left`: Opens at the left of the window.
+- `Right`: Opens at the right of the window.
 
 
 ## Contributing

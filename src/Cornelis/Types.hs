@@ -74,12 +74,12 @@ data CornelisState = CornelisState
   }
   deriving Generic
 
-data SplitDirection = Vertical | Horizontal
+data SplitLocation = Vertical | Horizontal | Left | Right | Top | Bottom
   deriving (Eq, Ord, Show, Enum, Bounded, Read)
 
 data CornelisConfig = CornelisConfig
   { cc_max_height :: Int64
-  , cc_split_direction :: SplitDirection
+  , cc_split_location :: SplitLocation
   }
   deriving (Show, Generic)
 

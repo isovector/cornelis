@@ -2,6 +2,7 @@
 
 module Cornelis.InfoWin (closeInfoWindows, showInfoWindow, buildInfoBuffer) where
 
+import           Prelude hiding (Left, Right)
 import           Control.Monad (unless)
 import           Control.Monad.State.Class
 import           Cornelis.Pretty
@@ -102,9 +103,13 @@ buildInfoBuffer = do
 buildInfoWindow :: InfoBuffer -> Window -> Neovim CornelisEnv Window
 buildInfoWindow (InfoBuffer split_buf) w = savingCurrentWindow $ do
   nvim_set_current_win w
-  asks (cc_split_direction . ce_config) >>= \case
+  asks (cc_split_location . ce_config) >>= \case
     Vertical -> vim_command "vsplit"
     Horizontal -> vim_command "split"
+    Left -> vim_command "topleft vsplit"
+    Right -> vim_command "botright vsplit"
+    Top -> vim_command "topleft split"
+    Bottom -> vim_command "botright split"
   split_win <- nvim_get_current_win
   nvim_win_set_buf split_win split_buf
 
@@ -121,9 +126,13 @@ resizeInfoWin w ib = do
   t <- nvim_buf_get_lines (iw_buffer ib) 0 (-1) False
   max_size <- asks $ cc_max_height . ce_config
   let size = min max_size $ fromIntegral $ V.length t
-  asks (cc_split_direction . ce_config) >>= \case
+  asks (cc_split_location . ce_config) >>= \case
     Vertical -> pure ()
     Horizontal -> window_set_height w size
+    Left -> pure ()
+    Right -> pure ()
+    Top -> window_set_height w size
+    Bottom -> window_set_height w size
 
 
 

@@ -27,7 +27,6 @@
         hsPkgs = pkgs.haskell.packages.${compiler}.override {
           overrides = hfinal: hprev: {
             cornelis = hfinal.callCabal2nix "cornelis" ./. { };
-            nvim-hs = hfinal.callPackage ./nix/deps/nvim-hs.nix { };
           };
         };
       in

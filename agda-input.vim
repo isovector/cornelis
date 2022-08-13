@@ -1,6 +1,6 @@
 if exists("*which_key#register")
   let l:cornelis_agda_prefix = get(g:, "cornelis_agda_prefix", "<localleader>")
-  exec "inoremap <buffer> " . l:agda_prefix . " <C-O>:WhichKey \"agda\"<CR>"
+  exec "inoremap <buffer> " . l:cornelis_agda_prefix . " <C-O>:WhichKey \"agda\"<CR>"
   call which_key#register('agda', "g:agda_input")
 endif
 

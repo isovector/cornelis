@@ -67,6 +67,12 @@ insert mode. See
 [agda-input.vim](https://github.com/isovector/cornelis/blob/master/agda-input.vim)
 for available bindings, or slap your `<LocalLeader>` while in insert mode.
 
+If you'd like to use a prefix other than your `<LocalLeader>`, add the following
+to your `.vimrc`:
+
+```viml
+let g:cornelis_agda_prefix = "<Tab>" " Replace with your desired prefix
+```
 
 #### Disabling Default Bindings
 

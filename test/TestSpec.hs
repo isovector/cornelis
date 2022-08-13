@@ -97,6 +97,12 @@ spec = focus $ parallel $ do
     liftIO $ threadDelay 5e5
     caseSplit "x"
 
+  diffSpec "work with ? in names" (Seconds 5) "test/Hello.agda"
+      [ Swap "foo? ?f = {! !}" "foo? ?f x = {! !}"
+      ] $ \w _ -> do
+    goto w 34 13
+    caseSplit ""
+
   diffSpec "question to meta" (Seconds 5) "test/Hello.agda"
        [ Swap "unit = ?" "unit = {! !}"
        , Swap "test x = ?" "test x = {! !}"

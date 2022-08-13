@@ -123,5 +123,8 @@ getGoalContents :: Buffer -> Interval' LineOffset -> Neovim CornelisEnv Text
 getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 
 replaceQuestion :: Text -> Text
-replaceQuestion = T.replace "?" "{! !}"
+replaceQuestion = T.unwords . fmap go . T.words
+  where
+    go "?" = "{! !}"
+    go x   = x
 

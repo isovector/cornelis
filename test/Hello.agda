@@ -30,3 +30,6 @@ isEven∘ (suc n) = {! isEven∘ !}
 copattern : Bool → Bool
 copattern = ?
 
+foo? : Bool → Bool → Set
+foo? ?f = {! !}
+

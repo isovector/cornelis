@@ -22,7 +22,8 @@ import           Neovim
 import           Neovim.API.Text
 
 
--- | Find a goal in the current window
+--------------------------------------------------------------------------------
+-- | Move the vim cursor to a goal in the current window
 findGoal :: Ord a => (Pos -> Pos -> Maybe a) -> Neovim CornelisEnv ()
 findGoal hunt = withAgda $ do
   w <- vim_get_current_window
@@ -42,6 +43,9 @@ findGoal hunt = withAgda $ do
         let pos' = fst $ maximumBy (comparing snd) judged_goals
         setWindowCursor w pos'
 
+
+------------------------------------------------------------------------------
+-- | Move the vim cursor to the previous interaction point.
 prevGoal :: Neovim CornelisEnv ()
 prevGoal =
   findGoal $ \pos goal ->
@@ -51,6 +55,9 @@ prevGoal =
                      , offsetDiff (p_col goal) (p_col pos)
                      )
 
+
+------------------------------------------------------------------------------
+-- | Move the vim cursor to the next interaction point.
 nextGoal :: Neovim CornelisEnv ()
 nextGoal =
   findGoal $ \pos goal ->
@@ -103,7 +110,12 @@ getGoalAtPos b p = do
   pure $ getFirst z
 
 
-withGoalAtCursor :: (Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv a) -> Neovim CornelisEnv (Maybe a)
+------------------------------------------------------------------------------
+-- | Run a continuation on a goal at the current position in the current
+-- buffer, if it exists.
+withGoalAtCursor
+    :: (Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv a)
+    -> Neovim CornelisEnv (Maybe a)
 withGoalAtCursor f = getGoalAtCursor >>= \case
    (_, Nothing) -> do
      reportInfo "No goal at cursor"
@@ -111,6 +123,11 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
    (b, Just ip) -> fmap Just $ f b ip
 
 
+------------------------------------------------------------------------------
+-- | Get the contents of a goal. PRECONDITION: The given interval correctly
+-- spans an interaction point.
+--
+-- TODO(sandy): make this call correct by construction
 getGoalContents_maybe :: Buffer -> Interval' LineOffset -> Neovim CornelisEnv (Maybe Text)
 getGoalContents_maybe b ip = do
   iv <- fmap T.strip $ getBufferInterval b ip
@@ -119,9 +136,15 @@ getGoalContents_maybe b ip = do
          -- Chop off {!, !} and trim any spaces.
     _ -> Just $ T.strip $ T.dropEnd 2 $ T.drop 2 $ iv
 
+
+------------------------------------------------------------------------------
+-- | Like 'getGoalContents_maybe', subject to the same limitations.
 getGoalContents :: Buffer -> Interval' LineOffset -> Neovim CornelisEnv Text
 getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 
+
+------------------------------------------------------------------------------
+-- | Replace all single @?@ tokens with interaction holes.
 replaceQuestion :: Text -> Text
 replaceQuestion = T.unwords . fmap go . T.words
   where

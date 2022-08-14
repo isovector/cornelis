@@ -25,9 +25,17 @@ import           System.IO hiding (hGetLine)
 import           System.Process
 
 
+------------------------------------------------------------------------------
+-- | When true, dump out received JSON as it arrives.
 debugJson :: Bool
 debugJson = False
 
+
+------------------------------------------------------------------------------
+-- | Create an 'Agda' environment for the given buffer. This spawns an
+-- asynchronous thread that keeps an agda process alive as long as vim is open.
+--
+-- TODO(sandy): This leaks the process when the buffer is closed.
 spawnAgda :: Buffer -> Neovim CornelisEnv Agda
 spawnAgda buffer = do
   (m_in, m_out, _, hdl) <-
@@ -55,28 +63,32 @@ spawnAgda buffer = do
     (_, _) -> error "can't start agda"
 
 
+------------------------------------------------------------------------------
+-- | Drop a prefix from the text, if it exists.
 dropPrefix :: LT.Text -> LT.Text -> LT.Text
 dropPrefix pref msg
   | LT.isPrefixOf pref msg = LT.drop (LT.length pref) msg
   | otherwise = msg
 
 
+------------------------------------------------------------------------------
+-- | Send an 'Interaction' to an 'Agda'.
 runIOTCM :: Interaction -> Agda -> Neovim env ()
 runIOTCM i agda = do
   iotcm <- buildIOTCM i $ a_buffer agda
   liftIO $ hPrint (a_req agda) iotcm
 
 
-enableHighlighting :: HighlightingLevel
-enableHighlighting = NonInteractive
-
-
+------------------------------------------------------------------------------
+-- | Construct an 'IOTCM' for a buffer.
 buildIOTCM :: Interaction -> Buffer -> Neovim env IOTCM
 buildIOTCM i buffer = do
   fp <- buffer_get_name buffer
-  pure $ IOTCM fp enableHighlighting Direct i
+  pure $ IOTCM fp NonInteractive Direct i
 
 
+------------------------------------------------------------------------------
+-- | Get the current buffer and run the continuation.
 withCurrentBuffer :: (Buffer -> Neovim env a) -> Neovim env a
 withCurrentBuffer f = vim_get_current_buffer >>= f
 
@@ -101,6 +113,8 @@ withAgda m = do
       m
 
 
+------------------------------------------------------------------------------
+-- | Get the 'Agda' environment for a given buffer.
 getAgda :: Buffer -> Neovim CornelisEnv Agda
 getAgda buffer = gets $ bs_agda_proc . (M.! buffer) . cs_buffers
 

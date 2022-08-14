@@ -1,5 +1,6 @@
 function! cornelis#bind_input(key, result)
-    let str = "<buffer> <LocalLeader>" . substitute(a:key, "|", "<bar>", "g") . " " . a:result
+    let l:cornelis_agda_prefix = get(g:, "cornelis_agda_prefix", "<localleader>")
+    let str = "<buffer> " . l:cornelis_agda_prefix . substitute(a:key, "|", "<bar>", "g") . " " . a:result
     exec "silent inoremap" . str
     exec "silent cnoremap" . str
 

@@ -1,6 +1,9 @@
+{-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
+
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Cornelis.Utils where
 
@@ -21,6 +24,9 @@ import           Neovim hiding (err)
 import           Neovim.API.Text
 import           Neovim.Context.Internal (Neovim(..), retypeConfig)
 
+
+deriving via (Ap (Neovim e) a) instance Semigroup a => Semigroup (Neovim e a)
+deriving via (Ap (Neovim e) a) instance Monoid a => Monoid (Neovim e a)
 
 objectToInt :: Num a => Object -> Maybe a
 objectToInt (ObjectUInt w) = Just $ fromIntegral w

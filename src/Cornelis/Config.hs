@@ -2,7 +2,6 @@
 
 module Cornelis.Config where
 
-import           Control.Applicative (asum)
 import           Cornelis.Types
 import           Cornelis.Utils (objectToInt, objectToText)
 import           Data.Maybe (fromMaybe)
@@ -24,7 +23,7 @@ getVar v
 -- | Get the first variable from vim that succeeds. Useful for variable names
 -- that have changed over time.
 getVarWithAlternatives :: [Text] -> Neovim env (Maybe Object)
-getVarWithAlternatives = asum . fmap getVar
+getVarWithAlternatives = fmap getFirst . foldMap (fmap First . getVar)
 
 
 ------------------------------------------------------------------------------

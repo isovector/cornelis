@@ -156,7 +156,7 @@ configuration to help you understand where everything plugs in.
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    cornelis.url = "github:JonathanLorimer/cornelis";
+    cornelis.url = "github:isovector/cornelis";
     cornelis.inputs.nixpkgs.follows = "nixpkgs";
   };
   outputs =

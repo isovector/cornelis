@@ -14,7 +14,7 @@ if !exists("g:cornelis_no_agda_input")
   " Mapping unicode symbols.
   call cornelis#bind_input("to", "→")
   call cornelis#bind_input("to", "→")
-  call cornelis#bind_input("-", "→")
+  call cornelis#bind_input("->", "→")
   call cornelis#bind_input("<-", "←")
   call cornelis#bind_input("and", "∧")
   call cornelis#bind_input("or", "∨")

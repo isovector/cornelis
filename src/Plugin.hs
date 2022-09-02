@@ -7,6 +7,7 @@
 module Plugin where
 
 import           Control.Lens
+import           Control.Monad ((>=>))
 import           Control.Monad.State.Class
 import           Control.Monad.Trans
 import           Cornelis.Agda (withCurrentBuffer, runIOTCM, withAgda, getAgda)
@@ -126,6 +127,8 @@ doRestart _ = do
   modify $ #cs_buffers .~ mempty
   liftIO $ for_ bs $ terminateProcess . a_hdl . bs_agda_proc
 
+doAbort :: CommandArguments -> Neovim CornelisEnv ()
+doAbort _ = withAgda $ withCurrentBuffer $ getAgda >=> runIOTCM Cmd_abort
 
 normalizationMode :: Neovim env Rewrite
 normalizationMode = pure HeadNormal

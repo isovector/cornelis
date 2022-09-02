@@ -31,6 +31,7 @@ exposed via the vim commands:
 ```
 :CornelisLoad
 :CornelisGoals
+:CornelisAbort
 :CornelisTypeContext <RW>
 :CornelisTypeContextInfer <RW>
 :CornelisRefine

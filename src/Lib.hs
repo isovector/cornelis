@@ -173,6 +173,7 @@ cornelis = do
     { environment = env
     , exports =
         [ $(command "CornelisRestart"          'doRestart)        [CmdSync Async]
+        , $(command "CornelisAbort"            'doAbort)          [CmdSync Async]
         , $(command "CornelisLoad"             'doLoad)           [CmdSync Async]
         , $(command "CornelisGoals"            'doAllGoals)       [CmdSync Async]
         , $(command "CornelisSolve"            'solveOne)         [CmdSync Async]

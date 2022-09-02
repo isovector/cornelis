@@ -34,6 +34,8 @@ exposed via the vim commands:
 :CornelisTypeContext <RW>
 :CornelisTypeContextInfer <RW>
 :CornelisRefine
+:CornelisGive
+:CornelisElaborate
 :CornelisAuto
 :CornelisSolve <RW>
 :CornelisMakeCase

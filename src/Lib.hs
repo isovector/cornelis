@@ -182,6 +182,7 @@ cornelis = do
         , $(command "CornelisMakeCase"         'doCaseSplit)      [CmdSync Async]
         , $(command "CornelisRefine"           'doRefine)         [CmdSync Async]
         , $(command "CornelisGive"             'doGive)           [CmdSync Async]
+        , $(command "CornelisElaborate"        'doElaborate)      [CmdSync Async]
         , $(command "CornelisPrevGoal"         'doPrevGoal)       [CmdSync Async]
         , $(command "CornelisNextGoal"         'doNextGoal)       [CmdSync Async]
         , $(command "CornelisGoToDefinition"   'doGotoDefinition) [CmdSync Async]

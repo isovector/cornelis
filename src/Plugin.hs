@@ -195,6 +195,19 @@ give = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   t <- getGoalContents b $ ip_interval goal
   flip runIOTCM agda $ Cmd_give WithoutForce (InteractionId $ ip_id goal) noRange $ T.unpack t
 
+doElaborate :: CommandArguments -> Maybe String-> Neovim CornelisEnv ()
+doElaborate _ ms = withNormalizationMode ms elaborate
+
+elaborate :: Rewrite -> Neovim CornelisEnv ()
+elaborate mode = withAgda $
+  void $
+    withGoalAtCursor $ \b goal -> do
+      agda <- getAgda b
+      t <- getGoalContents b $ ip_interval goal
+      flip runIOTCM agda $
+        Cmd_elaborate_give mode (InteractionId $ ip_id goal) noRange $ T.unpack t
+
+
 doWhyInScope :: CommandArguments -> Neovim CornelisEnv ()
 doWhyInScope _ = do
   thing <- input "Why is what in scope? " Nothing Nothing

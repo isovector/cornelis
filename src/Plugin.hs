@@ -7,6 +7,7 @@
 module Plugin where
 
 import           Control.Lens
+import           Control.Monad ((>=>))
 import           Control.Monad.State.Class
 import           Control.Monad.Trans
 import           Cornelis.Agda (withCurrentBuffer, runIOTCM, withAgda, getAgda)
@@ -126,6 +127,8 @@ doRestart _ = do
   modify $ #cs_buffers .~ mempty
   liftIO $ for_ bs $ terminateProcess . a_hdl . bs_agda_proc
 
+doAbort :: CommandArguments -> Neovim CornelisEnv ()
+doAbort _ = withAgda $ withCurrentBuffer $ getAgda >=> runIOTCM Cmd_abort
 
 normalizationMode :: Neovim env Rewrite
 normalizationMode = pure HeadNormal
@@ -185,6 +188,28 @@ refine = withAgda $ void $ withGoalAtCursor $ \b goal -> do
   agda <- getAgda b
   t <- getGoalContents b $ ip_interval goal
   flip runIOTCM agda $ Cmd_refine_or_intro True (InteractionId $ ip_id goal) noRange $ T.unpack t
+
+doGive :: CommandArguments -> Neovim CornelisEnv ()
+doGive = const give
+
+give :: Neovim CornelisEnv ()
+give = withAgda $ void $ withGoalAtCursor $ \b goal -> do
+  agda <- getAgda b
+  t <- getGoalContents b $ ip_interval goal
+  flip runIOTCM agda $ Cmd_give WithoutForce (InteractionId $ ip_id goal) noRange $ T.unpack t
+
+doElaborate :: CommandArguments -> Maybe String-> Neovim CornelisEnv ()
+doElaborate _ ms = withNormalizationMode ms elaborate
+
+elaborate :: Rewrite -> Neovim CornelisEnv ()
+elaborate mode = withAgda $
+  void $
+    withGoalAtCursor $ \b goal -> do
+      agda <- getAgda b
+      t <- getGoalContents b $ ip_interval goal
+      flip runIOTCM agda $
+        Cmd_elaborate_give mode (InteractionId $ ip_id goal) noRange $ T.unpack t
+
 
 doWhyInScope :: CommandArguments -> Neovim CornelisEnv ()
 doWhyInScope _ = do

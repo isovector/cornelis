@@ -112,3 +112,24 @@ spec = focus $ parallel $ do
        , Swap "copattern = ?" "copattern = {! !}"
        ] $ \_ b -> do
     questionToMeta b
+
+  diffSpec "give" (Seconds 5) "test/Hello.agda"
+        [ Swap "give = {! true !}" "give = true"
+        ] $ \w _ -> do
+    goto w 37 11
+    give
+
+  let elaborate_test rw changes row column =
+        let title = maybe "default mode" show rw in
+        diffSpec ("elaborate (" <> title <> ")") (Seconds 5) "test/Hello.agda" changes $
+            \w _ -> do
+                goto w row column
+                withNormalizationMode rw elaborate
+
+  elaborate_test Nothing
+    [Swap "elaborate = {! 3 !}" "elaborate = suc (suc (suc zero))"]
+    30 16
+
+  elaborate_test (Just "AsIs")
+    [Swap "elaborate = {! 3 !}" "elaborate = 3"]
+    30 16

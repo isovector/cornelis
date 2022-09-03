@@ -17,48 +17,69 @@
 
 ## Overview
 
-`cornelis` is agda-mode, but for neovim. It's written in Haskell, which means
+`cornelis` is [agda-mode], but for neovim. It's written in Haskell, which means
 it's maintainable and significantly less likely to bit-rot like any
 vimscript/lua implementations.
 
+[agda-mode]: https://agda.readthedocs.io/en/latest/tools/emacs-mode.html
 
 ## Features
 
 It supports highlighting, goal listing, type-context, refinement, auto, solving,
 case splitting, go-to definition, normalization, and helper functions. These are
-exposed via the vim commands:
+exposed via vim commands.  Most commands have an equivalent in [agda-mode].
 
-```
-:CornelisLoad
-:CornelisGoals
-:CornelisTypeContext <RW>
-:CornelisTypeContextInfer <RW>
-:CornelisRefine
-:CornelisAuto
-:CornelisSolve <RW>
-:CornelisMakeCase
-:CornelisGoToDefinition
-:CornelisPrevGoal
-:CornelisNextGoal
-:CornelisWhyInScope
-:CornelisNormalize <CM>
-:CornelisHelperFunc <RW>
-:CornelisQuestionToMeta
-```
+### Global commands
+
+| Vim command | Description | Equivalent agda-mode keybinding |
+| :--- | :--- | :--- |
+| `:CornelisLoad`           | Load and type-check buffer | <kbd>C-c</kbd><kbd>C-l</kbd> |
+| `:CornelisGoals`          | Show all goals        | <kbd>C-c</kbd><kbd>C-?</kbd> |
+| `:CornelisRestart`        | Kill and restart the `agda` process | <kbd>C-c</kbd><kbd>C-x</kbd><kbd>C-r</kbd> |
+| `:CornelisAbort`          | Abort running command | <kbd>C-c</kbd><kbd>C-x</kbd><kbd>C-a</kbd> |
+| `:CornelisSolve <RW>`     | Solve constraints     | <kbd>C-c</kbd><kbd>C-s</kbd> |
+| `:CornelisGoToDefinition` | Jump to definition of name at cursor | <kbd>M-.</kbd> or middle mouse button |
+| `:CornelisPrevGoal`       | Jump to previous goal | <kbd>C-c</kbd><kbd>C-b</kbd> |
+| `:CornelisNextGoal`       | Jump to next goal     | <kbd>C-c</kbd><kbd>C-f</kbd> |
+| `:CornelisQuestionToMeta` | Expand `?`-holes to `{! !}` | _(none)_ |
+
+### Commands in context of a goal
+
+These commands can be used in context of a hole:
+
+| Vim command | Description | Equivalent agda-mode keybinding |
+| :--- | :--- | :--- |
+| `:CornelisGive`                  | Fill goal with hole contents | <kbd>C-c</kbd><kbd>C-SPC</kbd> |
+| `:CornelisRefine`                | Refine goal                  | <kbd>C-c</kbd><kbd>C-r</kbd> |
+| `:CornelisElaborate <RW>`        | Fill goal with normalized hole contents | <kbd>C-c</kbd><kbd>C-m</kbd> |
+| `:CornelisAuto`                  | [Automatic proof search]   | <kbd>C-c</kbd><kbd>C-a</kbd> |
+| `:CornelisMakeCase`              | Case split                 | <kbd>C-c</kbd><kbd>C-c</kbd> |
+| `:CornelisTypeContext <RW>`      | Show goal type and context | <kbd>C-c</kbd><kbd>C-,</kbd> |
+| `:CornelisTypeContextInfer <RW>` | Show goal type, context, and inferred type of hole contents | <kbd>C-c</kbd><kbd>C-.</kbd> |
+| `:CornelisNormalize <CM>`        | Compute normal of hole contents | <kbd>C-c</kbd><kbd>C-n</kbd> |
+| `:CornelisWhyInScope`            | Show why given name is in scope | <kbd>C-c</kbd><kbd>C-w</kbd> |
+| `:CornelisHelperFunc <RW>`       | Copy inferred type to register `"` | <kbd>C-c</kbd><kbd>C-h</kbd> |
+
+[Automatic proof search]: https://agda.readthedocs.io/en/latest/tools/auto.html#auto
 
 Commands with an `<RW>` argument take an optional normalization mode argument,
 one of `AsIs`, `Instantiated`, `HeadNormal`, `Simplified` or `Normalised`. When
 omitted, defaults to `Normalised`.
 
-Commands with a `<CM>` argument take an optional compute mode argument,
-one of `DefaultCompute`, `HeadCompute`, `IgnoreAbstract` or `UseShowInstance`.
-When omitted, defaults to `DefaultCompute`.
+Commands with a `<CM>` argument take an optional compute mode argument:
+
+| `<CM>` | Description | Equivalent agda-mode prefix |
+| :---   | :---        | :---             |
+| `DefaultCompute`  | default, used if `<CM>` is omitted                 | no prefix, default |
+| `IgnoreAbstract`  | compute normal form, ignoring `abstract`s          | <kbd>C-u</kbd> |
+| `UseShowInstance` | compute normal form of print using `show` instance | <kbd>C-u</kbd><kbd>C-u</kbd> |
+| `HeadCompute`     | compute weak-head normal form                      | <kbd>C-u</kbd><kbd>C-u</kbd><kbd>C-u</kbd> |
+
+If Agda is stuck executing a command (e.g. if normalization takes too long),
+abort the command with `:CornelisAbort`.
 
 If you need to restart the plugin (eg if Agda is stuck in a loop), you can
 restart everything via `:CornelisRestart`.
-
-`:CornelisQuestionToMeta` will replace any `?` goals with `{! !}`s.
-
 
 ### Agda Input
 

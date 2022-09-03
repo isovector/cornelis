@@ -173,6 +173,7 @@ cornelis = do
     { environment = env
     , exports =
         [ $(command "CornelisRestart"          'doRestart)        [CmdSync Async]
+        , $(command "CornelisAbort"            'doAbort)          [CmdSync Async]
         , $(command "CornelisLoad"             'doLoad)           [CmdSync Async]
         , $(command "CornelisGoals"            'doAllGoals)       [CmdSync Async]
         , $(command "CornelisSolve"            'solveOne)         [CmdSync Async]
@@ -181,6 +182,8 @@ cornelis = do
         , $(command "CornelisTypeContextInfer" 'typeContextInfer) [CmdSync Async]
         , $(command "CornelisMakeCase"         'doCaseSplit)      [CmdSync Async]
         , $(command "CornelisRefine"           'doRefine)         [CmdSync Async]
+        , $(command "CornelisGive"             'doGive)           [CmdSync Async]
+        , $(command "CornelisElaborate"        'doElaborate)      [CmdSync Async]
         , $(command "CornelisPrevGoal"         'doPrevGoal)       [CmdSync Async]
         , $(command "CornelisNextGoal"         'doNextGoal)       [CmdSync Async]
         , $(command "CornelisGoToDefinition"   'doGotoDefinition) [CmdSync Async]

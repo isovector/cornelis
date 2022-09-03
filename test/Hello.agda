@@ -33,3 +33,8 @@ copattern = ?
 foo? : Bool → Bool → Set
 foo? ?f = {! !}
 
+give : Bool
+give = {! true !}
+
+elaborate : Nat
+elaborate = {! 3 !}

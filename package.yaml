@@ -45,10 +45,6 @@ dependencies:
 - megaparsec >= 9.0.1 && < 10
 - diff-loc >= 0.1.0.0
 
-- hspec >= 2.7.10
-- QuickCheck >= 2.14.2
-- levenshtein >= 0.1.3.0
-
 default-extensions:
   - BangPatterns
   - BinaryLiterals
@@ -128,6 +124,9 @@ tests:
     - hspec
     - temporary
     - filepath
+    - QuickCheck >= 2.14.2
+    - levenshtein >= 0.1.3.0
+
     # build-dependencies:
     # - hspec-discover
 

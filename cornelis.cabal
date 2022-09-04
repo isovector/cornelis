@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.34.7.
 --
 -- see: https://github.com/sol/hpack
 
@@ -106,8 +106,8 @@ library
     , lens
     , levenshtein
     , mtl
-    , nvim-hs
-    , nvim-hs-contrib
+    , nvim-hs >=2.0 && <3
+    , nvim-hs-contrib >=2.0 && <3
     , prettyprinter
     , process
     , random
@@ -189,8 +189,8 @@ executable cornelis
     , lens
     , levenshtein
     , mtl
-    , nvim-hs
-    , nvim-hs-contrib
+    , nvim-hs >=2.0 && <3
+    , nvim-hs-contrib >=2.0 && <3
     , prettyprinter
     , process
     , random
@@ -276,8 +276,8 @@ test-suite test
     , lens
     , levenshtein
     , mtl
-    , nvim-hs
-    , nvim-hs-contrib
+    , nvim-hs >=2.0 && <3
+    , nvim-hs-contrib >=2.0 && <3
     , prettyprinter
     , process
     , random

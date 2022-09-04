@@ -43,10 +43,6 @@ dependencies:
 - vector
 - random
 
-- hspec
-- QuickCheck
-- levenshtein
-
 default-extensions:
   - BangPatterns
   - BinaryLiterals
@@ -124,5 +120,8 @@ tests:
     dependencies:
     - cornelis
     - hspec
+    - QuickCheck
+    - levenshtein
+
     # build-dependencies:
     # - hspec-discover

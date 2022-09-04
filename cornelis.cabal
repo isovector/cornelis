@@ -92,8 +92,7 @@ library
       TypeSynonymInstances
   ghc-options: -Wall
   build-depends:
-      QuickCheck
-    , aeson
+      aeson
     , async
     , base >=4.7 && <5
     , bytestring
@@ -102,9 +101,7 @@ library
     , filepath
     , fingertree
     , generic-lens
-    , hspec
     , lens
-    , levenshtein
     , mtl
     , nvim-hs >=2.0 && <3
     , nvim-hs-contrib >=2.0 && <3
@@ -174,8 +171,7 @@ executable cornelis
       TypeSynonymInstances
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      QuickCheck
-    , aeson
+      aeson
     , async
     , base >=4.7 && <5
     , bytestring
@@ -185,9 +181,7 @@ executable cornelis
     , filepath
     , fingertree
     , generic-lens
-    , hspec
     , lens
-    , levenshtein
     , mtl
     , nvim-hs >=2.0 && <3
     , nvim-hs-contrib >=2.0 && <3

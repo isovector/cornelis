@@ -4,5 +4,6 @@ packages:
 - .
 
 extra-deps:
-- nvim-hs-2.2.0.0
-- levenshtein-0.1.3.0
+- nvim-hs-2.2.0.2
+- levenshtein-0.2.1.0
+- template-haskell-compat-v0208-0.1.9

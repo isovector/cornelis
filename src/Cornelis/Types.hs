@@ -300,6 +300,7 @@ data DisplayInfo
       , di_output_forms :: Maybe [Text]
       }
   | HelperFunction Text
+  | InferredType Type
   | DisplayError Text
   | WhyInScope Text
   | NormalForm Text
@@ -326,6 +327,8 @@ instance FromJSON DisplayInfo where
       "Error" ->
         obj .: "error" >>= \err ->
           DisplayError <$> err .: "message"
+      "InferredType" ->
+        InferredType <$> obj .: "expr"
       "WhyInScope" ->
         WhyInScope <$> obj .: "message"
       "NormalForm" ->
@@ -344,6 +347,8 @@ instance FromJSON DisplayInfo where
                 <*> info .:? "boundary"
                 <*> info .:? "outputForms"
             "NormalForm" -> NormalForm <$> info .: "expr"
+            "InferredType" ->
+              InferredType <$> info .: "expr"
             (_ :: Text) ->
               pure $ UnknownDisplayInfo v
       (_ :: Text) -> pure $ UnknownDisplayInfo v

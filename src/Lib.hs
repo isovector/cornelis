@@ -199,6 +199,7 @@ cornelis = do
         , $(command "CornelisGoals"            'doAllGoals)       [CmdSync Async]
         , $(command "CornelisSolve"            'solveOne)         [CmdSync Async, rw_complete]
         , $(command "CornelisAuto"             'autoOne)          [CmdSync Async]
+        , $(command "CornelisTypeInfer"        'doTypeInfer)      [CmdSync Async]
         , $(command "CornelisTypeContext"      'typeContext)      [CmdSync Async, rw_complete]
         , $(command "CornelisTypeContextInfer" 'typeContextInfer) [CmdSync Async, rw_complete]
         , $(command "CornelisMakeCase"         'doCaseSplit)      [CmdSync Async]

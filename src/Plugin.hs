@@ -37,6 +37,12 @@ import           System.Process (terminateProcess)
 import           Text.Read (readMaybe)
 
 
+runInteraction :: Interaction -> Neovim CornelisEnv ()
+runInteraction interaction = withCurrentBuffer $ \b -> do
+    agda <- getAgda b
+    runIOTCM interaction agda
+
+
 getDefinitionSites :: Buffer -> AgdaPos -> Neovim CornelisEnv (First DefinitionSite)
 getDefinitionSites b p = withBufferStuff b $ \bs -> do
   marks <- getExtmarks b p
@@ -246,6 +252,16 @@ elaborate mode = withAgda $ void $ withGoalAtCursor $ \b ip -> do
         (ip_id ip)
         (mkAbsPathRnage fp $ ip_interval' ip)
     $ T.unpack t
+
+doTypeInfer :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
+doTypeInfer _ ms = withNormalizationMode ms inferType
+
+inferType :: Rewrite -> Neovim CornelisEnv ()
+inferType mode = withAgda $ do
+    cmd <- withGoalContentsOrPrompt "Infer type of what?"
+        (\goal -> pure . Cmd_infer mode (ip_id goal) NoRange)
+        (\input -> pure $ Cmd_infer_toplevel mode input)
+    runInteraction cmd
 
 
 doWhyInScope :: CommandArguments -> Neovim CornelisEnv ()

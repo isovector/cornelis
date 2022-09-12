@@ -57,6 +57,7 @@ These commands can be used in context of a hole:
 | `:CornelisAuto`                  | [Automatic proof search]   | <kbd>C-c</kbd><kbd>C-a</kbd> |
 | `:CornelisMakeCase`              | Case split                 | <kbd>C-c</kbd><kbd>C-c</kbd> |
 | `:CornelisTypeContext <RW>`      | Show goal type and context | <kbd>C-c</kbd><kbd>C-,</kbd> |
+| `:CornelisTypeInfer <RW>`        | Show inferred type of hole contents | <kbd>C-c</kbd><kbd>C-d</kbd> |
 | `:CornelisTypeContextInfer <RW>` | Show goal type, context, and inferred type of hole contents | <kbd>C-c</kbd><kbd>C-.</kbd> |
 | `:CornelisNormalize <CM>`        | Compute normal of hole contents | <kbd>C-c</kbd><kbd>C-n</kbd> |
 | `:CornelisWhyInScope`            | Show why given name is in scope | <kbd>C-c</kbd><kbd>C-w</kbd> |

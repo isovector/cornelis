@@ -36,5 +36,9 @@ foo? ?f = {! !}
 give : Bool
 give = {! true !}
 
-elaborate : Nat
-elaborate = {! 3 !}
+not : Bool → Bool
+not true = false
+not false = true
+
+elaborate : Bool
+elaborate = {! not true !}

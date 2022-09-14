@@ -133,10 +133,10 @@ spec = focus $ parallel $ do
                 goto w row column
                 withNormalizationMode rw elaborate
 
-  elaborate_test Nothing
-    [Swap "elaborate = {! 3 !}" "elaborate = suc (suc (suc zero))"]
-    30 16
+  elaborate_test (Just "Normalised")
+    [Swap "elaborate = {! not true !}" "elaborate = false"]
+    44 16
 
   elaborate_test (Just "AsIs")
-    [Swap "elaborate = {! 3 !}" "elaborate = 3"]
-    30 16
+    [Swap "elaborate = {! not true !}" "elaborate = not true"]
+    44 16

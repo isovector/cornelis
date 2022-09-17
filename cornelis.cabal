@@ -98,6 +98,7 @@ library
     , bytestring
     , containers
     , directory
+    , either ==5.*
     , filepath
     , fingertree
     , generic-lens
@@ -178,6 +179,7 @@ executable cornelis
     , containers
     , cornelis
     , directory
+    , either ==5.*
     , filepath
     , fingertree
     , generic-lens
@@ -263,6 +265,7 @@ test-suite test
     , containers
     , cornelis
     , directory
+    , either ==5.*
     , filepath
     , fingertree
     , generic-lens

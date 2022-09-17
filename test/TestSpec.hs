@@ -5,7 +5,6 @@
 module TestSpec where
 
 import           Control.Concurrent (threadDelay)
-import           Control.Monad (void)
 import           Cornelis.Types
 import           Cornelis.Types.Agda (Rewrite (..))
 import           Cornelis.Utils (withBufferStuff)
@@ -20,7 +19,6 @@ import           System.Exit (ExitCode(..))
 import           System.Process (rawSystem)
 import           Test.Hspec
 import           Utils
-
 
 broken :: SpecWith a -> SpecWith a
 broken = before_ pending
@@ -37,12 +35,12 @@ spec = focus $ parallel $ do
     goto w 11 8
     refine
 
-  diffSpec "should support helper functions" (Seconds 5) "test/Hello.agda"
-      [ Swap "" "help_me : Unit"] $ \w _ -> do
+  vimSpec "should support helper functions" (Seconds 5) "test/Hello.agda" $ \w _ -> do
     goto w 11 8
     helperFunc Normalised "help_me"
     liftIO $ threadDelay 5e5
-    void $ vim_command "normal! G\"\"p"
+    reg <- getreg "\""
+    liftIO $ reg `shouldBe` (Just "help_me : Unit")
 
   broken $ diffSpec "should case split (unicode lambda)" (Seconds 5) "test/Hello.agda"
       [ Add                       "slap = λ { true → {! !}"

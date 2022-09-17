@@ -8,6 +8,7 @@ import           Control.Lens
 import           Cornelis.Offsets
 import           Cornelis.Types
 import           Cornelis.Utils (objectToInt, savingCurrentPosition, savingCurrentWindow)
+import           Data.Either.Combinators (rightToMaybe)
 import           Data.Foldable (toList)
 import           Data.Int
 import qualified Data.Text as T
@@ -127,6 +128,12 @@ setreg reg val
     [ ObjectString $ encodeUtf8 reg
     , ObjectString $ encodeUtf8 val
     ]
+
+getreg :: Text -> Neovim env (Maybe Text)
+getreg reg
+    = (rightToMaybe . fromObject)
+    <$> (vim_call_function "getreg" $ V.singleton $ toObject reg)
+
 
 ------------------------------------------------------------------------------
 -- | Awful function that does the motion in visual mode and gives you back

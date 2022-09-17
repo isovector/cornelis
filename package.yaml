@@ -44,6 +44,7 @@ dependencies:
 - random
 - megaparsec >= 9.0.1 && < 10
 - diff-loc >= 0.1.0.0
+- either >= 5 && < 6
 
 default-extensions:
   - BangPatterns

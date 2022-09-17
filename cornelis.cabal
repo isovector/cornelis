@@ -104,6 +104,7 @@ library
     , containers
     , diff-loc >=0.1.0.0
     , directory
+    , either ==5.*
     , filepath
     , fingertree >=0.1.4.2
     , generic-lens >=2.1.0.0
@@ -186,6 +187,7 @@ executable cornelis
     , cornelis
     , diff-loc >=0.1.0.0
     , directory
+    , either ==5.*
     , filepath
     , fingertree >=0.1.4.2
     , generic-lens >=2.1.0.0
@@ -273,6 +275,7 @@ test-suite test
     , cornelis
     , diff-loc >=0.1.0.0
     , directory
+    , either ==5.*
     , filepath
     , fingertree >=0.1.4.2
     , generic-lens >=2.1.0.0

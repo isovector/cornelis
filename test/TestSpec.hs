@@ -16,6 +16,8 @@ import           Neovim (liftIO)
 import           Neovim.API.Text
 import           Neovim.Test
 import           Plugin
+import           System.Exit (ExitCode(..))
+import           System.Process (rawSystem)
 import           Test.Hspec
 import           Utils
 
@@ -25,6 +27,11 @@ broken = before_ pending
 
 spec :: Spec
 spec = focus $ parallel $ do
+  describe "nvim" $ do
+    exit_code <- runIO $ rawSystem "nvim" ["--version"]
+    it "is executable" $ do
+      exit_code `shouldBe` ExitSuccess
+
   diffSpec "should refine" (Seconds 5) "test/Hello.agda"
       [ Swap "unit = ?" "unit = one"] $ \w _ -> do
     goto w 11 8

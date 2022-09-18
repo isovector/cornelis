@@ -19,9 +19,11 @@ import           Neovim
 import           Neovim.API.Text
 import           Neovim.Test
 import           Plugin
+import           System.Exit (ExitCode(..))
 import           System.FilePath (takeBaseName)
 import           System.IO (hFlush, hPutStr)
 import           System.IO.Temp (withSystemTempFile)
+import           System.Process (rawSystem)
 import           Test.Hspec hiding (after, before)
 
 
@@ -108,6 +110,13 @@ vimSpec name secs fp m = do
           load
           liftIO $ threadDelay 5e6
           m w b
+
+-- | Assert that 'bin' is executable.
+executableSpec :: String -> Spec
+executableSpec bin = describe bin $ do
+  it "is executable" $ do
+    exit_code <- rawSystem bin ["--version"]
+    exit_code `shouldBe` ExitSuccess
 
 goto :: Window -> Int -> Int -> Neovim env ()
 goto w row col = setWindowCursor w $ Pos (toOneIndexed row) (toOneIndexed col)

@@ -27,6 +27,9 @@ spec :: Spec
 spec = focus $ do
   let timeout = Seconds 60
 
+  executableSpec "agda"
+  executableSpec "nvim"
+
   it "should load read-only file" $ do
     withVim timeout $ \w b -> do
       env <- cornelisInit

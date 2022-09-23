@@ -91,8 +91,10 @@ respond b (JumpToError _ pos) = do
   case lookupPoint li pos of
     Nothing -> reportError "invalid error report from Agda"
     Just lc -> do
-      ws <- windowsForBuffer b
-      for_ ws $ flip window_set_cursor $ first (fromIntegral . getOneIndexedLineNumber . incLineNumber) lc
+      ws <- fmap listToMaybe $ windowsForBuffer b
+      for_ ws
+        $ flip window_set_cursor
+        $ first (fromIntegral . getOneIndexedLineNumber . incLineNumber) lc
 respond _ Status{} = pure ()
 respond _ (Unknown k _) = reportError k
 

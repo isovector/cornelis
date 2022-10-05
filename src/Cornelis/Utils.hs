@@ -24,10 +24,6 @@ import           Neovim hiding (err)
 import           Neovim.API.Text
 import           Neovim.Context.Internal (Neovim(..), retypeConfig)
 
-
-deriving via (Ap (Neovim e) a) instance Semigroup a => Semigroup (Neovim e a)
-deriving via (Ap (Neovim e) a) instance Monoid a => Monoid (Neovim e a)
-
 objectToInt :: Num a => Object -> Maybe a
 objectToInt (ObjectUInt w) = Just $ fromIntegral w
 objectToInt (ObjectInt w) = Just $ fromIntegral w

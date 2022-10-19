@@ -338,6 +338,7 @@ instance FromJSON DisplayInfo where
                 <*> (fmap (fmap ta_expr) (info .: "typeAux") <|> pure Nothing)
                 <*> info .:? "boundary"
                 <*> info .:? "outputForms"
+            "NormalForm" -> NormalForm <$> info .: "expr"
             (_ :: Text) ->
               pure $ UnknownDisplayInfo v
       (_ :: Text) -> pure $ UnknownDisplayInfo v

@@ -3,6 +3,7 @@
 
 module Cornelis.Types.Agda where
 
+import           Control.Applicative (liftA2)
 import           Control.Monad (mplus, liftM2)
 import           Control.Monad.Except (ExceptT, throwError)
 import           Control.Monad.State.Strict (StateT, runStateT, put, get)
@@ -19,20 +20,20 @@ import qualified Data.Sequence as Seq
 import           Data.Text (Text)
 import           GHC.Generics
 import           GHC.Show (showSpace)
+import           Prettyprinter (Pretty)
 import           System.FilePath
-import Control.Applicative (liftA2)
 
 ------------------------------------------------------------------------------
 -- | Line numbers are always 1-indexed
 newtype LineNumber = LineNumber { getOneIndexedLineNumber :: Int32 }
   deriving stock Data
-  deriving newtype (Eq, Ord, Show, Read, FromJSON)
+  deriving newtype (Eq, Ord, Show, Read, FromJSON, Pretty)
 
 data OffsetType = Line | File | OneIndexed
 
 newtype Offset (a :: OffsetType) = Offset Int32
   deriving stock Data
-  deriving newtype (Eq, Ord, Show, Read, FromJSON)
+  deriving newtype (Eq, Ord, Show, Read, FromJSON, Pretty)
 
 type BufferOffset = Offset 'File
 type LineOffset = Offset 'Line

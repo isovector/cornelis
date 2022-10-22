@@ -106,7 +106,7 @@ library
     , lens
     , levenshtein
     , mtl
-    , nvim-hs >=2.0 && <3
+    , nvim-hs >=2.2.0.3 && <3
     , nvim-hs-contrib >=2.0 && <3
     , prettyprinter
     , process
@@ -189,7 +189,7 @@ executable cornelis
     , lens
     , levenshtein
     , mtl
-    , nvim-hs >=2.0 && <3
+    , nvim-hs >=2.2.0.3 && <3
     , nvim-hs-contrib >=2.0 && <3
     , prettyprinter
     , process
@@ -276,7 +276,7 @@ test-suite test
     , lens
     , levenshtein
     , mtl
-    , nvim-hs >=2.0 && <3
+    , nvim-hs >=2.2.0.3 && <3
     , nvim-hs-contrib >=2.0 && <3
     , prettyprinter
     , process

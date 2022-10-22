@@ -15,6 +15,7 @@ import           Data.Semigroup (stimes)
 import qualified Data.Text as T
 import           Prettyprinter
 import           Prettyprinter.Internal.Type
+import Cornelis.Types.Agda (IntervalWithoutFile, AgdaOffset)
 
 data HighlightGroup
   = Keyword
@@ -98,7 +99,9 @@ prettyGoals (AllGoalsWarnings vis invis _ warns) =
     [ section "Warnings" warns $ annotate WarningMsg . pretty . getMessage
     , section "Visible Goals" vis $
         prettyGoal . fmap (mappend "?" . T.pack . show . ip_id)
-    , section "Invisible Goals" invis $ prettyGoal . fmap np_name
+    , section "Invisible Goals" invis $ \gi ->
+        prettyGoal (fmap np_name gi)
+          <+> maybe mempty (brackets . ("at" <+>) . prettyInterval) (np_interval $ gi_ip gi)
     ]
 prettyGoals (GoalSpecific _ scoped ty mhave mboundary mconstraints) =
   vcat $ intersperse (stimes @_ @Int 60 "—") $
@@ -124,6 +127,17 @@ prettyGoals (WhyInScope msg) = pretty msg
 prettyGoals (NormalForm expr) = pretty expr
 prettyGoals (DisplayError err) = annotate Error $ pretty err
 prettyGoals (UnknownDisplayInfo v) = annotate Error $ pretty $ show v
+
+prettyInterval :: IntervalWithoutFile -> Doc HighlightGroup
+prettyInterval (Interval s e)
+  | p_line s == p_line e
+  = prettyPoint s <> "-" <> pretty (p_col e)
+  | otherwise
+  = prettyPoint s <> "-" <> prettyPoint e
+
+prettyPoint :: Pos' AgdaOffset -> Doc HighlightGroup
+prettyPoint p = pretty (p_line p) <> "," <> pretty (p_col p)
+
 
 isEmpty :: Doc HighlightGroup -> Bool
 isEmpty Empty = True

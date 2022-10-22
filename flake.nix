@@ -55,7 +55,7 @@
           cornelis-vim = pkgs.vimUtils.buildVimPlugin {
             # NOTE: apparently using name here is not encouraged anymore 
             #       and will eventually lead to breakages
-            pname = "cornelis";
+            name = "cornelis";
             # matches the cabal file
             version = "0.1.0.0";
             src = ./.;

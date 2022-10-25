@@ -90,15 +90,13 @@ groupScopeSet
   . groupBy (on (==) is_type)
   . sortOn is_type
 
-
 prettyGoals :: DisplayInfo -> Doc HighlightGroup
-prettyGoals (AllGoalsWarnings _ _ errs _) | not $ null errs =
-  annotate Error $ vcat $ fmap (pretty . getMessage) errs
-prettyGoals (AllGoalsWarnings vis invis _ warns) =
+prettyGoals (AllGoalsWarnings vis invis errs warns) =
   vcat $ punctuate hardline $ filter (not . isEmpty)
     [ section "Warnings" warns $ annotate WarningMsg . pretty . getMessage
     , section "Visible Goals" vis $
         prettyGoal . fmap (mappend "?" . T.pack . show . ip_id)
+    , section "Errors" errs prettyError
     , section "Invisible Goals" invis $ \gi ->
         prettyGoal (fmap np_name gi)
           <+> maybe mempty (brackets . ("at" <+>) . prettyInterval) (np_interval $ gi_ip gi)
@@ -192,3 +190,7 @@ prettyGoal (GoalInfo name ty) =
     , prettyType ty
     ]
 
+prettyError :: Message -> Doc HighlightGroup
+prettyError (Message msg) =
+  let (hdr, body) = fmap (T.drop 1) $ T.break (== '\n') msg in
+  vcat [ annotate Error (pretty hdr) , pretty body ]

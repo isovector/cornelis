@@ -123,7 +123,7 @@ addHighlight b lis hl = do
                             (first (fromIntegral . getOneIndexedLineNumber) end)
                           $ hlGroup atom
 
-      pure $ (, Just ext) $ case atom == "hole" of
+      pure $ (, ext) $ case atom == "hole" of
         False -> []
         True ->
           pure $ Interval
@@ -138,10 +138,11 @@ setHighlight
     -> (Int64, Int64)
     -> (Int64, Int64)
     -> HighlightGroup
-    -> Neovim CornelisEnv Extmark
+    -> Neovim CornelisEnv (Maybe Extmark)
 setHighlight b (sl, sc) (el, ec) hl = do
   ns <- asks ce_namespace
-  fmap coerce $ nvim_buf_set_extmark b ns sl sc $ M.fromList
+  flip catchNeovimException (const (pure Nothing))
+    $ fmap (Just . coerce) $ nvim_buf_set_extmark b ns sl sc $ M.fromList
     [ ( "end_line"
       , ObjectInt el
       )
@@ -162,7 +163,7 @@ highlightInterval
     :: Buffer
     -> Interval' LineOffset
     -> HighlightGroup
-    -> Neovim CornelisEnv Extmark
+    -> Neovim CornelisEnv (Maybe Extmark)
 highlightInterval b int hl = do
   Interval (Pos sl sc) (Pos el ec) <- traverseInterval (vimifyPositionM b) int
   let to_vim = subtract 1 . fromIntegral . getOneIndexedLineNumber

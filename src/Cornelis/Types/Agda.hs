@@ -41,11 +41,11 @@ type AgdaOffset = Offset 'OneIndexed
 
 
 data Rewrite =  AsIs | Instantiated | HeadNormal | Simplified | Normalised
-    deriving (Show, Read, Eq, Ord)
+    deriving (Show, Read, Eq, Ord, Enum, Bounded)
 
 
 data ComputeMode = DefaultCompute | HeadCompute | IgnoreAbstract | UseShowInstance
-  deriving (Show, Read, Eq, Enum, Bounded)
+  deriving (Show, Read, Eq, Ord, Enum, Bounded)
 
 data UseForce
   = WithForce     -- ^ Ignore additional checks, like termination/positivity...

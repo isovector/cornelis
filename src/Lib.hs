@@ -29,6 +29,7 @@ import           Data.Maybe
 import qualified Data.Text as T
 import           Neovim
 import           Neovim.API.Text
+import           Neovim.Plugin (CommandOption(CmdComplete))
 import           Plugin
 
 
@@ -171,6 +172,9 @@ cornelis = do
   env <- cornelisInit
   closeInfoWindows
 
+  let rw_complete = CmdComplete "custom,InternalCornelisRewriteModeCompletion"
+      cm_complete = CmdComplete "custom,InternalCornelisComputeModeCompletion"
+
   wrapPlugin $ Plugin
     { environment = env
     , exports =
@@ -178,21 +182,23 @@ cornelis = do
         , $(command "CornelisAbort"            'doAbort)          [CmdSync Async]
         , $(command "CornelisLoad"             'doLoad)           [CmdSync Async]
         , $(command "CornelisGoals"            'doAllGoals)       [CmdSync Async]
-        , $(command "CornelisSolve"            'solveOne)         [CmdSync Async]
+        , $(command "CornelisSolve"            'solveOne)         [CmdSync Async, rw_complete]
         , $(command "CornelisAuto"             'autoOne)          [CmdSync Async]
-        , $(command "CornelisTypeContext"      'typeContext)      [CmdSync Async]
-        , $(command "CornelisTypeContextInfer" 'typeContextInfer) [CmdSync Async]
+        , $(command "CornelisTypeContext"      'typeContext)      [CmdSync Async, rw_complete]
+        , $(command "CornelisTypeContextInfer" 'typeContextInfer) [CmdSync Async, rw_complete]
         , $(command "CornelisMakeCase"         'doCaseSplit)      [CmdSync Async]
         , $(command "CornelisRefine"           'doRefine)         [CmdSync Async]
         , $(command "CornelisGive"             'doGive)           [CmdSync Async]
-        , $(command "CornelisElaborate"        'doElaborate)      [CmdSync Async]
+        , $(command "CornelisElaborate"        'doElaborate)      [CmdSync Async, rw_complete]
         , $(command "CornelisPrevGoal"         'doPrevGoal)       [CmdSync Async]
         , $(command "CornelisNextGoal"         'doNextGoal)       [CmdSync Async]
         , $(command "CornelisGoToDefinition"   'doGotoDefinition) [CmdSync Async]
         , $(command "CornelisWhyInScope"       'doWhyInScope)     [CmdSync Async]
-        , $(command "CornelisNormalize"        'doNormalize)      [CmdSync Async]
-        , $(command "CornelisHelperFunc"       'doHelperFunc)     [CmdSync Async]
+        , $(command "CornelisNormalize"        'doNormalize)      [CmdSync Async, cm_complete]
+        , $(command "CornelisHelperFunc"       'doHelperFunc)     [CmdSync Async, rw_complete]
         , $(command "CornelisQuestionToMeta"   'doQuestionToMeta) [CmdSync Async]
+        , $(function "InternalCornelisRewriteModeCompletion" 'rewriteModeCompletion) Sync
+        , $(function "InternalCornelisComputeModeCompletion" 'computeModeCompletion) Sync
         ]
     }
 

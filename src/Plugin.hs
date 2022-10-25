@@ -262,3 +262,9 @@ doQuestionToMeta _ = withCurrentBuffer questionToMeta
 goalWindow :: Buffer -> DisplayInfo ->  Neovim CornelisEnv ()
 goalWindow b = showInfoWindow b . prettyGoals
 
+computeModeCompletion :: String -> String -> Int -> Neovim env String
+computeModeCompletion _ _ _ = pure $ unlines $ fmap show $ enumFromTo @ComputeMode minBound maxBound
+
+rewriteModeCompletion :: String -> String -> Int -> Neovim env String
+rewriteModeCompletion _ _ _ = pure $ unlines $ fmap show $ enumFromTo @Rewrite minBound maxBound
+

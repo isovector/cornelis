@@ -4,7 +4,7 @@
 
 module Cornelis.Agda where
 
-import           Control.Concurrent.Chan.Unagi (writeChan)
+import           Control.Concurrent.Chan.Unagi (newChan, readChan, writeChan)
 import           Control.Lens
 import           Control.Monad.IO.Class
 import           Control.Monad.State
@@ -42,6 +42,7 @@ spawnAgda buffer = do
     liftIO $ createProcess $
       (proc "agda" ["--interaction-json"])
         { std_in = CreatePipe , std_out = CreatePipe }
+  (c_in, c_out) <- liftIO newChan
   case (m_in, m_out) of
     (Just hin, Just hout) -> do
       liftIO $ do
@@ -51,7 +52,9 @@ spawnAgda buffer = do
       void $ neovimAsync $ forever $ reportExceptions $ do
         resp <- liftIO $ hGetLine hout
         chan <- asks ce_stream
-        case eitherDecode @Response $ encodeUtf8 $ (dropPrefix "JSON> ") resp of
+        let resp' = dropPrefix "JSON> " resp
+        case eitherDecode @Response $ encodeUtf8 resp' of
+          _ | LT.null resp' -> pure ()
           Left err -> vim_report_error $ T.pack err
           Right res -> do
             case res of
@@ -59,7 +62,11 @@ spawnAgda buffer = do
               _ -> when debugJson $ vim_report_error $ T.pack $ show resp
             liftIO $ writeChan chan $ AgdaResp buffer res
 
-      pure $ Agda buffer hin hdl
+      void $ neovimAsync $ liftIO $ forever $ do
+        msg <- readChan c_out
+        hPutStrLn hin msg
+
+      pure $ Agda buffer c_in hdl
     (_, _) -> error "can't start agda"
 
 
@@ -76,7 +83,7 @@ dropPrefix pref msg
 runIOTCM :: Interaction -> Agda -> Neovim env ()
 runIOTCM i agda = do
   iotcm <- buildIOTCM i $ a_buffer agda
-  liftIO $ hPrint (a_req agda) iotcm
+  liftIO $ writeChan (a_req agda) (show iotcm)
 
 
 ------------------------------------------------------------------------------

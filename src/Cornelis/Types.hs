@@ -39,7 +39,6 @@ import GHC.Generics
 import GHC.Stack
 import Neovim hiding (err)
 import Neovim.API.Text (Buffer(..), Window)
-import System.IO (Handle)
 import System.Process (ProcessHandle)
 import Data.Functor.Identity
 import Data.Char (toLower)
@@ -51,7 +50,7 @@ type Pos = Pos' LineOffset
 
 data Agda = Agda
   { a_buffer :: Buffer
-  , a_req    :: Handle
+  , a_req    :: InChan String
   , a_hdl    :: ProcessHandle
   }
   deriving Generic

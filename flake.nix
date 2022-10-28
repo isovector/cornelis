@@ -22,7 +22,7 @@
     defaultVersion = "8107";
     compilerFor = ghc: "ghc${ghc}";
     perGHC = nixpkgs.lib.genAttrs (map compilerFor ghcVersions);
-    # recursive flattening of attrSets 
+    # recursive flattening of attrSets
     flattenAttrs = with nixpkgs.lib;
       sep: attrs: let
         recurse = p:
@@ -52,13 +52,13 @@
       in rec {
         packages = flattenAttrs "-" rec {
           cornelis = perGHC (ver: hsPkgs.${ver}.cornelis);
-          cornelis-vim = pkgs.vimUtils.buildVimPlugin {
-            # NOTE: apparently using name here is not encouraged anymore 
-            #       and will eventually lead to breakages
-            name = "cornelis";
-            # matches the cabal file
-            version = "0.1.0.0";
+          cornelis-vim = pkgs.vimUtils.buildVimPluginFrom2Nix {
+            pname = "cornelis";
+            inherit (self.packages.${system}.default) version;
             src = ./.;
+            dependencies = lib.attrValues {
+              inherit (pkgs.vimPlugins) nvim-hs-vim vim-textobj-user;
+            };
           };
           default = cornelis.${compilerFor defaultVersion};
         };

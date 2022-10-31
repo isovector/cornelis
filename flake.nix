@@ -18,60 +18,61 @@
     flake-utils,
     ...
   }: let
-    ghcVersions = ["8107" "902" "924"];
-    defaultVersion = "8107";
-    compilerFor = ghc: "ghc${ghc}";
-    perGHC = nixpkgs.lib.genAttrs (map compilerFor ghcVersions);
-    # recursive flattening of attrSets
-    flattenAttrs = with nixpkgs.lib;
-      sep: attrs: let
-        recurse = p:
-          mapAttrsToList
-          (n: v: let
-            p' =
-              if p == ""
-              then p
-              else p + sep;
-          in
-            if (isAttrs v && !(isDerivation v))
-            then recurse (p' + n) v
-            else {${p' + n} = v;});
-      in
-        foldr (a: b: a // b) {} (flatten (recurse "" attrs));
+    name = "cornelis";
+    ghcVersions = map (v: "ghc${v}") ["8107" "902" "924"];
+    defaultGhcVersion = "ghc8107";
   in
-    with flake-utils.lib;
-      eachDefaultSystem (system: let
-        pkgs = import nixpkgs {inherit system;};
+    {
+      overlays = {
+        ${name} = final: prev: {
+          haskell =
+            prev.haskell
+            // {
+              packageOverrides =
+                final.lib.composeExtensions
+                prev.haskell.packageOverrides
+                (hfinal: _: {${name} = hfinal.callCabal2nix name ./. {};});
+            };
 
-        hsPkgs = perGHC (ver:
-          pkgs.haskell.packages.${ver}.override {
-            overrides = hfinal: hprev: {
-              cornelis = hfinal.callCabal2nix "cornelis" ./. {};
+          ${name} = final.haskell.packages.${defaultGhcVersion}.${name};
+
+          vimPlugins = prev.vimPlugins.extend (pfinal: _: {
+            ${name} = final.vimUtils.buildVimPluginFrom2Nix {
+              pname = name;
+              inherit (final.${name}) version;
+              src = ./.;
+              dependencies = builtins.attrValues {
+                inherit (pfinal) nvim-hs-vim vim-textobj-user;
+              };
             };
           });
-      in rec {
-        packages = flattenAttrs "-" rec {
-          cornelis = perGHC (ver: hsPkgs.${ver}.cornelis);
-          cornelis-vim = pkgs.vimUtils.buildVimPluginFrom2Nix {
-            pname = "cornelis";
-            inherit (self.packages.${system}.default) version;
-            src = ./.;
-            dependencies = lib.attrValues {
-              inherit (pkgs.vimPlugins) nvim-hs-vim vim-textobj-user;
-            };
-          };
-          default = cornelis.${compilerFor defaultVersion};
         };
+      };
+    }
+    // flake-utils.lib.eachDefaultSystem (
+      system: let
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = builtins.attrValues self.overlays;
+        };
+      in {
+        packages =
+          builtins.listToAttrs (
+            map
+            (v: {
+              name = "${name}-${v}";
+              value = pkgs.haskell.packages.${v}.${name};
+            })
+            ghcVersions
+          )
+          // {
+            "${name}-vim" = pkgs.vimPlugins.${name};
 
-        apps = flattenAttrs "-" rec {
-          cornelis = perGHC (ver:
-            mkApp {
-              name = "cornelis";
-              drv = packages."cornelis-${ver}";
-            });
-          default = cornelis.${compilerFor defaultVersion};
-        };
+            ${name} = pkgs.${name};
+            default = pkgs.${name};
+          };
 
         formatter = pkgs.alejandra;
-      });
+      }
+    );
 }

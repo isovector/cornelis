@@ -191,14 +191,12 @@ configuration to help you understand where everything plugs in.
         system = "x86_64-linux";
         modules = [
           home-manager.nixosModules.home-manager
-            {
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.users.my-home = (import ./my-home.nix) {
-                cornelis = cornelis.packages."x86_64-linux".cornelis;
-                cornelis-vim = cornelis.packages."x86_64-linux".cornelis-vim;
-              };
-            }
+          {
+            nixpkgs.overlays = [cornelis.overlays.cornelis];
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.users.my-home = import ./my-home.nix;
+          }
         ];
       };
     };
@@ -206,21 +204,20 @@ configuration to help you understand where everything plugs in.
 }
 
 # my-home.nix
-{cornelis, cornelis-vim}: {pkgs, ...}:
+{pkgs, ...}:
 {
-  home = {
-    packages = [cornelis pkgs.agda];
-  };
-  programs = {
-    neovim = {
-      enable = true;
-      extraConfig = builtins.readFile ./init.vim;
-      plugins = with pkgs.vimPlugins; [
-        cornelis-vim
-        vim-textobj-user
-        nvim-hs-vim
-      ];
-    };
+  home.packages = [ pkgs.agda ];
+  programs.neovim = {
+    enable = true;
+    extraConfig = builtins.readFile ./init.vim;
+    plugins = [
+      {
+        # plugin packages in required Vim plugin dependencies
+        plugin = pkgs.vimPlugins.cornelis;
+        config = "let g:cornelis_use_global_binary = 1";
+      }
+    ];
+    extraPackages = [ pkgs.cornelis ];
   };
 }
 ```

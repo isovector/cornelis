@@ -2,21 +2,25 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
   pull_request:
     branches: [ master ]
 
 jobs:
-  build-stack:
-    runs-on: ubuntu-latest
+  stack-test:
     strategy:
+      fail-fast: false
       matrix:
-        ghc: ['8.8.3']
+        ghc: ['8.10.7']
         cabal: ['3.0.0.0']
         os: [ubuntu-latest, macOS-latest, windows-latest]
-    name: Test ${{ matrix.os }}
+
+    name: Stack test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
       - name: Setup Haskell
         uses: haskell/actions/setup@v1
         with:
@@ -24,30 +28,36 @@ jobs:
           enable-stack: true
           stack-version: 'latest'
           cabal-version: ${{ matrix.cabal }}
-      - run: stack test
-  build-nix:
-    name: Nix Build
+
+      - name: Build and test
+        run: stack test
+
+  nix-build:
     strategy:
+      fail-fast: false
       matrix:
         # See `ghcVersions` in `../../flake.nix`
         # GHC 9.0.2 not included since package doesn't currently build.
-        ghc: [ '8107', '924' ]
+        ghc: ['8107', '924']
         os: [ubuntu-latest, macOS-latest]
-      fail-fast: false
+
+    name: Nix build
     runs-on: ${{ matrix.os }}
+
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v2
+      - name: Checkout repo
+        uses: actions/checkout@v2
 
-    - name: Install Nix
-      uses: cachix/install-nix-action@v17
-      with:
-        extra_nix_config: |
-          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - name: Install Nix
+        uses: cachix/install-nix-action@v17
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build cornelis
-      run: |
-        nix -L build .#cornelis-ghc${{ matrix.ghc }}
-    - name: Build cornelis Vim plugin
-      run: |
-        nix -L build .#cornelis-vim
+      - name: Build cornelis
+        run: |
+          nix -L build .#cornelis-ghc${{ matrix.ghc }}
+
+      - name: Build cornelis Vim plugin
+        run: |
+          nix -L build .#cornelis-vim

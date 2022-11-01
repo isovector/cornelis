@@ -49,6 +49,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           ${{ matrix.package-manager }} install neovim agda
+          mkdir -p ~/.local/share/nvim/swap/
 
       - name: Install test dependencies (Windows)
         if: matrix.os == 'windows-latest'

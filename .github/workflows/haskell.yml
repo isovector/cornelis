@@ -10,12 +10,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [ubuntu-22.04, macos-12, windows-latest]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             package-manager: 'sudo apt'
             update-path-cmd: 'echo "${HOME}/.local/bin" >> $GITHUB_PATH'
-          - os: macOS-latest
+          - os: macos-12
             package-manager: 'brew'
             update-path-cmd: 'echo "${HOME}/.local/bin" >> $GITHUB_PATH'
           - os: windows-latest
@@ -67,7 +67,7 @@ jobs:
         # See `ghcVersions` in `../../flake.nix`
         # GHC 9.0.2 not included since package doesn't currently build.
         ghc: ['8107', '924']
-        os: [ubuntu-latest, macOS-latest]
+        os: [ubuntu-22.04, macos-12]
 
     name: Nix build
     runs-on: ${{ matrix.os }}

@@ -23,6 +23,9 @@ offsetPlus = coerce $ (+) @Int32
 offsetDiff :: Offset a -> Offset a -> Offset a
 offsetDiff = coerce $ (-) @Int32
 
+offsetSubtract :: Int -> Offset a -> Offset a
+offsetSubtract i (Offset a) = Offset $ a - fromIntegral i
+
 lineDiff :: LineNumber -> LineNumber -> LineNumber
 lineDiff = coerce $ (-) @Int32
 

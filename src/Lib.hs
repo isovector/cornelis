@@ -120,13 +120,18 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
       reportError
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a limitation in cornelis."
     Just w -> do
-      (start, end) <- getSurroundingMotion w b "i}" $ iStart $ ip_interval ip'
+      (start, end)
+        <- getSurroundingMotion w b "i}"
+          -- Subtract one so we are outside of a {! !} goal and the i} movement
+          -- works correctly
+         $ fmap (offsetSubtract 1)
+         $ iStart
+         $ ip_interval ip'
       -- Add an extra character to the start so we leave a space after the
       -- opening brace
       replaceInterval b (start & #p_col %~ offsetPlus (Offset 1)) end
         $ T.unlines
-        $ fmap replaceQuestion
-        $ clauses & _tail %~ fmap (indent start)
+        $ fmap replaceQuestion clauses & _tail %~ fmap (indent start)
 
 
 ------------------------------------------------------------------------------

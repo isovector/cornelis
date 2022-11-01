@@ -19,6 +19,8 @@
     ...
   }: let
     name = "cornelis";
+    # Update `./.github/workflows/nix.yml` if changed.
+    # Build currently failing on `ghc902`.
     ghcVersions = map (v: "ghc${v}") ["8107" "902" "924"];
     defaultGhcVersion = "ghc8107";
   in

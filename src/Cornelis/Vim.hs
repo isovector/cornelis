@@ -175,10 +175,8 @@ getSurroundingMotion w b motion p = do
 getLambdaClause
     :: Window
     -> Buffer
-       -- | Start of IP interval
-    -> Pos
-       -- | End of IP interval
-    -> Pos
+    -> Pos -- ^ Start of IP interval
+    -> Pos -- ^ End of IP interval
     -> Neovim env (Pos, Pos)
 getLambdaClause w b p0 p1 = do
   savingCurrentWindow $ do

@@ -1,0 +1,53 @@
+name: Nix CI
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+
+jobs:
+  build-package:
+    strategy:
+      fail-fast: false
+      matrix:
+        # See `ghcVersions` in `../../flake.nix`
+        # GHC 9.0.2 not included since package doesn't currently build.
+        ghc: ['8107', '924']
+
+    name: Build package (ghc${{ matrix.ghc }})
+    runs-on: ${{ inputs.os }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v18
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build cornelis
+        run: |
+          nix -L build .#cornelis-ghc${{ matrix.ghc }}
+
+  build-vim-plugin:
+    name: Build Vim plugin
+    runs-on: ${{ inputs.os }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v18
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build cornelis Vim plugin
+        run: |
+          nix -L build .#cornelis-vim
+

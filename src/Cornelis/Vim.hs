@@ -47,6 +47,26 @@ getpos b mark = do
   -- but the columns are one indexed!
   pure $ Pos line $ offsetDiff col' $ Offset 1
 
+data SearchMode = Forward | Backward
+  deriving (Eq, Ord, Show)
+
+-- Like @searchpos@ from vim, but specialized to find one of many patterns
+searchpos :: Buffer -> [Text] -> SearchMode -> Neovim env Pos
+searchpos b pats dir = do
+  ObjectArray [objectToInt -> Just row, objectToInt -> Just col]
+    <- vim_call_function "searchpos" $ V.fromList
+        [ ObjectString $ encodeUtf8 $ T.intercalate "\\|" pats
+        , ObjectString $ encodeUtf8 $ case dir of
+            Forward -> "n"
+            Backward -> "bn"
+        ]
+  -- getpos gives us a 1-indexed line, but that is the same way that
+  -- lines are indexed.
+  let line = LineNumber row
+  col' <- unvimifyColumn b line col
+  -- unlike getpos, these columns are 0 indexed W T F
+  pure $ Pos line col'
+
 
 setWindowCursor :: Window -> Pos -> Neovim env ()
 setWindowCursor w p = do
@@ -148,5 +168,25 @@ getSurroundingMotion w b motion p = do
       start <- getpos b 'v'
       end <- getpos b '.'
       void $ nvim_input "<esc>"
+      pure (start, end)
+
+------------------------------------------------------------------------------
+-- | Get an interval to replace for a lambda case split
+getLambdaClause
+    :: Window
+    -> Buffer
+       -- | Start of IP interval
+    -> Pos
+       -- | End of IP interval
+    -> Pos
+    -> Neovim env (Pos, Pos)
+getLambdaClause w b p0 p1 = do
+  savingCurrentWindow $ do
+    savingCurrentPosition w $ do
+      nvim_set_current_win w
+      setWindowCursor w p0
+      start <- searchpos b ["{", ";"] Backward
+      setWindowCursor w p1
+      end <- searchpos b [";", "}"] Forward
       pure (start, end)
 

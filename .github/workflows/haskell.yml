@@ -10,8 +10,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ghc: ['8.10.7']
-        cabal: ['3.0.0.0']
         os: [ubuntu-latest, macOS-latest, windows-latest]
 
     name: Stack test (${{ matrix.os }})
@@ -36,14 +34,6 @@ jobs:
           key: ${{ matrix.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
           restore-keys: |
             ${{ matrix.os }}-stack-work-
-
-      - name: Setup Haskell
-        uses: haskell/actions/setup@v1
-        with:
-          ghc-version: ${{ matrix.ghc }}
-          enable-stack: true
-          stack-version: 'latest'
-          cabal-version: ${{ matrix.cabal }}
 
       - name: Build and test
         run: stack test

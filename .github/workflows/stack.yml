@@ -1,0 +1,86 @@
+name: Stack CI
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      package-manager:
+        required: true
+        type: string
+      update-path-cmd:
+        required: false
+        type: string
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ inputs.os }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Cache ~/.stack
+        uses: actions/cache@v3
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-global-
+
+      - name: Cache .stack-work
+        uses: actions/cache@v3
+        with:
+          path: .stack-work
+          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-work-
+
+      - name: Build package and tests
+        run: |
+          stack test --no-run-tests
+
+  test:
+    needs: build
+
+    name: Test
+    runs-on: ${{ inputs.os }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Cache ~/.stack
+        uses: actions/cache@v3
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-global-
+
+      - name: Cache .stack-work
+        uses: actions/cache@v3
+        with:
+          path: .stack-work
+          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-work-
+
+      - name: Install test dependencies (Ubuntu and macOS)
+        if: inputs.os != 'windows-latest'
+        run: |
+          ${{ inputs.package-manager }} install neovim agda
+          mkdir -p ~/.local/share/nvim/swap/
+
+      - name: Install test dependencies (Windows)
+        if: inputs.os == 'windows-latest'
+        run: |
+          ${{ inputs.package-manager }} install neovim
+          ${{ inputs.update-path-cmd }}
+          stack install Agda
+
+      - name: Run tests
+        run: |
+          stack test

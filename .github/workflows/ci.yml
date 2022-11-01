@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  # Stack CI
+  stack-linux:
+    name: Stack Linux
+    uses: ./.github/workflows/stack.yml
+    with:
+      os: ubuntu-22.04
+      package-manager: sudo apt
+  stack-macos:
+    name: Stack macOS
+    uses: ./.github/workflows/stack.yml
+    with:
+      os: macos-12
+      package-manager: brew
+  stack-windows:
+    name: Stack Windows
+    uses: ./.github/workflows/stack.yml
+    with:
+      os: windows-latest
+      package-manager: choco
+      update-path-cmd: 'echo "${HOME}/.local/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append'
+
+  # Nix CI
+  nix-linux:
+    name: Nix Linux
+    uses: ./.github/workflows/nix.yml
+    with:
+      os: ubuntu-22.04
+  nix-macos:
+    name: Nix macOS
+    uses: ./.github/workflows/nix.yml
+    with:
+      os: macos-12

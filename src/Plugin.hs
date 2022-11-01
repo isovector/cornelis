@@ -13,7 +13,7 @@ import           Control.Monad.Trans
 import           Cornelis.Agda (withCurrentBuffer, runIOTCM, withAgda, getAgda)
 import           Cornelis.Goals
 import           Cornelis.Highlighting (getExtmarks, highlightInterval)
-import           Cornelis.InfoWin (showInfoWindow)
+import           Cornelis.InfoWin (showInfoWindow, closeInfoWindows)
 import           Cornelis.Offsets
 import           Cornelis.Pretty (prettyGoals, HighlightGroup (Todo))
 import           Cornelis.Types
@@ -120,6 +120,9 @@ allGoals =
     withBufferStuff b $ \bs -> do
       goalWindow b $ bs_goals bs
 
+
+doCloseInfoWindows :: CommandArguments -> Neovim CornelisEnv ()
+doCloseInfoWindows _ = closeInfoWindows
 
 doRestart :: CommandArguments -> Neovim CornelisEnv ()
 doRestart _ = do

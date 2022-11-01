@@ -11,6 +11,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            neovim-installer: 'sudo apt'
+          - os: macOS-latest
+            neovim-installer: 'brew'
+          - os: windows-latest
+            neovim-installer: 'choco'
 
     name: Stack test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -18,6 +25,10 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
+
+      - name: Install Neovim
+        run: |
+          ${{ matrix.neovim-installer }} install neovim
 
       - name: Cache ~/.stack
         uses: actions/cache@v3

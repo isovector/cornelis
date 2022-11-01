@@ -21,6 +21,22 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
+      - name: Cache ~/.stack
+        uses: actions/cache@v3
+        with:
+          path: ~/.stack
+          key: ${{ matrix.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          restore-keys: |
+            ${{ matrix.os }}-stack-global-
+
+      - name: Cache .stack-work
+        uses: actions/cache@v3
+        with:
+          path: .stack-work
+          key: ${{ matrix.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          restore-keys: |
+            ${{ matrix.os }}-stack-work-
+
       - name: Setup Haskell
         uses: haskell/actions/setup@v1
         with:

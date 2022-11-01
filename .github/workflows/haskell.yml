@@ -13,11 +13,14 @@ jobs:
         os: [ubuntu-latest, macOS-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            neovim-installer: 'sudo apt'
+            package-manager: 'sudo apt'
+            update-path-cmd: 'echo "${HOME}/.local/bin" >> $GITHUB_PATH'
           - os: macOS-latest
-            neovim-installer: 'brew'
+            package-manager: 'brew'
+            update-path-cmd: 'echo "${HOME}/.local/bin" >> $GITHUB_PATH'
           - os: windows-latest
-            neovim-installer: 'choco'
+            package-manager: 'choco'
+            update-path-cmd: 'echo "${HOME}/.local/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append'
 
     name: Stack test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -25,10 +28,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
-
-      - name: Install Neovim
-        run: |
-          ${{ matrix.neovim-installer }} install neovim
 
       - name: Cache ~/.stack
         uses: actions/cache@v3
@@ -45,6 +44,18 @@ jobs:
           key: ${{ matrix.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
           restore-keys: |
             ${{ matrix.os }}-stack-work-
+
+      - name: Install test dependencies (Ubuntu and macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          ${{ matrix.package-manager }} install neovim agda
+
+      - name: Install test dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          ${{ matrix.package-manager }} install neovim
+          ${{ matrix.update-path-cmd }}
+          stack install Agda
 
       - name: Build and test
         run: stack test

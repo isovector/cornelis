@@ -9,13 +9,12 @@ module Utils
 
 import           Control.Concurrent (threadDelay)
 import           Control.Lens (set, _head)
-import           Control.Monad.State (gets)
 import           Cornelis.Types
 import           Cornelis.Types.Agda
 import           Cornelis.Utils (withLocalEnv, withBufferStuff)
 import           Cornelis.Vim
 import           Data.Foldable.Levenshtein (levenshtein, Edit(..))
-import           Data.Function (fix)
+import qualified Data.IntMap as IM
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import           Lib
@@ -25,7 +24,6 @@ import           Neovim.Test
 import           Plugin
 import           System.Random (randomIO)
 import           Test.Hspec hiding (after, before)
-import qualified Data.IntMap as IM
 
 
 -- data Diff a

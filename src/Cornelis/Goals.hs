@@ -149,5 +149,8 @@ replaceQuestion :: Text -> Text
 replaceQuestion = T.unwords . fmap go . T.words
   where
     go "?" = "{! !}"
-    go x   = x
+    go x   =
+      case T.dropWhileEnd (== ')') x of
+        "?" -> "{! !}" <> T.drop 1 x
+        _ -> x
 

@@ -24,8 +24,9 @@ jobs:
     uses: ./.github/workflows/stack.yml
     with:
       os: windows-latest
+      global-stack-cache-path: ~\AppData\Roaming\stack
       package-manager: choco
-      update-path-cmd: 'echo "${HOME}/.local/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append'
+      update-path-cmd: 'echo "${HOME}\AppData\Roaming\local\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append'
 
   # Nix CI
   nix-linux:

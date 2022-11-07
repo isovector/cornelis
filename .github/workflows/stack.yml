@@ -6,12 +6,17 @@ on:
       os:
         required: true
         type: string
+      global-stack-cache-path:
+        required: false
+        type: string
+        default: ~/.stack
       package-manager:
         required: true
         type: string
       update-path-cmd:
         required: false
         type: string
+        default: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
 jobs:
   build:
@@ -22,10 +27,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Cache ~/.stack
+      - name: Cache ${{ inputs.global-stack-cache-path }}
         uses: actions/cache@v3
         with:
-          path: ~/.stack
+          path: ${{ inputs.global-stack-cache-path }}
           key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
           restore-keys: |
             ${{ runner.os }}-stack-global-

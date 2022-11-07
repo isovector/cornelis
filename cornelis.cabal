@@ -282,6 +282,7 @@ test-suite test
     , process
     , random
     , resourcet
+    , temporary
     , text
     , transformers
     , unagi-chan

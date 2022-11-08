@@ -124,5 +124,7 @@ tests:
     dependencies:
     - cornelis
     - hspec
+    - temporary
+    - filepath
     # build-dependencies:
     # - hspec-discover

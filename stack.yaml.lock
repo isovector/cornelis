@@ -5,29 +5,29 @@
 
 packages:
 - completed:
-    hackage: nvim-hs-2.2.0.3@sha256:4d186280e81cc20817f1cf0bc7a19f854865422045831debf3eb39d46649aa2f,7641
+    hackage: nvim-hs-2.3.0.0@sha256:0102bfe3926387dc5431eb2d9929bc4c6f19ef5f43fc36af4f83120b426965c9,7875
     pantry-tree:
-      size: 3030
-      sha256: e6f77311de2808c9d955ac64bc4b37c53d8b6365fcd09236cb54f7ec51135584
+      sha256: 358e2c685447d39f9fc9bd5ad02eb25e5c497817dae627b48cb65102743dd825
+      size: 3304
   original:
-    hackage: nvim-hs-2.2.0.3
+    hackage: nvim-hs-2.3.0.0
 - completed:
-    hackage: template-haskell-compat-v0208-0.1.9@sha256:abba2d89c500b0ad6259f42be07c1a59d331970624de7e0600ba62738e2c0115,1523
+    hackage: template-haskell-compat-v0208-0.1.9.1@sha256:73b2ab35ad5c5ec0c767a55838078a22cd05994d4a452c22bf5c0711627fffc6,1525
     pantry-tree:
+      sha256: cd15a1631082a3f206d1be72493938d6875c9797beb987725baa48205091aa94
       size: 295
-      sha256: 6ccef12b43fd6561c5e74f618e4eb9200c44966127144a5056d42d1d1378118b
   original:
-    hackage: template-haskell-compat-v0208-0.1.9
+    hackage: template-haskell-compat-v0208-0.1.9.1
 - completed:
     hackage: levenshtein-0.1.3.0@sha256:b285d0fde053c4c45c86f8ea082f2e3af6ddc6ff5e0891ad23305f6123fe015a,1771
     pantry-tree:
-      size: 460
       sha256: 0ba9ab3e59c31ee87da888f9823f34318cf775f3bf04facf523b1e7df4f1f929
+      size: 460
   original:
     hackage: levenshtein-0.1.3.0
 snapshots:
 - completed:
-    size: 586286
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/16.yaml
-    sha256: cdead65fca0323144b346c94286186f4969bf85594d649c49c7557295675d8a5
-  original: lts-18.16
+    sha256: 428ec8d5ce932190d3cbe266b9eb3c175cd81e984babf876b64019e2cbe4ea68
+    size: 590100
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/28.yaml
+  original: lts-18.28

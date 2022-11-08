@@ -75,8 +75,11 @@ jobs:
       - name: Install test dependencies
         run: |
           ${{ inputs.package-manager }} install neovim
-          ${{ inputs.update-path-cmd }}
           stack install Agda
+
+      - name: Update $PATH
+        run: |
+          ${{ inputs.update-path-cmd }}
 
       - name: Create Neovim swap dirs (Linux/macOS)
         if: ${{ !startsWith(inputs.os, 'windows') }}
@@ -93,3 +96,4 @@ jobs:
       - name: Run tests
         run: |
           stack test
+

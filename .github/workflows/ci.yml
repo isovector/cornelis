@@ -28,7 +28,9 @@ jobs:
       os: windows-latest
       global-stack-cache-dir: ~\AppData\Roaming\stack
       package-manager: choco
-      update-path-cmd: 'echo "${HOME}\AppData\Roaming\local\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append'
+      update-path-cmd: |
+        "$env:HOMEPATH\AppData\Roaming\local\bin" >> $env:GITHUB_PATH
+        "C:\tools\neovim\nvim-win64\bin" >> $env:GITHUB_PATH
 
   # Nix CI -----------------------------------------------------------------------------------------
   nix-linux:

@@ -19,15 +19,6 @@ runs:
   using: "composite"
 
   steps:
-    - name: Cache ~\AppData\Local\Programs\stack
-      if: runner.os == 'Windows'
-      uses: actions/cache@v3
-      with:
-        path: ~\AppData\Local\Programs\stack
-        key: ${{ runner.os }}-stack-programs-${{ hashFiles('stack.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-stack-programs-
-
     - name: Cache ${{ inputs.global-stack-dir }}
       uses: actions/cache@v3
       with:

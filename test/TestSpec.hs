@@ -6,6 +6,7 @@ module TestSpec where
 
 import           Control.Concurrent (threadDelay)
 import           Control.Monad (void)
+import           Cornelis.Subscripts (decNextDigitSeq, incNextDigitSeq)
 import           Cornelis.Types
 import           Cornelis.Types.Agda (Rewrite (..))
 import           Cornelis.Utils (withBufferStuff)
@@ -129,4 +130,34 @@ spec = focus $ parallel $ do
   elaborate_test (Just "AsIs")
     [Swap "elaborate = {! 3 !}" "elaborate = 3"]
     40 16
+
+  diffSpec "should dec subscripts" (Seconds 5) "test/Hello.agda"
+      [ Swap "sub₁and-super⁹ : Nat" "sub₀and-super⁹ : Nat"] $ \w _ -> do
+    goto w 42 1
+    decNextDigitSeq
+
+  diffSpec "should inc subscripts" (Seconds 5) "test/Hello.agda"
+      [ Swap "sub₁and-super⁹ : Nat" "sub₂and-super⁹ : Nat"] $ \w _ -> do
+    goto w 42 1
+    incNextDigitSeq
+
+  diffSpec "should dec superscripts" (Seconds 5) "test/Hello.agda"
+      [ Swap "sub₁and-super⁹ : Nat" "sub₁and-super⁸ : Nat"] $ \w _ -> do
+    goto w 42 6
+    decNextDigitSeq
+
+  diffSpec "should inc superscripts" (Seconds 5) "test/Hello.agda"
+      [ Swap "sub₁and-super⁹ : Nat" "sub₁and-super¹⁰ : Nat"] $ \w _ -> do
+    goto w 42 6
+    incNextDigitSeq
+
+  diffSpec "should dec digits" (Seconds 5) "test/Hello.agda"
+      [ Swap "sub₁and-super⁹ = 15" "sub₁and-super⁹ = 14"] $ \w _ -> do
+    goto w 43 16
+    decNextDigitSeq
+
+  diffSpec "should inc digits" (Seconds 5) "test/Hello.agda"
+      [ Swap "sub₁and-super⁹ = 15" "sub₁and-super⁹ = 16"] $ \w _ -> do
+    goto w 43 16
+    incNextDigitSeq
 

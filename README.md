@@ -42,6 +42,8 @@ exposed via vim commands.  Most commands have an equivalent in [agda-mode].
 | `:CornelisPrevGoal`       | Jump to previous goal | <kbd>C-c</kbd><kbd>C-b</kbd> |
 | `:CornelisNextGoal`       | Jump to next goal     | <kbd>C-c</kbd><kbd>C-f</kbd> |
 | `:CornelisQuestionToMeta` | Expand `?`-holes to `{! !}` | _(none)_ |
+| `:CornelisInc`            | Like `<C-A>` but also targets sub- and superscripts | _(none)_ |
+| `:CornelisDec`            | Like `<C-X>` but also targets sub- and superscripts | _(none)_ |
 
 ### Commands in context of a goal
 
@@ -261,6 +263,8 @@ function! AgdaFiletype()
     nnoremap <buffer> gd        :CornelisGoToDefinition<CR>
     nnoremap <buffer> [/        :CornelisPrevGoal<CR>
     nnoremap <buffer> ]/        :CornelisNextGoal<CR>
+    nnoremap <buffer> <C-A>     :CornelisInc<CR>
+    nnoremap <buffer> <C-X>     :CornelisDec<CR>
 endfunction
 ```
 

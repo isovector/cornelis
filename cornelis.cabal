@@ -33,6 +33,7 @@ library
       Cornelis.InfoWin
       Cornelis.Offsets
       Cornelis.Pretty
+      Cornelis.Subscripts
       Cornelis.Types
       Cornelis.Types.Agda
       Cornelis.Utils

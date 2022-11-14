@@ -19,6 +19,7 @@ import           Cornelis.Goals
 import           Cornelis.Highlighting (highlightBuffer, getLineIntervals, lookupPoint)
 import           Cornelis.InfoWin
 import           Cornelis.Offsets
+import           Cornelis.Subscripts (incNextDigitSeq, decNextDigitSeq)
 import           Cornelis.Types
 import           Cornelis.Utils
 import           Cornelis.Vim
@@ -146,6 +147,13 @@ doNextGoal :: CommandArguments -> Neovim CornelisEnv ()
 doNextGoal = const nextGoal
 
 
+doIncNextDigitSeq :: CommandArguments -> Neovim CornelisEnv ()
+doIncNextDigitSeq = const incNextDigitSeq
+
+doDecNextDigitSeq :: CommandArguments -> Neovim CornelisEnv ()
+doDecNextDigitSeq = const decNextDigitSeq
+
+
 cornelisInit :: Neovim env CornelisEnv
 cornelisInit = do
   (inchan, outchan) <- liftIO newChan
@@ -201,6 +209,8 @@ cornelis = do
         , $(command "CornelisNormalize"        'doNormalize)      [CmdSync Async, cm_complete]
         , $(command "CornelisHelperFunc"       'doHelperFunc)     [CmdSync Async, rw_complete]
         , $(command "CornelisQuestionToMeta"   'doQuestionToMeta) [CmdSync Async]
+        , $(command "CornelisInc"              'doIncNextDigitSeq) [CmdSync Async]
+        , $(command "CornelisDec"              'doDecNextDigitSeq) [CmdSync Async]
         , $(function "InternalCornelisRewriteModeCompletion" 'rewriteModeCompletion) Sync
         , $(function "InternalCornelisComputeModeCompletion" 'computeModeCompletion) Sync
         ]

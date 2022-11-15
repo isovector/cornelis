@@ -23,7 +23,6 @@ module Cornelis.Types
   , HasCallStack
   ) where
 
-import Control.Concurrent
 import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
 import Cornelis.Debug
@@ -34,7 +33,6 @@ import Data.IntMap.Strict (IntMap)
 import Data.Map (Map)
 import Data.Maybe (listToMaybe)
 import Data.Text (Text)
-import Data.Tuple (swap)
 import GHC.Generics
 import GHC.Stack
 import Neovim hiding (err)
@@ -42,6 +40,7 @@ import Neovim.API.Text (Buffer(..), Window)
 import System.Process (ProcessHandle)
 import Data.Functor.Identity
 import Data.Char (toLower)
+import Data.IORef
 
 deriving stock instance Ord Buffer
 
@@ -109,7 +108,7 @@ data CornelisConfig = CornelisConfig
   deriving (Show, Generic)
 
 data CornelisEnv = CornelisEnv
-  { ce_state :: MVar CornelisState
+  { ce_state :: IORef CornelisState
   , ce_stream :: InChan AgdaResp
   , ce_namespace :: Int64
   , ce_config :: CornelisConfig
@@ -123,9 +122,12 @@ data AgdaResp = AgdaResp
   deriving Generic
 
 instance MonadState CornelisState (Neovim CornelisEnv) where
-  state f = do
+  get = do
     mv <- asks ce_state
-    liftIO $ modifyMVar mv $ pure . fmap swap f
+    liftIO $ readIORef mv
+  put a = do
+    mv <- asks ce_state
+    liftIO $ writeIORef mv a
 
 data Response
   = DisplayInfo DisplayInfo

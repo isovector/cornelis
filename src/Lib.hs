@@ -7,7 +7,6 @@
 module Lib where
 
 import           Control.Arrow ((&&&))
-import           Control.Concurrent (newMVar)
 import           Control.Concurrent.Chan.Unagi
 import           Control.Lens
 import           Control.Monad (forever)
@@ -25,6 +24,7 @@ import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Bifunctor
 import           Data.Foldable (for_)
+import           Data.IORef (newIORef)
 import qualified Data.IntMap.Strict as IM
 import           Data.Maybe
 import qualified Data.Text as T
@@ -158,7 +158,7 @@ cornelisInit :: Neovim env CornelisEnv
 cornelisInit = do
   (inchan, outchan) <- liftIO newChan
   ns <- nvim_create_namespace "cornelis"
-  mvar <- liftIO $ newMVar $ CornelisState mempty
+  mvar <- liftIO $ newIORef $ CornelisState mempty
 
   cfg <- getConfig
 

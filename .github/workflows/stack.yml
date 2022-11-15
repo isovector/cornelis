@@ -96,4 +96,3 @@ jobs:
       - name: Run tests
         run: |
           stack test
-

@@ -316,6 +316,29 @@ The following configuration options are available:
 - `right`: Opens at the right of the window.
 
 
+### Synergy with Other Plugins
+
+If you're interested in automatically aligning your reasoning justifications,
+also install the following plugin:
+
+```
+Plug 'junegunn/vim-easy-align'
+```
+
+and add the following configuration for it:
+
+```
+vmap <leader><space> <Plug>(EasyAlign)
+
+let g:easy_align_delimiters = {
+\ 'r': { 'pattern': '[≤≡≈∎]', 'left_margin': 2, 'right_margin': 0, 'stick_to_left': 0 },
+\ }
+```
+
+You can now align justifications by visually selecting the block, and then
+typing `<leader><space>r`.
+
+
 ## Contributing
 
 I'm a noob at Agda, and I don't know what I don't know. If this plugin doesn't

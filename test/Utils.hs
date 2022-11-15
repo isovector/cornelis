@@ -107,7 +107,7 @@ vimSpec name secs fp m = do
           w <- vim_get_current_window
           b <- nvim_win_get_buf w
           load
-          liftIO $ threadDelay 10e6
+          liftIO $ threadDelay 5e6
           m w b
 
 mkPos :: Int32 -> Int32 -> Pos

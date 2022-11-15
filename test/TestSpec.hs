@@ -26,12 +26,13 @@ broken = before_ pending
 
 spec :: Spec
 spec = focus $ do
-  diffSpec "should refine" (Seconds 5) "test/Hello.agda"
+  let timeout = Seconds 60
+  diffSpec "should refine" timeout "test/Hello.agda"
       [ Swap "unit = ?" "unit = one"] $ \w _ -> do
     goto w 11 8
     refine
 
-  diffSpec "should support helper functions" (Seconds 5) "test/Hello.agda"
+  diffSpec "should support helper functions" timeout "test/Hello.agda"
       [ Swap "" "help_me : Unit"] $ \w _ -> do
     goto w 11 8
     helperFunc Normalised "help_me"
@@ -40,27 +41,27 @@ spec = focus $ do
 
   -- TODO(sandy): not broken on sandy's machine, but reliably broken in the
   -- test suite?
-  broken $ diffSpec "should case split (unicode lambda)" (Seconds 5) "test/Hello.agda"
+  broken $ diffSpec "should case split (unicode lambda)" timeout "test/Hello.agda"
       [ Add                       "slap = λ { true → {! !}"
       , Swap "slap = λ { x → ? }" "         ; false → {! !} }"
       ] $ \w _ -> do
     goto w 20 16
     caseSplit "x"
 
-  diffSpec "should preserve indents when doing case split" (Seconds 5) "test/Hello.agda"
+  diffSpec "should preserve indents when doing case split" timeout "test/Hello.agda"
       [ Add                       "  testIndent true = {! !}"
       , Swap "  testIndent b = ?" "  testIndent false = {! !}"
       ] $ \w _ -> do
     goto w 24 18
     caseSplit "b"
 
-  diffSpec "should refine with hints" (Seconds 5) "test/Hello.agda"
+  diffSpec "should refine with hints" timeout "test/Hello.agda"
       [ Swap "isEven∘ (suc n) = {! isEven∘ !}" "isEven∘ (suc n) = isEven∘ {! !}"] $ \w _ -> do
     goto w 28 24
     refine
 
   let case_split_test name row col =
-        diffSpec ("should case split (" <> T.unpack name <> ")") (Seconds 5) "test/Hello.agda"
+        diffSpec ("should case split (" <> T.unpack name <> ")") timeout "test/Hello.agda"
             (fmap (fmap (name <>))
               [ Add           " true = {! !}"
               , Swap " x = ?" " false = {! !}"
@@ -73,7 +74,7 @@ spec = focus $ do
 
   case_split_test "unicodeTest₁" 17 18
 
-  vimSpec "should support why in scope" (Seconds 5) "test/Hello.agda" $ \_ b -> do
+  vimSpec "should support why in scope" timeout "test/Hello.agda" $ \_ b -> do
     withBufferStuff b $ \bs -> do
       whyInScope "zero"
       liftIO $ threadDelay 5e5
@@ -81,7 +82,7 @@ spec = focus $ do
       liftIO $ V.toList res `shouldContain` ["zero is in scope as"]
 
   vimSpec "should support goto definition across modules"
-          (Seconds 5) "test/Hello.agda" $ \w _ -> do
+          timeout "test/Hello.agda" $ \w _ -> do
     goto w 2 18
     gotoDefinition
     liftIO $ threadDelay 5e5
@@ -89,7 +90,7 @@ spec = focus $ do
     res <- buffer_get_lines b' vimFirstLine vimLastLine False
     liftIO $ V.toList res `shouldContain` ["module Agda.Builtin.Nat where"]
 
-  diffSpec "work with multiple" (Seconds 5) "test/Hello.agda"
+  diffSpec "work with multiple" timeout "test/Hello.agda"
       [ Add                  "copattern true = {! !}"
       , Swap "copattern = ?" "copattern false = {! !}"
       ] $ \w _ -> do
@@ -100,13 +101,13 @@ spec = focus $ do
     liftIO $ threadDelay 5e5
     caseSplit "x"
 
-  diffSpec "work with ? in names" (Seconds 5) "test/Hello.agda"
+  diffSpec "work with ? in names" timeout "test/Hello.agda"
       [ Swap "foo? ?f = {! !}" "foo? ?f x = {! !}"
       ] $ \w _ -> do
     goto w 34 13
     caseSplit ""
 
-  diffSpec "question to meta" (Seconds 5) "test/Hello.agda"
+  diffSpec "question to meta" timeout "test/Hello.agda"
        [ Swap "unit = ?" "unit = {! !}"
        , Swap "test x = ?" "test x = {! !}"
        , Swap "unicodeTest\8321 x = ?" "unicodeTest\8321 x = {! !}"
@@ -116,7 +117,7 @@ spec = focus $ do
        ] $ \_ b -> do
     questionToMeta b
 
-  diffSpec "give" (Seconds 5) "test/Hello.agda"
+  diffSpec "give" timeout "test/Hello.agda"
         [ Swap "give = {! true !}" "give = true"
         ] $ \w _ -> do
     goto w 37 11
@@ -124,7 +125,7 @@ spec = focus $ do
 
   let elaborate_test rw changes row column =
         let title = maybe "default mode" show rw in
-        diffSpec ("elaborate (" <> title <> ")") (Seconds 5) "test/Hello.agda" changes $
+        diffSpec ("elaborate (" <> title <> ")") timeout "test/Hello.agda" changes $
             \w _ -> do
                 goto w row column
                 withNormalizationMode rw elaborate
@@ -133,32 +134,32 @@ spec = focus $ do
     [Swap "elaborate = {! 3 !}" "elaborate = 3"]
     40 16
 
-  diffSpec "should dec subscripts" (Seconds 5) "test/Hello.agda"
+  diffSpec "should dec subscripts" timeout "test/Hello.agda"
       [ Swap "sub₀and-super⁹ : Nat" "sub₋₁and-super⁹ : Nat"] $ \w _ -> do
     goto w 42 1
     decNextDigitSeq
 
-  diffSpec "should inc subscripts" (Seconds 5) "test/Hello.agda"
+  diffSpec "should inc subscripts" timeout "test/Hello.agda"
       [ Swap "sub₀and-super⁹ : Nat" "sub₁and-super⁹ : Nat"] $ \w _ -> do
     goto w 42 1
     incNextDigitSeq
 
-  diffSpec "should dec superscripts" (Seconds 5) "test/Hello.agda"
+  diffSpec "should dec superscripts" timeout "test/Hello.agda"
       [ Swap "sub₀and-super⁹ : Nat" "sub₀and-super⁸ : Nat"] $ \w _ -> do
     goto w 42 6
     decNextDigitSeq
 
-  diffSpec "should inc superscripts" (Seconds 5) "test/Hello.agda"
+  diffSpec "should inc superscripts" timeout "test/Hello.agda"
       [ Swap "sub₀and-super⁹ : Nat" "sub₀and-super¹⁰ : Nat"] $ \w _ -> do
     goto w 42 6
     incNextDigitSeq
 
-  diffSpec "should dec digits" (Seconds 5) "test/Hello.agda"
+  diffSpec "should dec digits" timeout "test/Hello.agda"
       [ Swap "sub₀and-super⁹ = 15" "sub₀and-super⁹ = 14"] $ \w _ -> do
     goto w 43 16
     decNextDigitSeq
 
-  diffSpec "should inc digits" (Seconds 5) "test/Hello.agda"
+  diffSpec "should inc digits" timeout "test/Hello.agda"
       [ Swap "sub₀and-super⁹ = 15" "sub₀and-super⁹ = 16"] $ \w _ -> do
     goto w 43 16
     incNextDigitSeq

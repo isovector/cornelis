@@ -335,7 +335,7 @@ let g:easy_align_delimiters = {
 \ }
 ```
 
-You can now align justifications by visually selecting the block, and then
+You can now align justifications by visually selecting the proof, and then
 typing `<leader><space>r`.
 
 

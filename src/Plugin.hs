@@ -20,6 +20,7 @@ import           Cornelis.Types
 import           Cornelis.Types.Agda hiding (Error)
 import           Cornelis.Utils
 import           Cornelis.Vim
+import           Data.Bool (bool)
 import           Data.Foldable (for_, fold, toList)
 import qualified Data.IntMap as IM
 import           Data.List
@@ -247,8 +248,11 @@ doHelperFunc _ ms = withNormalizationMode ms $ \mode -> do
   helperFunc mode expr
 
 doCaseSplit :: CommandArguments -> Neovim CornelisEnv ()
-doCaseSplit _ = do
-  thing <- input @Text "Split on what?" Nothing Nothing
+doCaseSplit _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
+  contents <- fmap T.strip $ getGoalContents b $ ip_interval goal
+  thing <- bool (pure contents)
+                (input @Text "Split on what?" Nothing Nothing)
+         $ T.null contents
   caseSplit thing
 
 caseSplit :: Text -> Neovim CornelisEnv ()

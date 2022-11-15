@@ -39,3 +39,6 @@ give = {! true !}
 elaborate : Nat
 elaborate = {! 3 !}
 
+sub₀and-super⁹ : Nat
+sub₀and-super⁹ = 15
+

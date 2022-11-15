@@ -33,6 +33,7 @@ library
       Cornelis.InfoWin
       Cornelis.Offsets
       Cornelis.Pretty
+      Cornelis.Subscripts
       Cornelis.Types
       Cornelis.Types.Agda
       Cornelis.Utils
@@ -105,6 +106,7 @@ library
     , hspec
     , lens
     , levenshtein
+    , megaparsec
     , mtl
     , nvim-hs >=2.2.0.3 && <3
     , nvim-hs-contrib >=2.0 && <3
@@ -188,6 +190,7 @@ executable cornelis
     , hspec
     , lens
     , levenshtein
+    , megaparsec
     , mtl
     , nvim-hs >=2.2.0.3 && <3
     , nvim-hs-contrib >=2.0 && <3
@@ -275,6 +278,7 @@ test-suite test
     , hspec
     , lens
     , levenshtein
+    , megaparsec
     , mtl
     , nvim-hs >=2.2.0.3 && <3
     , nvim-hs-contrib >=2.0 && <3
@@ -282,6 +286,7 @@ test-suite test
     , process
     , random
     , resourcet
+    , temporary
     , text
     , transformers
     , unagi-chan

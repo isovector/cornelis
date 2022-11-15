@@ -6,12 +6,17 @@ on:
       os:
         required: true
         type: string
+      global-stack-cache-dir:
+        required: false
+        type: string
+        default: ~/.stack
       package-manager:
         required: true
         type: string
       update-path-cmd:
         required: false
         type: string
+        default: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
 jobs:
   build:
@@ -22,28 +27,37 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Cache ~/.stack
-        uses: actions/cache@v3
+      - name: Cache Stack dirs
+        uses: ./.github/template/stack-cache
         with:
-          path: ~/.stack
-          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-stack-global-
-
-      - name: Cache .stack-work
-        uses: actions/cache@v3
-        with:
-          path: .stack-work
-          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
-          restore-keys: |
-            ${{ runner.os }}-stack-work-
+          global-stack-dir: ${{ inputs.global-stack-cache-dir }}
 
       - name: Build package and tests
         run: |
           stack test --no-run-tests
 
-  test:
+  build-and-cache-agda:
     needs: build
+
+    name: Build and cache Agda
+    runs-on: ${{ inputs.os }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Cache Stack dirs
+        uses: ./.github/template/stack-cache
+        with:
+          global-stack-dir: ${{ inputs.global-stack-cache-dir }}
+          cache-key-suffix: -withAgda
+
+      - name: Build package and tests
+        run: |
+          stack install Agda
+
+  test:
+    needs: [ build, build-and-cache-agda ]
 
     name: Test
     runs-on: ${{ inputs.os }}
@@ -52,34 +66,32 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Cache ~/.stack
-        uses: actions/cache@v3
+      - name: Cache Stack dirs
+        uses: ./.github/template/stack-cache
         with:
-          path: ~/.stack
-          key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-stack-global-
+          global-stack-dir: ${{ inputs.global-stack-cache-dir }}
+          cache-key-suffix: -withAgda
 
-      - name: Cache .stack-work
-        uses: actions/cache@v3
-        with:
-          path: .stack-work
-          key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
-          restore-keys: |
-            ${{ runner.os }}-stack-work-
-
-      - name: Install test dependencies (Ubuntu and macOS)
-        if: inputs.os != 'windows-latest'
-        run: |
-          ${{ inputs.package-manager }} install neovim agda
-          mkdir -p ~/.local/share/nvim/swap/
-
-      - name: Install test dependencies (Windows)
-        if: inputs.os == 'windows-latest'
+      - name: Install test dependencies
         run: |
           ${{ inputs.package-manager }} install neovim
-          ${{ inputs.update-path-cmd }}
           stack install Agda
+
+      - name: Update $PATH
+        run: |
+          ${{ inputs.update-path-cmd }}
+
+      - name: Create Neovim swap dirs (Linux/macOS)
+        if: ${{ !startsWith(inputs.os, 'windows') }}
+        run: |
+          mkdir -p ~/.local/share/nvim/swap
+          mkdir -p ~/.local/state/nvim/swap
+
+      - name: Create Neovim swap dirs (Windows)
+        if: ${{ startsWith(inputs.os, 'windows') }}
+        run: |
+          mkdir -p ~\AppData\Roaming\local\share\nvim\swap
+          mkdir -p ~\AppData\Roaming\local\state\nvim\swap
 
       - name: Run tests
         run: |

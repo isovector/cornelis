@@ -1,0 +1,38 @@
+name: Cache Stack dirs
+description: foo
+
+inputs:
+  global-stack-dir:
+    description: Path to global Stack cache
+    required: false
+    default: ~/.stack
+  stack-work-dir:
+    description: Path to project local Stack cache
+    required: false
+    default: .stack-work
+  cache-key-suffix:
+    description: String to append to cache key
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Cache ${{ inputs.global-stack-dir }}
+      uses: actions/cache@v3
+      with:
+        path: ${{ inputs.global-stack-dir }}
+        key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}${{ inputs.cache-key-suffix }}
+        restore-keys: |
+          ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          ${{ runner.os }}-stack-global-
+
+    - name: Cache .stack-work
+      uses: actions/cache@v3
+      with:
+        path: ${{ inputs.stack-work-dir }}
+        key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}${{ inputs.cache-key-suffix }}
+        restore-keys: |
+          ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          ${{ runner.os }}-stack-work-

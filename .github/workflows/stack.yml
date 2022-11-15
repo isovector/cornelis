@@ -96,7 +96,3 @@ jobs:
       - name: Run tests
         run: |
           stack test
-
-      - name: Dump log
-        run: |
-          cat /tmp/cornelis.log

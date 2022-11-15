@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 
@@ -106,6 +106,7 @@ library
     , hspec
     , lens
     , levenshtein
+    , megaparsec
     , mtl
     , nvim-hs >=2.2.0.3 && <3
     , nvim-hs-contrib >=2.0 && <3
@@ -189,6 +190,7 @@ executable cornelis
     , hspec
     , lens
     , levenshtein
+    , megaparsec
     , mtl
     , nvim-hs >=2.2.0.3 && <3
     , nvim-hs-contrib >=2.0 && <3
@@ -276,6 +278,7 @@ test-suite test
     , hspec
     , lens
     , levenshtein
+    , megaparsec
     , mtl
     , nvim-hs >=2.2.0.3 && <3
     , nvim-hs-contrib >=2.0 && <3

@@ -42,6 +42,7 @@ dependencies:
 - prettyprinter
 - vector
 - random
+- megaparsec
 
 - hspec
 - QuickCheck

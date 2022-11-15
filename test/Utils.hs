@@ -104,6 +104,7 @@ vimSpec name secs fp m = do
         env <- cornelisInit
         withLocalEnv env $ do
           vim_command $ "edit " <> T.pack fp'
+          liftIO $ threadDelay 1e6
           load
           liftIO $ threadDelay 1e6
           w <- vim_get_current_window

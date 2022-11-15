@@ -97,7 +97,7 @@ vimSpec name secs fp m = do
   it name $ do
     withSystemTempFile "test.agda" $ \fp' h -> do
       hPutStr h $ "module " <> takeBaseName fp' <> " where\n"
-      hPutStr h =<< readFile fp
+      hPutStr h =<< fmap (unlines . tail . lines) (readFile fp)
       hFlush h
       withNeovimEmbedded Nothing $ do
         env <- cornelisInit

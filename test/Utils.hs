@@ -10,10 +10,9 @@ module Utils
 import           Control.Concurrent (threadDelay)
 import           Cornelis.Types
 import           Cornelis.Types.Agda
-import           Cornelis.Utils (withLocalEnv, withBufferStuff)
+import           Cornelis.Utils (withLocalEnv)
 import           Cornelis.Vim
 import           Data.Foldable.Levenshtein (levenshtein, Edit(..))
-import qualified Data.IntMap as IM
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import           Lib
@@ -108,21 +107,8 @@ vimSpec name secs fp m = do
           w <- vim_get_current_window
           b <- nvim_win_get_buf w
           load
-          liftIO $ threadDelay 1e6
-          waitForEvents b
+          liftIO $ threadDelay 10e6
           m w b
-
-
-waitForEvents :: Buffer -> Neovim CornelisEnv ()
-waitForEvents b = do
-  liftIO $ threadDelay 5e5
-  withBufferStuff b $ \bs -> do
-    case (not (IM.null $ bs_ips bs) && bs_goals bs /= AllGoalsWarnings [] [] [] []) of
-      False -> waitForEvents b
-      True -> liftIO $ threadDelay 1e6
-
-
-
 
 mkPos :: Int32 -> Int32 -> Pos
 mkPos line col = Pos (LineNumber line) $ Offset col

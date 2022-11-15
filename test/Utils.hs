@@ -105,10 +105,10 @@ vimSpec name secs fp m = do
         withLocalEnv env $ do
           vim_command $ "edit " <> T.pack fp'
           liftIO $ threadDelay 1e6
-          load
-          liftIO $ threadDelay 1e6
           w <- vim_get_current_window
           b <- nvim_win_get_buf w
+          load
+          liftIO $ threadDelay 1e6
           waitForEvents b
           m w b
 

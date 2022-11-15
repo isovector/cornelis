@@ -142,22 +142,22 @@ spec = focus $ parallel $ do
     incNextDigitSeq
 
   diffSpec "should dec superscripts" (Seconds 5) "test/Hello.agda"
-      [ Swap "sub₀and-super⁹ : Nat" "sub₁and-super⁸ : Nat"] $ \w _ -> do
+      [ Swap "sub₀and-super⁹ : Nat" "sub₀and-super⁸ : Nat"] $ \w _ -> do
     goto w 42 6
     decNextDigitSeq
 
   diffSpec "should inc superscripts" (Seconds 5) "test/Hello.agda"
-      [ Swap "sub₀and-super⁹ : Nat" "sub₁and-super¹⁰ : Nat"] $ \w _ -> do
+      [ Swap "sub₀and-super⁹ : Nat" "sub₀and-super¹⁰ : Nat"] $ \w _ -> do
     goto w 42 6
     incNextDigitSeq
 
   diffSpec "should dec digits" (Seconds 5) "test/Hello.agda"
-      [ Swap "sub₀and-super⁹ = 15" "sub₁and-super⁹ = 14"] $ \w _ -> do
+      [ Swap "sub₀and-super⁹ = 15" "sub₀and-super⁹ = 14"] $ \w _ -> do
     goto w 43 16
     decNextDigitSeq
 
   diffSpec "should inc digits" (Seconds 5) "test/Hello.agda"
-      [ Swap "sub₀and-super⁹ = 15" "sub₁and-super⁹ = 16"] $ \w _ -> do
+      [ Swap "sub₀and-super⁹ = 15" "sub₀and-super⁹ = 16"] $ \w _ -> do
     goto w 43 16
     incNextDigitSeq
 

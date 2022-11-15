@@ -75,7 +75,7 @@ parseFlavor = asum
   ]
 
 parseLine :: Parser (String, Flavor Int)
-parseLine = manyTill_ anySingle parseFlavor
+parseLine = manyTill_ anySingle $ try parseFlavor
 
 
 unparse :: Flavor Int -> String

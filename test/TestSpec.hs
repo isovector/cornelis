@@ -25,7 +25,7 @@ broken :: SpecWith a -> SpecWith a
 broken = before_ pending
 
 spec :: Spec
-spec = focus $ parallel $ do
+spec = focus $ do
   diffSpec "should refine" (Seconds 5) "test/Hello.agda"
       [ Swap "unit = ?" "unit = one"] $ \w _ -> do
     goto w 11 8
@@ -38,6 +38,8 @@ spec = focus $ parallel $ do
     liftIO $ threadDelay 5e5
     void $ vim_command "normal! G\"\"p"
 
+  -- TODO(sandy): not broken on sandy's machine, but reliably broken in the
+  -- test suite?
   broken $ diffSpec "should case split (unicode lambda)" (Seconds 5) "test/Hello.agda"
       [ Add                       "slap = λ { true → {! !}"
       , Swap "slap = λ { x → ? }" "         ; false → {! !} }"

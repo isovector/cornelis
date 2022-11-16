@@ -103,13 +103,13 @@ let g:cornelis_agda_prefix = "<Tab>" " Replace with your desired prefix
 If you'd like an interactive prompt for choosing unicode characters,
 additionally install `vim-which-key`:
 
-```
+```viml
 Plug 'liuchengxu/vim-which-key'
 ```
 
 and map a call to `cornelis#prompt_input()` in insert mode:
 
-```
+```viml
 inoremap <localleader> :call cornelis#prompt_input()<CR>
 ```
 
@@ -153,7 +153,7 @@ text objects to behave.
 
 Make sure you have [`stack`](https://docs.haskellstack.org/en/stable/install_and_upgrade/) on your PATH!
 
-```
+```viml
 Plug 'kana/vim-textobj-user'
 Plug 'neovimhaskell/nvim-hs.vim'
 Plug 'isovector/cornelis', { 'do': 'stack build' }
@@ -251,7 +251,7 @@ which it will do if the global binary option isn't enabled.
 
 Vimscript:
 
-```vimscript
+```viml
 let g:cornelis_use_global_binary = 1
 ```
 
@@ -338,13 +338,13 @@ The following configuration options are available:
 If you're interested in automatically aligning your reasoning justifications,
 also install the following plugin:
 
-```
+```viml
 Plug 'junegunn/vim-easy-align'
 ```
 
 and add the following configuration for it:
 
-```
+```viml
 vmap <leader><space> <Plug>(EasyAlign)
 
 let g:easy_align_delimiters = {

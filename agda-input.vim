@@ -1,15 +1,13 @@
-if !empty(globpath(&rtp, "autoload/which_key.vim"))
-  let cornelis_agda_prefix = get(g:, "cornelis_agda_prefix", "<localleader>")
-  exec "inoremap <buffer> " . cornelis_agda_prefix . " <C-O>:WhichKey \"agda\"<CR>"
-  call which_key#register('agda', "g:agda_input")
-endif
-
 if !exists("g:agda_input")
   let g:agda_input = {}
 endif
 
 
 if !exists("g:cornelis_no_agda_input")
+  if !empty(globpath(&rtp, "autoload/which_key.vim"))
+    let cornelis_agda_prefix = get(g:, "cornelis_agda_prefix", "<localleader>")
+    exec "inoremap <buffer> " . cornelis_agda_prefix . " :call cornelis#prompt_input()<CR>"
+  endif
 
   " Mapping unicode symbols.
   call cornelis#bind_input("to", "→")

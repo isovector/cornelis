@@ -1,3 +1,11 @@
+function! cornelis#prompt_input()
+  if !empty(globpath(&rtp, "autoload/which_key.vim"))
+    call which_key#start(0, !0, g:agda_input)
+  else
+    echoerr "Please install https://github.com/liuchengxu/vim-which-key before using #prompt_input()"
+  endif
+endfunction
+
 function! cornelis#bind_input(key, result)
     let l:cornelis_agda_prefix = get(g:, "cornelis_agda_prefix", "<localleader>")
     let str = "<buffer> " . l:cornelis_agda_prefix . substitute(a:key, "|", "<bar>", "g") . " " . a:result

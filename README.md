@@ -88,7 +88,7 @@ restart everything via `:CornelisRestart`.
 There is reasonably good support for agda-input via your `<LocalLeader>` in
 insert mode. See
 [agda-input.vim](https://github.com/isovector/cornelis/blob/master/agda-input.vim)
-for available bindings, or slap your `<LocalLeader>` while in insert mode.
+for available bindings.
 
 If you'd like to use a prefix other than your `<LocalLeader>`, add the following
 to your `.vimrc`:
@@ -96,6 +96,23 @@ to your `.vimrc`:
 ```viml
 let g:cornelis_agda_prefix = "<Tab>" " Replace with your desired prefix
 ```
+
+
+#### Interactive Unicode Selection
+
+If you'd like an interactive prompt for choosing unicode characters,
+additionally install `vim-which-key`:
+
+```
+Plug 'liuchengxu/vim-which-key'
+```
+
+and map a call to `cornelis#prompt_input()` in insert mode:
+
+```
+inoremap <localleader> :call cornelis#prompt_input()<CR>
+```
+
 
 #### Disabling Default Bindings
 
@@ -116,6 +133,7 @@ call cornelis#bind_input("nat", "ℕ")
 ```
 
 will add `<LocalLeader>nat` as an input remapping for `ℕ`.
+
 
 ### Text Objects
 
@@ -138,7 +156,6 @@ Make sure you have [`stack`](https://docs.haskellstack.org/en/stable/install_and
 ```
 Plug 'kana/vim-textobj-user'
 Plug 'neovimhaskell/nvim-hs.vim'
-Plug 'liuchengxu/vim-which-key'
 Plug 'isovector/cornelis', { 'do': 'stack build' }
 ```
 
@@ -316,7 +333,7 @@ The following configuration options are available:
 - `right`: Opens at the right of the window.
 
 
-### Synergy with Other Plugins
+### Aligning Reasoning Justification
 
 If you're interested in automatically aligning your reasoning justifications,
 also install the following plugin:
@@ -331,7 +348,7 @@ and add the following configuration for it:
 vmap <leader><space> <Plug>(EasyAlign)
 
 let g:easy_align_delimiters = {
-\ 'r': { 'pattern': '[≤≡≈∎]', 'left_margin': 2, 'right_margin': 0, 'stick_to_left': 0 },
+\ 'r': { 'pattern': '[≤≡≈∎]', 'left_margin': 2, 'right_margin': 0 },
 \ }
 ```
 

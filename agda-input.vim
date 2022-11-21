@@ -4,11 +4,6 @@ endif
 
 
 if !exists("g:cornelis_no_agda_input")
-  if !empty(globpath(&rtp, "autoload/which_key.vim"))
-    let cornelis_agda_prefix = get(g:, "cornelis_agda_prefix", "<localleader>")
-    exec "inoremap <buffer> " . cornelis_agda_prefix . " :call cornelis#prompt_input()<CR>"
-  endif
-
   " Mapping unicode symbols.
   call cornelis#bind_input("to", "→")
   call cornelis#bind_input("->", "→")

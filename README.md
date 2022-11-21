@@ -110,7 +110,7 @@ Plug 'liuchengxu/vim-which-key'
 and map a call to `cornelis#prompt_input()` in insert mode:
 
 ```viml
-inoremap <localleader> :call cornelis#prompt_input()<CR>
+inoremap <localleader> <C-O>:call cornelis#prompt_input()<CR>
 ```
 
 

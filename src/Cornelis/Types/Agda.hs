@@ -11,6 +11,7 @@ import           Control.Monad.Trans (lift)
 import           Control.Monad.Trans.Except (runExceptT)
 import           Data.Aeson (FromJSON)
 import           Data.Data
+import           Data.Foldable (toList)
 import           Data.Functor.Identity
 import           Data.Int
 import qualified Data.List as List
@@ -96,14 +97,18 @@ instance Show a =>
     = showParen
         (a_a1hOk >= 11)
         ((.)
-           (showString "Range ")
+           (showString "intervalsToRange ")
            ((.)
               (showsPrec 11 b1_a1hOl)
               ((.)
-                 showSpace (showsPrec 11 b2_a1hOm))))
+                 showSpace (showsPrec 11 $ toList b2_a1hOm))))
 
 data Interval' a = Interval { iStart, iEnd :: !(Pos' a) }
-  deriving (Show, Data, Eq, Ord, Functor, Foldable, Traversable, Generic)
+  deriving (Data, Eq, Ord, Functor, Foldable, Traversable, Generic)
+
+instance Show a => Show (Interval' a) where
+  showsPrec n (Interval s e) =
+    showParen (n >= 11) $ showString "Interval " . showsPrec 11 s . showSpace . showsPrec 11 e
 
 type IntervalWithoutFile = Interval' AgdaOffset
 
@@ -117,7 +122,11 @@ data Pos' a = Pos
 
 
 newtype AbsolutePath = AbsolutePath { textPath :: String }
-  deriving (Show, Eq, Ord, Data)
+  deriving (Eq, Ord, Data)
+
+instance Show AbsolutePath where
+  showsPrec n (AbsolutePath p) =
+    showParen (n >= 11) $ showString "mkAbsolute " . showsPrec 11 p
 
 
 

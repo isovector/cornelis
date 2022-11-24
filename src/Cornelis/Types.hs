@@ -23,22 +23,23 @@ module Cornelis.Types
 import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
 import Cornelis.Debug
-import Cornelis.Offsets (Pos(..), Interval(..), AgdaIndex, AgdaPos, AgdaInterval)
+import Cornelis.Offsets (Pos(..), Interval(..), AgdaIndex, AgdaPos, AgdaInterval, VimIndex, LineNumber, Indexing(..))
 import Cornelis.Types.Agda (InteractionId)
 import Data.Aeson hiding (Error)
 import Data.Char (toLower)
 import Data.Functor.Identity
 import Data.Generics.Labels ()
 import Data.IORef
+import Data.IntervalMap.FingerTree (IntervalMap)
 import Data.Map (Map)
 import Data.Maybe (listToMaybe)
 import Data.Text (Text)
+import DiffLoc (Diff, Colline)
 import GHC.Generics
 import GHC.Stack
 import Neovim hiding (err)
 import Neovim.API.Text (Buffer(..), Window)
 import System.Process (ProcessHandle)
-
 
 deriving stock instance Ord Buffer
 
@@ -57,6 +58,7 @@ data BufferStuff = BufferStuff
   , bs_goto_sites :: Map Extmark DefinitionSite
   , bs_goals      :: DisplayInfo
   , bs_info_win   :: InfoBuffer
+  , bs_code_map   :: LineIntervals
   }
   deriving Generic
 
@@ -67,6 +69,7 @@ newtype InfoBuffer = InfoBuffer
 
 data CornelisState = CornelisState
   { cs_buffers :: Map Buffer BufferStuff
+  , cs_diff :: Map BufferNum Diff0
   }
   deriving Generic
 
@@ -391,3 +394,28 @@ data DebugCommand
   = DumpIPs
   deriving (Eq, Ord, Show, Read, Enum, Bounded)
 
+-- * Translating Agda indices to Vim indices
+--
+-- Agda sometimes takes a while to process. We want to be able to modify the
+-- buffer in the meantime. But then, Agda's highlighting instructions
+-- will be out of sync.
+--
+-- We record the LineIntervals mapping (in field 'bs_code_map') at the time
+-- when we reloaded, to translate old AgdaIndex to old VimPos, and then use the
+-- 'Diff0' data structure (in field 'cs_diff') to translate (intervals of) old
+-- VimPos to new VimPos.
+
+-- | Data for mapping code point indices to byte indices
+newtype LineIntervals = LineIntervals
+  { li_intervalMap :: IntervalMap AgdaIndex (LineNumber 'ZeroIndexed, Text)
+    -- ^ Mapping from positions to line numbers
+  } deriving newtype (Semigroup, Monoid)
+
+-- | Buffer update events give us this instead of a proper Buffer
+-- There is  buffer_get_number :: Buffer -> Neovim env BufferNum
+-- but nothing the other way???
+type BufferNum = Int64
+
+-- Data structures from the diff-loc library
+type DPos = Colline (LineNumber 'ZeroIndexed) VimIndex
+type Diff0 = Diff DPos

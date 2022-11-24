@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE RoleAnnotations #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Strongly typed indices and offsets.
 --
@@ -83,12 +85,14 @@ module Cornelis.Offsets
 import           Data.Aeson (FromJSON)
 import qualified Data.ByteString as BS
 import           Data.Coerce (coerce)
+import           Data.Monoid (Sum(..))
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import           GHC.Generics (Generic)
 import           GHC.Stack (HasCallStack)
 import           GHC.Show (showSpace)
 import           Prettyprinter (Pretty)
+import qualified DiffLoc as D
 
 -- | Indexing scheme: whether the first index is zero or one.
 data Indexing = OneIndexed | ZeroIndexed
@@ -106,6 +110,7 @@ type role Index nominal nominal
 -- | It doesn't seem worth the trouble to hide this constructor.
 newtype Offset (e :: Unit) = Offset Int
   deriving newtype (Eq, Ord, Show, Read, FromJSON, Pretty)
+  deriving (Semigroup, Monoid) via Sum Int
 
 type role Offset nominal
 
@@ -137,7 +142,7 @@ type AgdaOffset = Offset 'CodePoint
 type AgdaPos = Pos 'CodePoint 'OneIndexed 'OneIndexed
 type AgdaInterval = Interval AgdaPos
 
-type VimIndex = Index 'Byte
+type VimIndex = Index 'Byte 'ZeroIndexed
 type VimOffset = Offset 'Byte
 type VimPos = Pos 'Byte 'ZeroIndexed 'ZeroIndexed
 type VimInterval = Interval VimPos
@@ -218,3 +223,14 @@ fromBytes t i = error $ "missing bytes: " <> show (t, i)
 
 addCol :: Pos e i j -> Offset e -> Pos e i j
 addCol (Pos l c) dc = Pos l (c .+ dc)
+
+-- | Ordered monoid action of offsets on indices.
+instance D.Amor (Index e i) where
+  type Trans (Index e i) = Offset e
+  (.+) = (Cornelis.Offsets..+)
+  i .-.? j | i >= j = Just (i .-. j)
+           | otherwise = Nothing
+
+-- | The zero in zero-indexing.
+instance D.Origin (Index e 'ZeroIndexed) where
+  origin = toZeroIndexed (0 :: Int)

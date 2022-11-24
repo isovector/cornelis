@@ -160,7 +160,7 @@ cornelisInit :: Neovim env CornelisEnv
 cornelisInit = do
   (inchan, outchan) <- liftIO newChan
   ns <- nvim_create_namespace "cornelis"
-  mvar <- liftIO $ newIORef $ CornelisState mempty
+  mvar <- liftIO $ newIORef $ CornelisState mempty mempty
 
   cfg <- getConfig
 
@@ -218,6 +218,7 @@ cornelis = do
         , $(function "InternalCornelisRewriteModeCompletion" 'rewriteModeCompletion) Sync
         , $(function "InternalCornelisComputeModeCompletion" 'computeModeCompletion) Sync
         , $(function "InternalCornelisDebugCommandCompletion" 'debugCommandCompletion) Sync
+        , $(function "InternalCornelisNotifyEdit" 'notifyEdit) Async
         ]
     }
 

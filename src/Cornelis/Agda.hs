@@ -19,7 +19,7 @@ import qualified Data.Map as M
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import           Data.Text.Lazy.Encoding (encodeUtf8)
-import           Data.Text.Lazy.IO (hGetLine)
+import qualified Data.Text.Lazy.IO as LT
 import           Neovim hiding (err)
 import           Neovim.API.Text
 import           System.IO hiding (hGetLine)
@@ -62,7 +62,7 @@ spawnAgda buffer = do
       -- On the first load, we make ourselves ready before Agda tells us anything
       void $ neovimAsync $ (whenReady (pure ()) >>) . forever $ reportExceptions $ do
         whenReady $ atomicWriteIORef ready True
-        resp <- liftIO $ hGetLine hout
+        resp <- liftIO $ LT.hGetLine hout
         chan <- asks ce_stream
         case eitherDecode @Response $ encodeUtf8 resp of
           _ | LT.null resp -> pure ()
@@ -129,6 +129,7 @@ withAgda m = do
         , bs_goto_sites = mempty
         , bs_goals = AllGoalsWarnings [] [] [] []
         , bs_info_win = iw
+        , bs_code_map = mempty
         }
       m
 

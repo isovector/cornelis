@@ -11,8 +11,9 @@ import           Control.Monad ((>=>))
 import           Control.Monad.State.Class
 import           Control.Monad.Trans
 import           Cornelis.Agda (withCurrentBuffer, runIOTCM, withAgda, getAgda)
+import           Cornelis.Diff (resetDiff, recordUpdate, Replace(..), Colline(..), Vallee(..))
 import           Cornelis.Goals
-import           Cornelis.Highlighting (getExtmarks, highlightInterval)
+import           Cornelis.Highlighting (getExtmarks, highlightInterval, updateLineIntervals)
 import           Cornelis.InfoWin (showInfoWindow)
 import           Cornelis.Offsets
 import           Cornelis.Pretty (prettyGoals, HighlightGroup (Todo))
@@ -22,7 +23,7 @@ import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Bool (bool)
 import           Data.Foldable (for_, fold, toList)
-import           Data.IORef (readIORef)
+import           Data.IORef (IORef, readIORef, atomicModifyIORef)
 import           Data.List
 import qualified Data.Map as M
 import           Data.Ord
@@ -34,7 +35,6 @@ import           Neovim.API.Text
 import           Neovim.User.Input (input)
 import           System.Process (terminateProcess)
 import           Text.Read (readMaybe)
-
 
 
 getDefinitionSites :: Buffer -> AgdaPos -> Neovim CornelisEnv (First DefinitionSite)
@@ -68,6 +68,8 @@ gotoDefinition = withAgda $ do
 doLoad :: CommandArguments -> Neovim CornelisEnv ()
 doLoad = const load
 
+atomicSwapIORef :: IORef a -> a -> IO a
+atomicSwapIORef r x = atomicModifyIORef r (\y -> (x , y))
 
 load :: Neovim CornelisEnv ()
 load = withAgda $ withCurrentBuffer $ \b -> do
@@ -77,6 +79,8 @@ load = withAgda $ withCurrentBuffer $ \b -> do
     vim_command "noautocmd w"
     name <- buffer_get_name $ a_buffer agda
     flip runIOTCM agda $ Cmd_load name []
+    buffer_get_number b >>= resetDiff
+    updateLineIntervals b
   else vim_report_error "Agda is busy, not ready to load"
 
 questionToMeta :: Buffer -> Neovim CornelisEnv ()
@@ -338,3 +342,24 @@ doDebug _ str =
     Nothing ->
       vim_report_error $ T.pack $ "No matching debug command for " <> show str
 
+-- | The @on_bytes@ callback required by @nvim_buf_attach@.
+notifyEdit
+  :: Text -- ^ the string "bytes"
+  -> BufferNum -- ^ buffer handle
+  -> Bool -- ^ b:changedtick
+  -> Int -- ^ start row of the changed text (zero-indexed)
+  -> Int -- ^ start column of the changed text
+  -> Int -- ^ byte offset of the changed text (from the start of the buffer)
+  -> Int -- ^ old end row of the changed text (relative to the start row)
+  -> Int -- ^ old end column of the changed text
+  -> Int -- ^ old end byte length of the changed text
+  -> Int -- ^ new end row of the changed text (relative to the start row)
+  -> Int -- ^ new end column of the changed text
+  -> Int -- ^ new end byte length of the changed text
+  -> Neovim CornelisEnv Bool  -- ^ Return True to detach
+notifyEdit _ buf _ sr sc _ er ec _ fr fc _ = do
+  recordUpdate buf (Replace (pos sr sc) (range er ec) (range fr fc))
+  pure False
+  where
+    pos l c = Colline (toZeroIndexed l) (toZeroIndexed c)
+    range l c = Vallee (Offset l) (Offset c)

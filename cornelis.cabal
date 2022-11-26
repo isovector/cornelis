@@ -50,6 +50,7 @@ library
       ConstrainedClassMethods
       ConstraintKinds
       DataKinds
+      DeriveDataTypeable
       DeriveFoldable
       DeriveFunctor
       DeriveGeneric
@@ -132,6 +133,7 @@ executable cornelis
       ConstrainedClassMethods
       ConstraintKinds
       DataKinds
+      DeriveDataTypeable
       DeriveFoldable
       DeriveFunctor
       DeriveGeneric
@@ -219,6 +221,7 @@ test-suite test
       ConstrainedClassMethods
       ConstraintKinds
       DataKinds
+      DeriveDataTypeable
       DeriveFoldable
       DeriveFunctor
       DeriveGeneric

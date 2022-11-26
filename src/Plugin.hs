@@ -90,7 +90,7 @@ questionToMeta b = withBufferStuff b $ \bs -> do
     getGoalContents_maybe b int >>= \case
       -- We only don't have a goal contents if we are a ? goal
       Nothing -> do
-        replaceInterval b (iStart int) (iEnd int) "{! !}"
+        replaceInterval b int "{! !}"
         let int' = int
                   { iEnd = (iStart int)
                               -- Inclusive, so we add only 4 offset, rather

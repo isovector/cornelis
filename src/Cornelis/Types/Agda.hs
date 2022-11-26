@@ -51,6 +51,7 @@ newtype InteractionId = InteractionId { interactionId :: Int }
 
 type Command = Command' IOTCM
 
+type IntervalWithoutFile = AgdaInterval
 
 data Command' a
   = Command !a
@@ -83,23 +84,7 @@ instance Show a =>
               ((.)
                  showSpace (showsPrec 11 $ toList b2_a1hOm))))
 
-data Interval' a = Interval { iStart, iEnd :: !(Pos' a) }
-  deriving (Eq, Ord, Functor, Foldable, Traversable, Generic)
-
-instance Show a => Show (Interval' a) where
-  showsPrec n (Interval s e) =
-    showParen (n >= 11) $ showString "Interval " . showsPrec 11 s . showSpace . showsPrec 11 e
-
-type IntervalWithoutFile = Interval' AgdaOffset
-
 type SrcFile = Maybe AbsolutePath
-
-data Pos' a = Pos
-  { p_line :: !LineNumber
-  , p_col  :: !a
-  }
-  deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
-
 
 newtype AbsolutePath = AbsolutePath { textPath :: String }
   deriving (Eq, Ord)
@@ -313,6 +298,7 @@ data Remove
   | Keep
   deriving (Show, Read)
 
+{-
 
 instance Read a => Read (Range' a) where
     readsPrec = parseToReadsPrec $
@@ -378,6 +364,7 @@ parens' p = do
     return x
   `mplus`
     p
+-}
 
 noRange :: Range' a
 noRange = NoRange

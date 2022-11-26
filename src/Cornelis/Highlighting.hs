@@ -12,7 +12,7 @@ import           Cornelis.Offsets
 import           Cornelis.Pretty
 import           Cornelis.Types hiding (Type)
 import           Cornelis.Utils
-import           Cornelis.Vim (unvimifyColumn, vimifyPositionM)
+import           Cornelis.Vim (unvimify, vimify)
 import           Data.Bifunctor (first)
 import           Data.Coerce (coerce)
 import           Data.IntervalMap.FingerTree (IntervalMap)
@@ -56,7 +56,7 @@ lineIntervalsForBuffer b = do
   buf_lines <- nvim_buf_get_lines b 0 (-1) True
   pure $ getLineIntervals buf_lines
 
-highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv [Interval' Int64]
+highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv [VimInterval]
 highlightBuffer b hs = do
   li <- lineIntervalsForBuffer b
   (holes, exts) <- fmap unzip $ for hs $ \hl -> do
@@ -74,35 +74,32 @@ highlightBuffer b hs = do
   pure $ concat holes
 
 newtype LineIntervals = LineIntervals
-  { li_intervalMap :: IntervalMap BufferOffset (LineNumber, Text)
+  { li_intervalMap :: IntervalMap AgdaIndex (LineNumber 'ZeroIndexed, Text)
     -- ^ Mapping from positions to line numbers
   }
   deriving newtype (Semigroup, Monoid)
 
-
 getLineIntervals :: Vector Text -> LineIntervals
-getLineIntervals = LineIntervals . go (Offset 0) (LineNumber 0)
+getLineIntervals = LineIntervals . go (oneIndexed 1) (zeroIndexed 0)
   where
     go
-        :: BufferOffset
-        -> LineNumber
+        :: AgdaIndex
+        -> LineNumber 'ZeroIndexed
         -> Vector Text
-        -> IntervalMap BufferOffset (LineNumber, Text)
-    go (Offset pos) line v
+        -> IntervalMap AgdaIndex (LineNumber 'ZeroIndexed, Text)
+    go pos line v
       | Just (t, ss) <- V.uncons v =
         let len = T.length t
-            pos' = pos + fromIntegral len
-        in IM.singleton (IM.Interval (coerce pos) $ coerce pos') (line, t)
-              <> go (coerce $ pos' + 1) (incLineNumber line) ss
+            pos' = pos .+ Offset len
+        in IM.insert (IM.Interval pos pos') (line, t)
+              $ go (incIndex pos') (incIndex line) ss
       | otherwise = mempty
 
-lookupPoint :: LineIntervals -> BufferOffset -> Maybe (LineNumber, Int64)
-lookupPoint (LineIntervals im) off = do
-  (IM.Interval scs _, (startline, s)) <- listToMaybe $ IM.search off im
-  pure ( startline
-       , fromIntegral $ toBytes s (offsetDiff off scs) - 1
-       )
-
+lookupPoint :: LineIntervals -> AgdaIndex -> Maybe VimPos
+lookupPoint (LineIntervals im) i = do
+  (IM.Interval lineStart _, (line, s)) <- listToMaybe $ IM.search i im
+  let col = toBytes s (zeroIndexed 0 .+ (i .-. lineStart))
+  pure (TextPos line col)
 
 ------------------------------------------------------------------------------
 -- | Returns any holes it tried to highlight on the left
@@ -110,46 +107,39 @@ addHighlight
     :: Buffer
     -> LineIntervals
     -> Highlight
-    -> Neovim CornelisEnv ([Interval' Int64], Maybe Extmark)
+    -> Neovim CornelisEnv ([VimInterval], Maybe Extmark)
 addHighlight b lis hl = do
-  case (,)
-          <$> lookupPoint lis (hl_start hl)
-               -- Subtract 1 here from the end offset because unlike everywhere
-               -- else in vim, extmark ranges are inclusive...
-           <*> lookupPoint lis (offsetDiff (hl_end hl) (Offset 1)) of
-    Just (start@(sl, sc), end@(el, ec)) -> do
+  case Interval
+           <$> lookupPoint lis (hl_start hl)
+           <*> lookupPoint lis (hl_end hl) of
+    Just (int@(Interval start end@(TextPos el ec))) -> do
       let atom = fromMaybe "" $ listToMaybe $ hl_atoms hl
-      ext <- setHighlight b (first (fromIntegral . getOneIndexedLineNumber) start)
-                            (first (fromIntegral . getOneIndexedLineNumber) end)
-                          $ hlGroup atom
+      ext <- setHighlight b int $ hlGroup atom
 
       pure $ (, ext) $ case atom == "hole" of
         False -> []
         True ->
-          pure $ Interval
-            { iStart = Pos (incLineNumber sl) sc
-            , iEnd   = Pos (incLineNumber el) (ec + 1)
-            }
+          pure $ Interval start (TextPos el (incIndex ec))
     Nothing -> pure ([], Nothing)
 
 
 setHighlight
     :: Buffer
-    -> (Int64, Int64)
-    -> (Int64, Int64)
+    -> Interval VimPos
     -> HighlightGroup
     -> Neovim CornelisEnv (Maybe Extmark)
-setHighlight b (sl, sc) (el, ec) hl = do
+setHighlight b (Interval (TextPos sl sc) (TextPos el ec)) hl = do
   ns <- asks ce_namespace
+  let zi = fromZeroIndexed
   flip catchNeovimException (const (pure Nothing))
-    $ fmap (Just . coerce) $ nvim_buf_set_extmark b ns sl sc $ M.fromList
+    $ fmap (Just . coerce) $ nvim_buf_set_extmark b ns (zi sl) (zi sc) $ M.fromList
     [ ( "end_line"
-      , ObjectInt el
+      , ObjectInt (zi el)
       )
       -- unlike literally everywhere else in vim, this function is INCLUSIVE
       -- in its end column
     , ( "end_col"
-      , ObjectInt $ ec + 1
+      , ObjectInt $ zi ec + 1
       )
     , ( "hl_group"
       , ObjectString
@@ -161,39 +151,32 @@ setHighlight b (sl, sc) (el, ec) hl = do
 
 highlightInterval
     :: Buffer
-    -> Interval' LineOffset
+    -> AgdaInterval
     -> HighlightGroup
     -> Neovim CornelisEnv (Maybe Extmark)
 highlightInterval b int hl = do
-  Interval (Pos sl sc) (Pos el ec) <- traverseInterval (vimifyPositionM b) int
-  let to_vim = subtract 1 . fromIntegral . getOneIndexedLineNumber
-  setHighlight b (to_vim sl, sc) (to_vim el, ec) hl
+  int' <- traverse (vimify b . fromAgdaPos) int
+  setHighlight b int' hl
 
 
 parseExtmark :: Buffer -> Object -> Neovim CornelisEnv (Maybe ExtmarkStuff)
 parseExtmark b
   (ObjectArray ( (objectToInt -> Just ext)
-               : (objectToInt -> Just line)
-               : (objectToInt -> Just col)
+               : (objectToInt @Int -> Just (zeroIndexed -> start_line))
+               : (objectToInt @Int -> Just (zeroIndexed -> start_col))
                : ObjectMap details
                : _
                )) = runMaybeT $ do
-  vim_end_col <- hoistMaybe $ objectToInt =<< M.lookup (ObjectString "end_col") details
-  -- Plus one here because our lines are 1-indexed but the results of
-  -- get_extmarks is 0-indexed.
-  let start_line = LineNumber $ line + 1
-  end_line <- hoistMaybe $ fmap (LineNumber . (+1))
-            . objectToInt =<< M.lookup (ObjectString "end_row") details
+  end_col <- hoistMaybe $ fmap zeroIndexed
+            . objectToInt @Int =<< M.lookup (ObjectString "end_col") details
+  end_line <- hoistMaybe $ fmap zeroIndexed
+            . objectToInt @Int =<< M.lookup (ObjectString "end_row") details
   hlgroup <- hoistMaybe $ objectToText =<< M.lookup (ObjectString "hl_group") details
-  sc <- lift $ unvimifyColumn b start_line $ col
-  ec <- lift $ unvimifyColumn b end_line   $ vim_end_col
+  int <- lift $ traverse (unvimify b) (Interval (TextPos start_line start_col) (TextPos end_line end_col))
   pure $ ExtmarkStuff
     { es_mark = Extmark ext
     , es_hlgroup = hlgroup
-    , es_interval =
-       Interval { iStart = Pos start_line sc
-                , iEnd   = Pos end_line ec
-                }
+    , es_interval = int
     }
 parseExtmark _ _ = pure Nothing
 
@@ -205,15 +188,12 @@ hoistMaybe = MaybeT . pure
 getExtmarks :: Buffer -> Pos -> Neovim CornelisEnv [ExtmarkStuff]
 getExtmarks b p = do
   ns <- asks ce_namespace
-  vp <- vimifyPositionM b p
-  -- The vim API uses 0-indexed lines for buf_get_extmarks..
-  let pos0 = ObjectArray [ ObjectInt $ getVimLineNumber $ p_line vp
-                         , ObjectInt 0 -- from the beginning of the line
+  vp <- vimify b p
+  let -- i = 0 for beginning of line, i = 1 for end of line
+     pos i = ObjectArray [ ObjectInt $ fromZeroIndexed (p_line vp)
+                         , ObjectInt i -- from the beginning of the line
                          ]
-      pos1 = ObjectArray [ ObjectInt $ getVimLineNumber $ p_line vp
-                         , ObjectInt (-1) -- to the end of the line
-                         ]
-  res <- nvim_buf_get_extmarks b ns pos0 pos1 $ M.singleton "details" $ ObjectBool True
+  res <- nvim_buf_get_extmarks b ns (pos 0) (pos (-1)) $ M.singleton "details" $ ObjectBool True
   marks <- fmap catMaybes $ traverse (parseExtmark b) $ V.toList res
 
   pure $ marks >>= \es ->

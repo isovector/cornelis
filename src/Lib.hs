@@ -64,18 +64,14 @@ respond b (GiveAction result ip) = do
   let i = ip_id ip
   getInteractionPoint b i >>= \case
     Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
-    Just ip' ->
-      replaceInterval b (iStart $ ip_interval ip') (iEnd $ ip_interval ip')
-        $ replaceQuestion result
+    Just ip' -> replaceInterval b (ip_interval ip') $ replaceQuestion result
   reload
 -- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) ->
     getInteractionPoint b i >>= \case
       Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
-      Just ip -> do
-        replaceInterval b (iStart $ ip_interval ip) (iEnd $ ip_interval ip)
-          $ replaceQuestion ex
+      Just ip -> replaceInterval b (ip_interval ip) $ replaceQuestion ex
   reload
 respond b ClearHighlighting = do
   -- delete what we know about goto positions
@@ -108,7 +104,7 @@ doMakeCase b (RegularCase Function clauses ip) = do
       start = iStart int
       end = iEnd int
   ins <- getIndent b $ p_line start
-  replaceInterval b start end
+  replaceInterval b (Interval start end)
     $ T.unlines
     $ fmap (T.replicate ins " " <>)
     $ fmap replaceQuestion clauses
@@ -129,7 +125,7 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
          (iEnd $ ip_interval ip')
       -- Add an extra character to the start so we leave a space after the
       -- opening brace, and subtract two characters from the end for the space and the }
-      replaceInterval b (start & #p_col %~ offsetPlus (Offset 1)) (end & #p_col %~ offsetSubtract 2)
+      replaceInterval b (Interval (start & #p_col %~ offsetPlus (Offset 1)) (end & #p_col %~ offsetSubtract 2))
         $ T.unlines
         $ fmap replaceQuestion clauses & _tail %~ fmap (indent start)
 

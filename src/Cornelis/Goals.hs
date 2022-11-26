@@ -92,7 +92,7 @@ getGoalAtPos b p = do
   debug ("getgoalat", p)
   z <- withBufferStuff b $ \bs -> do
     marks <- getExtmarks b p
-    debug ("marks", p)
+    debug ("marks", marks)
     let todo = T.pack $ show holeHlGroup
 
     fmap fold $ for marks $ \es -> do

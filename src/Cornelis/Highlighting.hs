@@ -133,16 +133,16 @@ setHighlight
     -> Neovim CornelisEnv (Maybe Extmark)
 setHighlight b x@(Interval (Pos sl sc) (Pos el ec)) hl = do
   ns <- asks ce_namespace
-  let zi = fromZeroIndexed
+  let from0 = fromZeroIndexed
   y <- flip catchNeovimException (const (pure Nothing))
-    $ fmap (Just . coerce) $ nvim_buf_set_extmark b ns (zi sl) (zi sc) $ M.fromList
+    $ fmap (Just . coerce) $ nvim_buf_set_extmark b ns (from0 sl) (from0 sc) $ M.fromList
     [ ( "end_line"
-      , ObjectInt (zi el)
+      , ObjectInt (from0 el)
       )
       -- unlike literally everywhere else in vim, this function is INCLUSIVE
       -- in its end column
     , ( "end_col"
-      , ObjectInt $ zi ec
+      , ObjectInt $ from0 ec
       )
     , ( "hl_group"
       , ObjectString

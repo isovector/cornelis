@@ -33,7 +33,6 @@ import           Neovim.Plugin (CommandOption(CmdComplete))
 import           Plugin
 
 
-
 getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
 getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
 

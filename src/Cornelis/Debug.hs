@@ -1,5 +1,7 @@
 module Cornelis.Debug where
 
+import Control.Exception (catch, throw)
+import System.IO.Error (isAlreadyInUseError)
 import Neovim
 import Neovim.API.String (vim_report_error)
 
@@ -12,3 +14,11 @@ traceMX :: Show a => String -> a -> Neovim env ()
 traceMX herald a =
   vim_report_error $ "!!!" <> herald <> ": " <> show a
 
+debug :: Show a => a -> Neovim env ()
+debug x = liftIO $ go 100
+  where
+    go 0 = pure ()
+    go n = 
+      catch
+       (appendFile  "/tmp/agda-hl.log" (show x <> "\n"))
+       (\e -> if isAlreadyInUseError e then go (n-1) else throw e)

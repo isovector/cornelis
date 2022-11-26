@@ -8,6 +8,7 @@ module Cornelis.Highlighting where
 import           Control.Lens ((<>~))
 import           Control.Monad.Trans (lift)
 import           Control.Monad.Trans.Maybe
+import           Cornelis.Debug (debug)
 import           Cornelis.Offsets
 import           Cornelis.Pretty
 import           Cornelis.Types hiding (Type)
@@ -58,6 +59,7 @@ lineIntervalsForBuffer b = do
 
 highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv [VimInterval]
 highlightBuffer b hs = do
+  debug ("highlightBuffer", hs)
   li <- lineIntervalsForBuffer b
   (holes, exts) <- fmap unzip $ for hs $ \hl -> do
     (hole, mext) <- addHighlight b li hl
@@ -109,6 +111,7 @@ addHighlight
     -> Highlight
     -> Neovim CornelisEnv ([VimInterval], Maybe Extmark)
 addHighlight b lis hl = do
+  debug hl
   case Interval
            <$> lookupPoint lis (hl_start hl)
            <*> lookupPoint lis (hl_end hl) of
@@ -128,10 +131,10 @@ setHighlight
     -> Interval VimPos
     -> HighlightGroup
     -> Neovim CornelisEnv (Maybe Extmark)
-setHighlight b (Interval (Pos sl sc) (Pos el ec)) hl = do
+setHighlight b x@(Interval (Pos sl sc) (Pos el ec)) hl = do
   ns <- asks ce_namespace
   let zi = fromZeroIndexed
-  flip catchNeovimException (const (pure Nothing))
+  y <- flip catchNeovimException (const (pure Nothing))
     $ fmap (Just . coerce) $ nvim_buf_set_extmark b ns (zi sl) (zi sc) $ M.fromList
     [ ( "end_line"
       , ObjectInt (zi el)
@@ -139,7 +142,7 @@ setHighlight b (Interval (Pos sl sc) (Pos el ec)) hl = do
       -- unlike literally everywhere else in vim, this function is INCLUSIVE
       -- in its end column
     , ( "end_col"
-      , ObjectInt $ zi ec + 1
+      , ObjectInt $ zi ec
       )
     , ( "hl_group"
       , ObjectString
@@ -148,6 +151,9 @@ setHighlight b (Interval (Pos sl sc) (Pos el ec)) hl = do
           $ show hl
       )
     ]
+  debug ("setHl", x, y, hl)
+  pure y
+
 
 highlightInterval
     :: Buffer

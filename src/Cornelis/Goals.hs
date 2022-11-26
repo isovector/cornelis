@@ -6,6 +6,7 @@ module Cornelis.Goals where
 import           Control.Arrow ((&&&))
 import           Control.Lens
 import           Cornelis.Agda (withAgda)
+import           Cornelis.Debug (debug)
 import           Cornelis.Highlighting (getExtmarks, holeHlGroup)
 import           Cornelis.Offsets
 import           Cornelis.Types
@@ -88,8 +89,10 @@ getGoalAtPos
     -> AgdaPos
     -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
 getGoalAtPos b p = do
+  debug ("getgoalat", p)
   z <- withBufferStuff b $ \bs -> do
     marks <- getExtmarks b p
+    debug ("marks", p)
     let todo = T.pack $ show holeHlGroup
 
     fmap fold $ for marks $ \es -> do

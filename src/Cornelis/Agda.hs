@@ -51,6 +51,7 @@ spawnAgda buffer = do
 
       void $ neovimAsync $ forever $ reportExceptions $ do
         resp <- liftIO $ hGetLine hout
+        liftIO $ appendFile "/tmp/agda.log" $ LT.unpack resp <> "\n"
         chan <- asks ce_stream
         let resp' = dropPrefix "JSON> " resp
         case eitherDecode @Response $ encodeUtf8 resp' of

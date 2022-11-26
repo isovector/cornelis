@@ -15,7 +15,8 @@ import           Data.Semigroup (stimes)
 import qualified Data.Text as T
 import           Prettyprinter
 import           Prettyprinter.Internal.Type
-import Cornelis.Types.Agda (IntervalWithoutFile, AgdaOffset)
+import Cornelis.Offsets (AgdaOffset)
+import Cornelis.Types.Agda (IntervalWithoutFile)
 
 data HighlightGroup
   = Keyword

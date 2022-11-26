@@ -1,20 +1,31 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DerivingStrategies #-}
 
-module Cornelis.Offsets
-  ( module Cornelis.Offsets
-  , LineNumber(..)
-  , Offset(..)
-  , BufferOffset
-  , LineOffset
-  ) where
+module Cornelis.Offsets where
 
-import           Cornelis.Types
-import           Cornelis.Types.Agda
+import           Data.Aeson (FromJSON)
 import qualified Data.ByteString as BS
 import           Data.Coerce (coerce)
 import           Data.Int
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
+import           GHC.Stack (HasCallStack)
+import           Prettyprinter (Pretty)
+
+------------------------------------------------------------------------------
+-- | Line numbers are always 1-indexed
+newtype LineNumber = LineNumber { getOneIndexedLineNumber :: Int32 }
+  deriving newtype (Eq, Ord, Show, Read, FromJSON, Pretty)
+
+data OffsetType = Line | File | OneIndexed
+
+newtype Offset (a :: OffsetType) = Offset Int32
+  deriving newtype (Eq, Ord, Show, Read, FromJSON, Pretty)
+
+type BufferOffset = Offset 'File
+type LineOffset = Offset 'Line
+type AgdaOffset = Offset 'OneIndexed
+
 
 
 offsetPlus :: Offset a -> Offset a -> Offset a

@@ -26,7 +26,8 @@ module Cornelis.Types
 import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
 import Cornelis.Debug
-import Cornelis.Types.Agda (IntervalWithoutFile, Interval' (..), BufferOffset, LineOffset, AgdaOffset, Pos' (..))
+import Cornelis.Offsets (BufferOffset, LineOffset, AgdaOffset)
+import Cornelis.Types.Agda (IntervalWithoutFile, Interval' (..), Pos' (..))
 import Data.Aeson hiding (Error)
 import Data.Generics.Labels ()
 import Data.IntMap.Strict (IntMap)

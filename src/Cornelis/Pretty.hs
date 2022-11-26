@@ -2,7 +2,7 @@
 
 module Cornelis.Pretty where
 
-import           Cornelis.Offsets (AgdaPos, TextPos(..), Interval(..), AgdaInterval, charToBytes, textToBytes)
+import           Cornelis.Offsets (AgdaPos, Pos(..), Interval(..), AgdaInterval, charToBytes, textToBytes)
 import qualified Cornelis.Types as C
 import qualified Cornelis.Types as X
 import           Cornelis.Types hiding (Type)

@@ -22,7 +22,7 @@ module Cornelis.Types
 import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
 import Cornelis.Debug
-import Cornelis.Offsets (TextPos(..), Interval(..), Pos, AgdaIndex, AgdaPos, AgdaInterval)
+import Cornelis.Offsets (Pos(..), Interval(..), AgdaIndex, AgdaPos, AgdaInterval)
 import Data.Aeson hiding (Error)
 import Data.Generics.Labels ()
 import Data.IntMap.Strict (IntMap)
@@ -218,7 +218,7 @@ newtype AgdaPos' = AgdaPos AgdaPos
 
 instance FromJSON AgdaPos' where
   parseJSON = withObject "Position" $ \obj -> do
-    AgdaPos <$> (TextPos <$> obj .: "line" <*> obj .: "col")
+    AgdaPos <$> (Pos <$> obj .: "line" <*> obj .: "col")
 
 instance FromJSON (InteractionPoint Maybe) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
@@ -378,7 +378,7 @@ newtype Extmark = Extmark Int64
 data ExtmarkStuff = ExtmarkStuff
   { es_mark     :: Extmark
   , es_hlgroup  :: Text
-  , es_interval :: Interval Pos
+  , es_interval :: AgdaInterval
   }
   deriving (Eq, Ord, Show)
 

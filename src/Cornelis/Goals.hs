@@ -24,7 +24,7 @@ import           Neovim.API.Text
 
 --------------------------------------------------------------------------------
 -- | Move the vim cursor to a goal in the current window
-findGoal :: Ord a => (Pos -> Pos -> Maybe a) -> Neovim CornelisEnv ()
+findGoal :: Ord a => (AgdaPos -> AgdaPos -> Maybe a) -> Neovim CornelisEnv ()
 findGoal hunt = withAgda $ do
   w <- vim_get_current_window
   b <- window_get_buffer w
@@ -34,7 +34,6 @@ findGoal hunt = withAgda $ do
         judged_goals
               = mapMaybe ( sequenceA
                          . (id &&& hunt pos)
-                         . fromAgdaPos
                          . iStart
                          . ip_interval
                          ) goals
@@ -86,7 +85,7 @@ getGoalAtCursor = do
 -- internal state tracking where the goal is!!!
 getGoalAtPos
     :: Buffer
-    -> Pos
+    -> AgdaPos
     -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
 getGoalAtPos b p = do
   z <- withBufferStuff b $ \bs -> do
@@ -97,12 +96,11 @@ getGoalAtPos b p = do
       case es_hlgroup es == todo of
         False -> pure mempty
         True -> do
-          let eint = toAgdaPos <$> es_interval es
-          case find ((== iStart eint) . iStart . ip_interval)
+          case find ((== iStart (es_interval es)) . iStart . ip_interval)
                   $ toList (bs_ips bs) of
             Nothing -> pure mempty
             Just ip -> do
-              let ip' = ip { ip_interval' = Identity eint }
+              let ip' = ip { ip_interval' = Identity (es_interval es) }
               -- BIG HACK!!
               -- This is a convenient place to update our global mapping of
               -- where our holes are, since we just found one.
@@ -130,7 +128,7 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
 -- spans an interaction point.
 --
 -- TODO(sandy): make this call correct by construction
-getGoalContents_maybe :: Buffer -> Interval Pos -> Neovim CornelisEnv (Maybe Text)
+getGoalContents_maybe :: Buffer -> AgdaInterval -> Neovim CornelisEnv (Maybe Text)
 getGoalContents_maybe b ip = do
   iv <- fmap T.strip $ getBufferInterval b ip
   pure $ case iv of
@@ -141,7 +139,7 @@ getGoalContents_maybe b ip = do
 
 ------------------------------------------------------------------------------
 -- | Like 'getGoalContents_maybe', subject to the same limitations.
-getGoalContents :: Buffer -> Interval Pos -> Neovim CornelisEnv Text
+getGoalContents :: Buffer -> AgdaInterval -> Neovim CornelisEnv Text
 getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 
 

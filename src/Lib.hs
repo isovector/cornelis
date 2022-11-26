@@ -22,7 +22,6 @@ import           Cornelis.Subscripts (incNextDigitSeq, decNextDigitSeq)
 import           Cornelis.Types
 import           Cornelis.Utils
 import           Cornelis.Vim
-import           Data.Bifunctor
 import           Data.Foldable (for_)
 import           Data.IORef (newIORef)
 import qualified Data.IntMap.Strict as IM
@@ -35,7 +34,7 @@ import           Plugin
 
 
 
-getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe (InteractionPoint Identity LineOffset))
+getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
 getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
 
 
@@ -54,7 +53,7 @@ respond b (DisplayInfo dp) = do
 -- Update the buffer's interaction points map
 respond b (InteractionPoints ips) = do
   let ips' = mapMaybe sequenceInteractionPoint ips
-  modifyBufferStuff b $ #bs_ips .~ (IM.fromList $ fmap (ip_id &&& id) $ fmap (fmap agdaToLine) ips')
+  modifyBufferStuff b $ #bs_ips .~ (IM.fromList $ fmap (ip_id &&& id) ips')
 -- Replace a function clause
 respond b (MakeCase mkcase) = do
   doMakeCase b mkcase
@@ -88,52 +87,43 @@ respond b (JumpToError _ pos) = do
   let li = getLineIntervals buf_lines
   case lookupPoint li pos of
     Nothing -> reportError "invalid error report from Agda"
-    Just lc -> do
+    Just (Pos l c) -> do
       ws <- fmap listToMaybe $ windowsForBuffer b
-      for_ ws
-        $ flip window_set_cursor
-        $ first (fromIntegral . getOneIndexedLineNumber . incLineNumber) lc
+      for_ ws $ flip window_set_cursor (fromOneIndexed (oneIndex l), fromZeroIndexed c)
 respond _ Status{} = pure ()
 respond _ (Unknown k _) = reportError k
 
 doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
 doMakeCase b (RegularCase Function clauses ip) = do
-  int' <- traverseInterval (pure . fmap agdaToLine) $ ip_interval ip
-  let int :: Interval' LineOffset
-      int = int' & #iStart . #p_col .~ Offset 0
-      start = iStart int
-      end = iEnd int
-  ins <- getIndent b $ p_line start
-  replaceInterval b (Interval start end)
+  let int = ip_interval ip & #iStart . #p_col .~ oneIndexed @Int 1
+  ins <- getIndent b (zeroIndex (p_line (iStart int)))
+  replaceInterval b int
     $ T.unlines
     $ fmap (T.replicate ins " " <>)
     $ fmap replaceQuestion clauses
 -- TODO(sandy): It would be nice if Agda just gave us the bounds we're supposed to replace...
 doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
-  let ip' = fmap agdaToLine ip
   ws <- windowsForBuffer b
   case listToMaybe ws of
     Nothing ->
       reportError
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a limitation in cornelis."
     Just w -> do
-      (start, end)
-        <- getLambdaClause w b
-          -- Subtract one so we are outside of a {! !} goal and the i} movement
-          -- works correctly
-         (fmap (offsetSubtract 1) $ iStart $ ip_interval ip')
-         (iEnd $ ip_interval ip')
+      Interval start end
+        <- getLambdaClause w b (ip_interval ip & #iStart . #p_col %~ (.+ Offset (- 1)))
+           -- Subtract one so we are outside of a {! !} goal and the i} movement
+           -- works correctly
       -- Add an extra character to the start so we leave a space after the
       -- opening brace, and subtract two characters from the end for the space and the }
-      replaceInterval b (Interval (start & #p_col %~ offsetPlus (Offset 1)) (end & #p_col %~ offsetSubtract 2))
+      replaceInterval b (Interval (start & #p_col %~ (.+ Offset 1)) (end & #p_col %~ (.+ Offset (- 2))))
         $ T.unlines
         $ fmap replaceQuestion clauses & _tail %~ fmap (indent start)
 
 
 ------------------------------------------------------------------------------
 -- | Indent a string with the given offset.
-indent :: Pos -> Text -> Text
-indent (Pos _ (Offset n)) s = T.replicate (fromIntegral n - 1) " " <> "; " <> s
+indent :: AgdaPos -> Text -> Text
+indent (Pos _ c) s = T.replicate (fromZeroIndexed (zeroIndex c)) " " <> "; " <> s -- TODO: subtract one more?
 
 
 doPrevGoal :: CommandArguments -> Neovim CornelisEnv ()

@@ -6,7 +6,7 @@ module Cornelis.Offsets
   , Unit(..)
   , Index()
   , Offset(..)
-  , TextPos(..)
+  , Pos(..)
   , Interval(..)
   , LineNumber
   , AgdaIndex
@@ -17,7 +17,6 @@ module Cornelis.Offsets
   , VimOffset
   , VimPos
   , VimInterval
-  , Pos
   , zeroIndexed
   , oneIndexed
   , fromZeroIndexed
@@ -32,8 +31,6 @@ module Cornelis.Offsets
   , charToBytes
   , toBytes
   , fromBytes
-  , toAgdaPos
-  , fromAgdaPos
   , containsPoint
   , addCol
   ) where
@@ -43,6 +40,7 @@ import qualified Data.ByteString as BS
 import           Data.Coerce (coerce)
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
+import           GHC.Generics (Generic)
 import           GHC.Stack (HasCallStack)
 import           Prettyprinter (Pretty)
 
@@ -66,29 +64,26 @@ newtype Offset (e :: Unit) = Offset Int
 -- | Position in a text file as line-column numbers. This type is indexed by
 -- the units of the columns (@Byte@ or @CodePoint@) and by the indexing scheme
 -- of lines and columns.
-data TextPos e i j = TextPos
+data Pos e i j = Pos
   { p_line :: Index 'Line i
   , p_col :: Index e j
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Ord, Show, Generic)
 
 data Interval p = Interval { iStart, iEnd :: !p }
-  deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
 -- Common specializations
 
 type LineNumber = Index 'Line
 
--- | The main position type in cornelis.
-type Pos = TextPos 'CodePoint 'ZeroIndexed 'ZeroIndexed
-
 type AgdaIndex = Index 'CodePoint 'OneIndexed
 type AgdaOffset = Offset 'CodePoint
-type AgdaPos = TextPos 'CodePoint 'OneIndexed 'OneIndexed
+type AgdaPos = Pos 'CodePoint 'OneIndexed 'OneIndexed
 type AgdaInterval = Interval AgdaPos
 
 type VimIndex = Index 'Byte
 type VimOffset = Offset 'Byte
-type VimPos = TextPos 'Byte 'ZeroIndexed 'ZeroIndexed
+type VimPos = Pos 'Byte 'ZeroIndexed 'ZeroIndexed
 type VimInterval = Interval VimPos
 
 -- To pass indices to and from external sources.
@@ -183,11 +178,5 @@ fromBytes t (Index i) | Just (c, str) <- T.uncons t =
         False -> Index 0
 fromBytes t i = error $ "missing bytes: " <> show (t, i)
 
-toAgdaPos :: Pos -> AgdaPos
-toAgdaPos (TextPos l c) = TextPos (oneIndex l) (oneIndex c)
-
-fromAgdaPos :: AgdaPos -> Pos
-fromAgdaPos (TextPos l c) = TextPos (zeroIndex l) (zeroIndex c)
-
-addCol :: TextPos e i j -> Offset e -> TextPos e i j
-addCol (TextPos l c) dc = TextPos l (c .+ dc)
+addCol :: Pos e i j -> Offset e -> Pos e i j
+addCol (Pos l c) dc = Pos l (c .+ dc)

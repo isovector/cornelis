@@ -1,6 +1,6 @@
 module Cornelis.Subscripts where
 
-import           Cornelis.Offsets (Offset(..), TextPos(..), Interval(..), fromZeroIndexed, (.+))
+import           Cornelis.Offsets
 import           Cornelis.Vim (getWindowCursor, getBufferLine, replaceInterval, setWindowCursor, reportError)
 import           Data.Foldable (asum, foldl', for_)
 import           Data.Map (Map)
@@ -112,17 +112,17 @@ overNextDigitSeq ::  (Int -> Int) -> Neovim env ()
 overNextDigitSeq f = do
   w <- vim_get_current_window
   b <- window_get_buffer w
-  TextPos line col <- getWindowCursor w
-  txt <- getBufferLine b line
-  let later = T.drop (fromZeroIndexed col) txt
+  Pos line col <- getWindowCursor w
+  txt <- getBufferLine b (zeroIndex line)
+  let later = T.drop (fromZeroIndexed (zeroIndex col)) txt
 
   reportError $ T.pack $ show later
   for_ (parse (applyOver f) "" later) $ \(result, (before, target)) ->  do
     reportError result
     let start_col = col .+ Offset before
         end_col = start_col .+ Offset target
-        start_pos = TextPos line start_col
-        end_pos = TextPos line end_col
+        start_pos = Pos line start_col
+        end_pos = Pos line end_col
 
     replaceInterval b (Interval start_pos end_pos) result
 

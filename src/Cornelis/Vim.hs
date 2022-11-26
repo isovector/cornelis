@@ -23,28 +23,28 @@ vimFirstLine = 0
 vimLastLine :: Int64
 vimLastLine = -1
 
-getWindowCursor :: Window -> Neovim env Pos
+getWindowCursor :: Window -> Neovim env AgdaPos
 getWindowCursor w = do
   (oneIndexed -> row, zeroIndexed -> col) <- window_get_cursor w
   -- window_get_cursor gives us a 1-indexed line, but that is the same way that
   -- lines are indexed.
   let line = zeroIndex row
   b <- window_get_buffer w
-  unvimify b (TextPos line col)
+  unvimify b (Pos line col)
 
 -- | TODO(sandy): POSSIBLE BUG HERE. MAKE SURE YOU SET THE CURRENT WINDOW
 -- BEFORE CALLING THIS FUNCTION
-getpos :: Buffer -> Char -> Neovim env Pos
+getpos :: Buffer -> Char -> Neovim env AgdaPos
 getpos b mark = do
   -- getpos gives us a (1,1)-indexed position!
   ObjectArray [_, objectToInt @Int -> Just (oneIndexed -> line), objectToInt @Int -> Just (oneIndexed -> col), _]
     <- vim_call_function "getpos" $ V.fromList [ObjectString $ encodeUtf8 $ T.singleton mark]
-  unvimify b (TextPos (zeroIndex line) (zeroIndex col))
+  unvimify b (Pos (zeroIndex line) (zeroIndex col))
 
 data SearchMode = Forward | Backward
   deriving (Eq, Ord, Show)
 
-searchpos :: Buffer -> [Text] -> SearchMode -> Neovim env Pos
+searchpos :: Buffer -> [Text] -> SearchMode -> Neovim env AgdaPos
 searchpos b pats dir = do
   -- unlike getpos, these columns are 0 indexed W T F
   ObjectArray [objectToInt @Int -> Just (oneIndexed -> line), objectToInt @Int -> Just (zeroIndexed -> col)]
@@ -54,36 +54,36 @@ searchpos b pats dir = do
             Forward -> "n"
             Backward -> "bn"
         ]
-  unvimify b (TextPos (zeroIndex line) col)
+  unvimify b (Pos (zeroIndex line) col)
 
-setWindowCursor :: Window -> Pos -> Neovim env ()
+setWindowCursor :: Window -> AgdaPos -> Neovim env ()
 setWindowCursor w p = do
   b <- window_get_buffer w
-  TextPos l c <- vimify b p
+  Pos l c <- vimify b p
   window_set_cursor w (fromOneIndexed (oneIndex l), fromZeroIndexed c)
 
-replaceInterval :: Buffer -> Interval Pos -> Text -> Neovim env ()
+replaceInterval :: Buffer -> Interval AgdaPos -> Text -> Neovim env ()
 replaceInterval b ival str
   = do
-    Interval (TextPos sl sc) (TextPos el ec) <- traverse (vimify b) ival
-    nvim_buf_set_text b (zi sl) (zi sc) (zi el) (zi ec) $ V.fromList $ T.lines str
+    Interval (Pos sl sc) (Pos el ec) <- traverse (vimify b) ival
+    nvim_buf_set_text b (from0 sl) (from0 sc) (from0 el) (from0 ec) $ V.fromList $ T.lines str
   where
-    zi = fromZeroIndexed
+    from0 = fromZeroIndexed
 
 ------------------------------------------------------------------------------
 -- | Vim insists on returning byte-based offsets for the cursor positions...
 -- why the fuck? This function undoes the problem.
-unvimify :: Buffer -> VimPos -> Neovim env Pos
-unvimify b (TextPos line col) = do
+unvimify :: Buffer -> VimPos -> Neovim env AgdaPos
+unvimify b (Pos line col) = do
   txt <- getBufferLine b line
   let col' = fromBytes txt col
-  pure (TextPos line col')
+  pure (Pos (oneIndex line) (oneIndex col'))
 
-vimify :: Buffer -> Pos -> Neovim env VimPos
-vimify b (TextPos line col) = do
+vimify :: Buffer -> AgdaPos -> Neovim env VimPos
+vimify b (Pos (zeroIndex -> line) (zeroIndex -> col)) = do
   txt <- getBufferLine b line
   let col' = toBytes txt col
-  pure (TextPos line col')
+  pure (Pos line col')
 
 getIndent :: Buffer -> LineNumber 'ZeroIndexed -> Neovim env Int
 getIndent b l = do
@@ -94,17 +94,18 @@ getIndent b l = do
 getBufferLine :: Buffer -> LineNumber 'ZeroIndexed -> Neovim env Text
 getBufferLine b l = buffer_get_line b (fromZeroIndexed l)
 
-getBufferInterval :: Buffer -> Interval Pos -> Neovim env Text
+getBufferInterval :: Buffer -> Interval AgdaPos -> Neovim env Text
 getBufferInterval b (Interval start end) = do
-    TextPos sl _ <- vimify b start
-    TextPos el _ <- vimify b end
+    Pos sl _ <- vimify b start
+    Pos el _ <- vimify b end
     -- nvim_buf_get_lines is exclusive in its end line, thus the plus 1
-    ls <- fmap toList $ nvim_buf_get_lines b (zi sl) (zi el + 1) False
+    ls <- fmap toList $ nvim_buf_get_lines b (from0 sl) (from0 el + 1) False
     pure $ T.unlines $
-      ls & _last %~ T.take (zi (p_col end))
-         & _head %~ T.drop (zi (p_col start))
+      ls & _last %~ T.take (from1 (p_col end))
+         & _head %~ T.drop (from1 (p_col start))
   where
-    zi i = fromZeroIndexed i
+    from0 = fromZeroIndexed
+    from1 = fromZeroIndexed . zeroIndex  -- add 1 to a one-indexed arg before passing it to take/drop
 
 reportError :: Text -> Neovim env ()
 reportError = vim_report_error
@@ -130,8 +131,8 @@ getSurroundingMotion
     :: Window
     -> Buffer
     -> Text
-    -> Pos
-    -> Neovim env (Pos, Pos)
+    -> AgdaPos
+    -> Neovim env (AgdaPos, AgdaPos)
 getSurroundingMotion w b motion p = do
   savingCurrentWindow $ do
     savingCurrentPosition w $ do
@@ -148,10 +149,9 @@ getSurroundingMotion w b motion p = do
 getLambdaClause
     :: Window
     -> Buffer
-    -> Pos -- ^ Start of IP interval
-    -> Pos -- ^ End of IP interval
-    -> Neovim env (Pos, Pos)
-getLambdaClause w b p0 p1 = do
+    -> AgdaInterval
+    -> Neovim env AgdaInterval
+getLambdaClause w b (Interval p0 p1) = do
   savingCurrentWindow $ do
     savingCurrentPosition w $ do
       nvim_set_current_win w
@@ -159,5 +159,5 @@ getLambdaClause w b p0 p1 = do
       start <- searchpos b ["{", ";"] Backward
       setWindowCursor w p1
       end <- searchpos b [";", "}"] Forward
-      pure (start, end)
+      pure (Interval start end)
 

@@ -37,7 +37,7 @@ import           Text.Read (readMaybe)
 
 
 
-getDefinitionSites :: Buffer -> Pos -> Neovim CornelisEnv (First DefinitionSite)
+getDefinitionSites :: Buffer -> AgdaPos -> Neovim CornelisEnv (First DefinitionSite)
 getDefinitionSites b p = withBufferStuff b $ \bs -> do
   marks <- getExtmarks b p
   pure $ flip foldMap marks $ \es ->

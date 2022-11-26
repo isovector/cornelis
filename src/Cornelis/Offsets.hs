@@ -35,6 +35,7 @@ module Cornelis.Offsets
   , toAgdaPos
   , fromAgdaPos
   , containsPoint
+  , addCol
   ) where
 
 import           Data.Aeson (FromJSON)
@@ -188,3 +189,5 @@ toAgdaPos (TextPos l c) = TextPos (oneIndex l) (oneIndex c)
 fromAgdaPos :: AgdaPos -> Pos
 fromAgdaPos (TextPos l c) = TextPos (zeroIndex l) (zeroIndex c)
 
+addCol :: TextPos e i j -> Offset e -> TextPos e i j
+addCol (TextPos l c) dc = TextPos l (c .+ dc)

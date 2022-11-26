@@ -189,7 +189,7 @@ data Solution = Solution
 data InteractionPoint f = InteractionPoint
   { ip_id :: Int
   , ip_interval' :: f AgdaInterval
-  }
+  } deriving Generic
 
 deriving instance Eq (f AgdaInterval) => Eq (InteractionPoint f)
 deriving instance Ord (f AgdaInterval) => Ord (InteractionPoint f)

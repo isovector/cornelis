@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE RoleAnnotations #-}
 
 module Cornelis.Offsets
   ( Indexing(..)
@@ -17,8 +18,8 @@ module Cornelis.Offsets
   , VimOffset
   , VimPos
   , VimInterval
-  , zeroIndexed
-  , oneIndexed
+  , toZeroIndexed
+  , toOneIndexed
   , fromZeroIndexed
   , fromOneIndexed
   , zeroIndex
@@ -42,6 +43,7 @@ import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import           GHC.Generics (Generic)
 import           GHC.Stack (HasCallStack)
+import           GHC.Show (showSpace)
 import           Prettyprinter (Pretty)
 
 -- TODO: Distinguish offsets and positions; offsets have arithmetic, positions don't
@@ -52,14 +54,18 @@ data Indexing = OneIndexed | ZeroIndexed
 -- | What are we counting?
 data Unit = Byte | CodePoint | Line
 
--- | The constructor is hidden, use 'zeroIndexed' and 'oneIndexed' to construct it,
+-- | The constructor is hidden, use 'toZeroIndexed' and 'toOneIndexed' to construct it,
 -- and 'fromZeroIndexed' and 'fromOneIndexed' to destruct it.
 newtype Index (e :: Unit) (i :: Indexing) = Index Int
   deriving newtype (Eq, Ord, Show, Read, FromJSON, Pretty)
 
+type role Index nominal nominal
+
 -- | It doesn't seem worth the trouble to hide this constructor.
 newtype Offset (e :: Unit) = Offset Int
   deriving newtype (Eq, Ord, Show, Read, FromJSON, Pretty)
+
+type role Offset nominal
 
 -- | Position in a text file as line-column numbers. This type is indexed by
 -- the units of the columns (@Byte@ or @CodePoint@) and by the indexing scheme
@@ -70,7 +76,11 @@ data Pos e i j = Pos
   } deriving (Eq, Ord, Show, Generic)
 
 data Interval p = Interval { iStart, iEnd :: !p }
-  deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+  deriving (Eq, Ord, Functor, Foldable, Traversable, Generic)
+
+instance Show p => Show (Interval p) where
+  showsPrec n (Interval s e) =
+    showParen (n >= 11) $ showString "Interval " . showsPrec 11 s . showSpace . showsPrec 11 e
 
 -- Common specializations
 
@@ -89,12 +99,12 @@ type VimInterval = Interval VimPos
 -- To pass indices to and from external sources.
 
 -- | Mark a raw index as zero-indexed.
-zeroIndexed :: Integral a => a -> Index e 'ZeroIndexed
-zeroIndexed a = Index (fromIntegral a)
+toZeroIndexed :: Integral a => a -> Index e 'ZeroIndexed
+toZeroIndexed a = Index (fromIntegral a)
 
 -- | Mark a raw index as one-indexed.
-oneIndexed :: Integral a => a -> Index e 'OneIndexed
-oneIndexed a = Index (fromIntegral a)
+toOneIndexed :: Integral a => a -> Index e 'OneIndexed
+toOneIndexed a = Index (fromIntegral a)
 
 -- | Unwrap a raw zero-indexed index.
 fromZeroIndexed :: Num a => Index e 'ZeroIndexed -> a
@@ -132,24 +142,6 @@ offsetPlus = coerce $ (+) @Int
 
 containsPoint :: Ord p => Interval p -> p -> Bool
 containsPoint (Interval s e) p = s <= p && p < e
-
-{-
-
-offsetSubtract :: Int -> Offset a -> Offset a
-offsetSubtract i (Offset a) = Offset $ a - fromIntegral i
-
-lineDiff :: LineNumber -> LineNumber -> LineNumber
-lineDiff = coerce $ (-) @Int32
-
-incLineNumber :: LineNumber -> LineNumber
-incLineNumber = coerce ((+) @Int32 1)
-
-getVimLineNumber :: LineNumber -> Int64
-getVimLineNumber (LineNumber l) = fromIntegral l - 1
-
-agdaToLine :: AgdaOffset -> LineOffset
-agdaToLine = coerce $ subtract @Int32 1
--}
 
 -- | Number of bytes in a 'T.Text'.
 textToBytes :: T.Text -> Int

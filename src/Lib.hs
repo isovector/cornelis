@@ -94,7 +94,7 @@ respond _ (Unknown k _) = reportError k
 
 doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
 doMakeCase b (RegularCase Function clauses ip) = do
-  let int = ip_interval ip & #iStart . #p_col .~ oneIndexed @Int 1
+  let int = ip_interval ip & #iStart . #p_col .~ toOneIndexed @Int 1
   ins <- getIndent b (zeroIndex (p_line (iStart int)))
   replaceInterval b int
     $ T.unlines

@@ -8,7 +8,6 @@ module Cornelis.Highlighting where
 import           Control.Lens ((<>~))
 import           Control.Monad.Trans (lift)
 import           Control.Monad.Trans.Maybe
-import           Cornelis.Debug (debug)
 import           Cornelis.Offsets
 import           Cornelis.Pretty
 import           Cornelis.Types hiding (Type)
@@ -59,7 +58,6 @@ lineIntervalsForBuffer b = do
 
 highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv [VimInterval]
 highlightBuffer b hs = do
-  debug ("highlightBuffer", hs)
   li <- lineIntervalsForBuffer b
   (holes, exts) <- fmap unzip $ for hs $ \hl -> do
     (hole, mext) <- addHighlight b li hl
@@ -82,7 +80,7 @@ newtype LineIntervals = LineIntervals
   deriving newtype (Semigroup, Monoid)
 
 getLineIntervals :: Vector Text -> LineIntervals
-getLineIntervals = LineIntervals . go (oneIndexed 1) (zeroIndexed 0)
+getLineIntervals = LineIntervals . go (toOneIndexed 1) (toZeroIndexed 0)
   where
     go
         :: AgdaIndex
@@ -100,7 +98,7 @@ getLineIntervals = LineIntervals . go (oneIndexed 1) (zeroIndexed 0)
 lookupPoint :: LineIntervals -> AgdaIndex -> Maybe VimPos
 lookupPoint (LineIntervals im) i = do
   (IM.Interval lineStart _, (line, s)) <- listToMaybe $ IM.search i im
-  let col = toBytes s (zeroIndexed 0 .+ (i .-. lineStart))
+  let col = toBytes s (toZeroIndexed 0 .+ (i .-. lineStart))
   pure (Pos line col)
 
 ------------------------------------------------------------------------------
@@ -111,7 +109,6 @@ addHighlight
     -> Highlight
     -> Neovim CornelisEnv ([VimInterval], Maybe Extmark)
 addHighlight b lis hl = do
-  debug hl
   case Interval
            <$> lookupPoint lis (hl_start hl)
            <*> lookupPoint lis (hl_end hl) of
@@ -134,13 +131,11 @@ setHighlight
 setHighlight b x@(Interval (Pos sl sc) (Pos el ec)) hl = do
   ns <- asks ce_namespace
   let from0 = fromZeroIndexed
-  y <- flip catchNeovimException (const (pure Nothing))
+  flip catchNeovimException (const (pure Nothing))
     $ fmap (Just . coerce) $ nvim_buf_set_extmark b ns (from0 sl) (from0 sc) $ M.fromList
     [ ( "end_line"
       , ObjectInt (from0 el)
       )
-      -- unlike literally everywhere else in vim, this function is INCLUSIVE
-      -- in its end column
     , ( "end_col"
       , ObjectInt $ from0 ec
       )
@@ -151,9 +146,6 @@ setHighlight b x@(Interval (Pos sl sc) (Pos el ec)) hl = do
           $ show hl
       )
     ]
-  debug ("setHl", x, y, hl)
-  pure y
-
 
 highlightInterval
     :: Buffer
@@ -168,14 +160,14 @@ highlightInterval b int hl = do
 parseExtmark :: Buffer -> Object -> Neovim CornelisEnv (Maybe ExtmarkStuff)
 parseExtmark b
   (ObjectArray ( (objectToInt -> Just ext)
-               : (objectToInt @Int -> Just (zeroIndexed -> start_line))
-               : (objectToInt @Int -> Just (zeroIndexed -> start_col))
+               : (objectToInt @Int -> Just (toZeroIndexed -> start_line))
+               : (objectToInt @Int -> Just (toZeroIndexed -> start_col))
                : ObjectMap details
                : _
                )) = runMaybeT $ do
-  end_col <- hoistMaybe $ fmap zeroIndexed
+  end_col <- hoistMaybe $ fmap toZeroIndexed
             . objectToInt @Int =<< M.lookup (ObjectString "end_col") details
-  end_line <- hoistMaybe $ fmap zeroIndexed
+  end_line <- hoistMaybe $ fmap toZeroIndexed
             . objectToInt @Int =<< M.lookup (ObjectString "end_row") details
   hlgroup <- hoistMaybe $ objectToText =<< M.lookup (ObjectString "hl_group") details
   int <- lift $ traverse (unvimify b) (Interval (Pos start_line start_col) (Pos end_line end_col))
@@ -197,7 +189,7 @@ getExtmarks b p = do
   vp <- vimify b p
   let -- i = 0 for beginning of line, i = 1 for end of line
       pos i = ObjectArray [ ObjectInt $ fromZeroIndexed (p_line vp)
-                          , ObjectInt i -- from the beginning of the line
+                          , ObjectInt i
                           ]
   res <- nvim_buf_get_extmarks b ns (pos 0) (pos (-1)) $ M.singleton "details" $ ObjectBool True
   marks <- fmap catMaybes $ traverse (parseExtmark b) $ V.toList res

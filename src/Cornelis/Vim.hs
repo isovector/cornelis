@@ -25,7 +25,7 @@ vimLastLine = -1
 
 getWindowCursor :: Window -> Neovim env AgdaPos
 getWindowCursor w = do
-  (oneIndexed -> row, zeroIndexed -> col) <- window_get_cursor w
+  (toOneIndexed -> row, toZeroIndexed -> col) <- window_get_cursor w
   -- window_get_cursor gives us a 1-indexed line, but that is the same way that
   -- lines are indexed.
   let line = zeroIndex row
@@ -37,7 +37,7 @@ getWindowCursor w = do
 getpos :: Buffer -> Char -> Neovim env AgdaPos
 getpos b mark = do
   -- getpos gives us a (1,1)-indexed position!
-  ObjectArray [_, objectToInt @Int -> Just (oneIndexed -> line), objectToInt @Int -> Just (oneIndexed -> col), _]
+  ObjectArray [_, objectToInt @Int -> Just (toOneIndexed -> line), objectToInt @Int -> Just (toOneIndexed -> col), _]
     <- vim_call_function "getpos" $ V.fromList [ObjectString $ encodeUtf8 $ T.singleton mark]
   unvimify b (Pos (zeroIndex line) (zeroIndex col))
 
@@ -47,7 +47,7 @@ data SearchMode = Forward | Backward
 searchpos :: Buffer -> [Text] -> SearchMode -> Neovim env AgdaPos
 searchpos b pats dir = do
   -- unlike getpos, these columns are 0 indexed W T F
-  ObjectArray [objectToInt @Int -> Just (oneIndexed -> line), objectToInt @Int -> Just (zeroIndexed -> col)]
+  ObjectArray [objectToInt @Int -> Just (toOneIndexed -> line), objectToInt @Int -> Just (toZeroIndexed -> col)]
     <- vim_call_function "searchpos" $ V.fromList
         [ ObjectString $ encodeUtf8 $ T.intercalate "\\|" pats
         , ObjectString $ encodeUtf8 $ case dir of

@@ -91,11 +91,7 @@ questionToMeta b = withBufferStuff b $ \bs -> do
       -- We only don't have a goal contents if we are a ? goal
       Nothing -> do
         replaceInterval b int "{! !}"
-        let int' = int
-                  { iEnd = (iStart int) `addCol` Offset 4
-                    -- Inclusive, so we add only 4 offset, rather
-                    -- than the 5 for the characters
-                  }
+        let int' = int { iEnd = (iStart int) `addCol` Offset 5 }
         void $ highlightInterval b int' Todo
         modifyBufferStuff b $
           #bs_ips %~ IM.insert (ip_id ip) (ip & #ip_interval' . #_Identity .~ int')

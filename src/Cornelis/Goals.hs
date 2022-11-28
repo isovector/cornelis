@@ -6,7 +6,6 @@ module Cornelis.Goals where
 import           Control.Arrow ((&&&))
 import           Control.Lens
 import           Cornelis.Agda (withAgda)
-import           Cornelis.Debug (debug)
 import           Cornelis.Highlighting (getExtmarks, holeHlGroup)
 import           Cornelis.Offsets
 import           Cornelis.Types
@@ -89,21 +88,19 @@ getGoalAtPos
     -> AgdaPos
     -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
 getGoalAtPos b p = do
-  debug ("getgoalat", p)
   z <- withBufferStuff b $ \bs -> do
     marks <- getExtmarks b p
-    debug ("marks", marks)
     let todo = T.pack $ show holeHlGroup
 
     fmap fold $ for marks $ \es -> do
       case es_hlgroup es == todo of
         False -> pure mempty
         True -> do
-          case find ((== iStart (es_interval es)) . iStart . ip_interval)
+          case find ((== (iStart $ es_interval es)) . iStart . ip_interval)
                   $ toList (bs_ips bs) of
             Nothing -> pure mempty
             Just ip -> do
-              let ip' = ip { ip_interval' = Identity (es_interval es) }
+              let ip' = ip { ip_interval' = Identity $ es_interval es }
               -- BIG HACK!!
               -- This is a convenient place to update our global mapping of
               -- where our holes are, since we just found one.

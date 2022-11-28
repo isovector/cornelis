@@ -20,5 +20,5 @@ debug x = liftIO $ go 100
     go 0 = pure ()
     go n = 
       catch
-       (appendFile  "/tmp/agda-hl.log" (show x <> "\n"))
-       (\e -> if isAlreadyInUseError e then go (n-1) else throw e)
+       (appendFile  "/tmp/agda.log" (show x <> "\n"))
+       (\e -> if isAlreadyInUseError e then go (n-1 :: Int) else throw e)

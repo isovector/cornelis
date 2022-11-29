@@ -2,10 +2,54 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE RoleAnnotations #-}
 
+-- | Strongly typed indices and offsets.
+--
+-- The goal of this module is to make it as easy as possible to keep track
+-- of the various indexing schemes used by functions in the nvim API.
+--
+-- The core abstraction is the type 'Index' tagged with the sort of things it
+-- is indexing (@Byte@, @CodePoint@, @Line@) and whether things are 0-indexed
+-- or 1-indexed.
+--
+-- Two constructors and two destructors are provided: 'toZeroIndexed',
+-- 'toOneIndexed', 'fromZeroIndexed', and 'fromOneIndexed'.  They should only
+-- be used to make external API calls, to unwrap input indices and to wrap
+-- output indices. The names of those functions are self-documenting, indicating
+-- the indexing scheme used by every index that goes in and out of the external
+-- API.
+--
+-- Within Cornelis, indices remain typed at all times, using dedicated functions
+-- to convert between 0/1-indexing ('zeroIndex', 'oneIndex') and between
+-- @Byte@ and @CodePoint@ indexing ('toByte', 'fromByte').
+--
+-- Usually, indices are relative to a common origin (beginning of the same buffer
+-- or line), so it doesn't make sense to add them. There is a separate type of
+-- 'Offset' which can be added to indices using the operator @('.+')@.
+-- And @('.-.')@ gives the offset between two indices.
+--
+-- @
+-- i :: Index 'Byte 'ZeroIndexed
+-- i .+ Offset 42 :: Index 'Byte 'ZeroIndexed
+-- @
+--
+-- Types of 'Pos'isitions (pairs of line and column indices) and 'Interval's
+-- (pairs of positions or indices) are also provided, and should be used
+-- as much as possible to reduce the likelihood of mixing up indices.
+--
+-- When talking about 'Pos', "(i,j)-indexed" means "i-indexed lines, j-indexed
+-- columns".
+--
+-- Agda's indexing scheme (codepoints, (1,1)-indexed) is the preferred one
+-- (0- vs 1-indexing is heavily checked, so it doesn't matter much which
+-- we choose; codepoint indexing is preferred for manipulating unicode text
+-- (fewer invalid states than byte indexing)).
+--
+-- A secondary indexing scheme is bytes, (0,0)-indexed, used as a unified
+-- low-level representation right before talking to the nvim API.
 module Cornelis.Offsets
-  ( Indexing(..)
+  ( Index()
+  , Indexing(..)
   , Unit(..)
-  , Index()
   , Offset(..)
   , Pos(..)
   , Interval(..)
@@ -45,8 +89,6 @@ import           GHC.Generics (Generic)
 import           GHC.Stack (HasCallStack)
 import           GHC.Show (showSpace)
 import           Prettyprinter (Pretty)
-
--- TODO: Distinguish offsets and positions; offsets have arithmetic, positions don't
 
 -- | Indexing scheme: whether the first index is zero or one.
 data Indexing = OneIndexed | ZeroIndexed

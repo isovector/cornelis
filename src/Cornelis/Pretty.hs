@@ -2,7 +2,7 @@
 
 module Cornelis.Pretty where
 
-import           Cornelis.Offsets (toBytes, Offset (Offset))
+import           Cornelis.Offsets (AgdaPos, Pos(..), Interval(..), AgdaInterval, charToBytes, textToBytes)
 import qualified Cornelis.Types as C
 import qualified Cornelis.Types as X
 import           Cornelis.Types hiding (Type)
@@ -15,7 +15,6 @@ import           Data.Semigroup (stimes)
 import qualified Data.Text as T
 import           Prettyprinter
 import           Prettyprinter.Internal.Type
-import Cornelis.Types.Agda (IntervalWithoutFile, AgdaOffset)
 
 data HighlightGroup
   = Keyword
@@ -68,9 +67,9 @@ renderWithHlGroups = go [] 0 0
     go _ _ _ SFail = pure SFail
     go _ _ _ SEmpty = pure SEmpty
     go st r c (SChar c' sds) =
-      SChar c' <$> go st r (c + fromIntegral (toBytes (T.singleton c') $ Offset 1)) sds
+      SChar c' <$> go st r (c + fromIntegral (charToBytes c')) sds
     go st r c (SText n txt sds) =
-      SText n txt <$> go st r (c + fromIntegral (toBytes txt $ Offset $ fromIntegral n)) sds
+      SText n txt <$> go st r (c + fromIntegral (textToBytes txt)) sds
     go st r _ (SLine n sds) = SLine n <$> go st (r + 1) (fromIntegral n) sds
     go st r c (SAnnPush hg sds) = go (InfoHighlight (r, c) () hg : st) r c sds
     go [] _ _ (SAnnPop _) = error "popping an annotation that doesn't exist"
@@ -126,14 +125,14 @@ prettyGoals (NormalForm expr) = pretty expr
 prettyGoals (DisplayError err) = annotate Error $ pretty err
 prettyGoals (UnknownDisplayInfo v) = annotate Error $ pretty $ show v
 
-prettyInterval :: IntervalWithoutFile -> Doc HighlightGroup
+prettyInterval :: AgdaInterval -> Doc HighlightGroup
 prettyInterval (Interval s e)
   | p_line s == p_line e
   = prettyPoint s <> "-" <> pretty (p_col e)
   | otherwise
   = prettyPoint s <> "-" <> prettyPoint e
 
-prettyPoint :: Pos' AgdaOffset -> Doc HighlightGroup
+prettyPoint :: AgdaPos -> Doc HighlightGroup
 prettyPoint p = pretty (p_line p) <> "," <> pretty (p_col p)
 
 

@@ -24,7 +24,7 @@ import           Neovim.API.Text
 
 --------------------------------------------------------------------------------
 -- | Move the vim cursor to a goal in the current window
-findGoal :: Ord a => (Pos -> Pos -> Maybe a) -> Neovim CornelisEnv ()
+findGoal :: Ord a => (AgdaPos -> AgdaPos -> Maybe a) -> Neovim CornelisEnv ()
 findGoal hunt = withAgda $ do
   w <- vim_get_current_window
   b <- window_get_buffer w
@@ -51,8 +51,8 @@ prevGoal =
   findGoal $ \pos goal ->
     case pos > goal of
       False -> Nothing
-      True -> Just $ ( lineDiff (p_line goal) (p_line pos)
-                     , offsetDiff (p_col goal) (p_col pos)
+      True -> Just $ ( p_line goal .-. p_line pos
+                     , p_col goal .-. p_col pos  -- TODO: This formula looks fishy
                      )
 
 
@@ -63,14 +63,14 @@ nextGoal =
   findGoal $ \pos goal ->
     case pos < goal of
       False -> Nothing
-      True -> Just $ Down ( lineDiff (p_line goal) (p_line pos)
-                          , offsetDiff (p_col goal) (p_col pos)
+      True -> Just $ Down ( p_line goal .-. p_line pos
+                          , p_col goal .-. p_col pos
                           )
 
 ------------------------------------------------------------------------------
 -- | Uses highlighting extmarks to determine what a hole is; since the user
 -- might have typed inside of a {! !} goal since they last saved.
-getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe (InteractionPoint Identity LineOffset))
+getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe (InteractionPoint Identity))
 getGoalAtCursor = do
   w <- nvim_get_current_win
   b <- window_get_buffer w
@@ -85,8 +85,8 @@ getGoalAtCursor = do
 -- internal state tracking where the goal is!!!
 getGoalAtPos
     :: Buffer
-    -> Pos
-    -> Neovim CornelisEnv (Maybe (InteractionPoint Identity LineOffset))
+    -> AgdaPos
+    -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
 getGoalAtPos b p = do
   z <- withBufferStuff b $ \bs -> do
     marks <- getExtmarks b p
@@ -114,7 +114,7 @@ getGoalAtPos b p = do
 -- | Run a continuation on a goal at the current position in the current
 -- buffer, if it exists.
 withGoalAtCursor
-    :: (Buffer -> InteractionPoint Identity LineOffset -> Neovim CornelisEnv a)
+    :: (Buffer -> InteractionPoint Identity -> Neovim CornelisEnv a)
     -> Neovim CornelisEnv (Maybe a)
 withGoalAtCursor f = getGoalAtCursor >>= \case
    (_, Nothing) -> do
@@ -128,7 +128,7 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
 -- spans an interaction point.
 --
 -- TODO(sandy): make this call correct by construction
-getGoalContents_maybe :: Buffer -> Interval' LineOffset -> Neovim CornelisEnv (Maybe Text)
+getGoalContents_maybe :: Buffer -> AgdaInterval -> Neovim CornelisEnv (Maybe Text)
 getGoalContents_maybe b ip = do
   iv <- fmap T.strip $ getBufferInterval b ip
   pure $ case iv of
@@ -139,7 +139,7 @@ getGoalContents_maybe b ip = do
 
 ------------------------------------------------------------------------------
 -- | Like 'getGoalContents_maybe', subject to the same limitations.
-getGoalContents :: Buffer -> Interval' LineOffset -> Neovim CornelisEnv Text
+getGoalContents :: Buffer -> AgdaInterval -> Neovim CornelisEnv Text
 getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 
 

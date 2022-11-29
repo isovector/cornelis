@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 module PropertySpec where
 
 import           Cornelis.Offsets
-import           Cornelis.Types
 import           Cornelis.Vim
 import           Data.Bool (bool)
 import           Data.Containers.ListUtils (nubOrd)
@@ -26,7 +26,7 @@ spec = parallel $ do
     let len = length str
         t = T.pack str
     i <- suchThat arbitrary (\x -> 0 <= x && x <= len)
-    let off = Offset $ fromIntegral i
+    let off = toZeroIndexed i
     pure
       $ counterexample (show str)
       $ counterexample (show i)
@@ -38,7 +38,7 @@ spec = parallel $ do
     row <- choose (1, length strs)
     let rowidx = row - 1
     col <- choose (0, max 0 $ length (strs !! rowidx) - 1)
-    let pn = Pos (LineNumber $ fromIntegral row) $ Offset $ fromIntegral col
+    let pn = Pos (toOneIndexed row) (toOneIndexed col)
     pure
       $ counterexample (show strs)
       $ counterexample (show row)
@@ -59,17 +59,16 @@ spec = parallel $ do
     rep <- T.pack <$> listOf agdaChar
     start <- choose (0, T.length str - 1)
     end <- choose (0, T.length str - start)
-    let srow = LineNumber 1
-        scol = Offset $ fromIntegral $ start
-        ecol = Offset $ fromIntegral $ start + end
-        spn = Pos srow scol
-        epn = Pos srow ecol
+    let srow = toOneIndexed @Int 1
+        scol = toOneIndexed start
+        ecol = toOneIndexed (start + end)
+        int = Interval (Pos srow scol) (Pos srow ecol)
         expected = T.take start str <> rep <> T.drop (start + end) str
     pure $
       withVim (Seconds 1) $ \_ b -> do
         buffer_set_lines b 0 (-1) False $ V.fromList $ pure str
         intervention b (mapMaybe simplify [Swap str expected]) $
-          replaceInterval b spn epn rep
+          replaceInterval b int rep
 
 
 agdaChar :: Gen Char

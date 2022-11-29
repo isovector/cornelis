@@ -4,7 +4,7 @@
 
 module Cornelis.Vim where
 
-import           Control.Lens
+import           Control.Lens ((%~), _head, _last, (&))
 import           Cornelis.Offsets
 import           Cornelis.Types
 import           Cornelis.Utils (objectToInt, savingCurrentPosition, savingCurrentWindow)
@@ -23,115 +23,89 @@ vimFirstLine = 0
 vimLastLine :: Int64
 vimLastLine = -1
 
-
-getWindowCursor :: Window -> Neovim env Pos
+getWindowCursor :: Window -> Neovim env AgdaPos
 getWindowCursor w = do
-  (row, col) <- window_get_cursor w
+  (toOneIndexed -> row, toZeroIndexed -> col) <- window_get_cursor w
   -- window_get_cursor gives us a 1-indexed line, but that is the same way that
   -- lines are indexed.
-  let line = LineNumber $ fromIntegral row
+  let line = zeroIndex row
   b <- window_get_buffer w
-  col' <- unvimifyColumn b line col
-  pure $ Pos line col'
+  unvimify b (Pos line col)
 
 -- | TODO(sandy): POSSIBLE BUG HERE. MAKE SURE YOU SET THE CURRENT WINDOW
 -- BEFORE CALLING THIS FUNCTION
-getpos :: Buffer -> Char -> Neovim env Pos
+getpos :: Buffer -> Char -> Neovim env AgdaPos
 getpos b mark = do
-  ObjectArray [_, objectToInt -> Just row, objectToInt -> Just col, _]
+  -- getpos gives us a (1,1)-indexed position!
+  ObjectArray [_, objectToInt @Int -> Just (toOneIndexed -> line), objectToInt @Int -> Just (toOneIndexed -> col), _]
     <- vim_call_function "getpos" $ V.fromList [ObjectString $ encodeUtf8 $ T.singleton mark]
-  -- getpos gives us a 1-indexed line, but that is the same way that
-  -- lines are indexed.
-  let line = LineNumber row
-  col' <- unvimifyColumn b line col
-  -- but the columns are one indexed!
-  pure $ Pos line $ offsetDiff col' $ Offset 1
+  unvimify b (Pos (zeroIndex line) (zeroIndex col))
 
 data SearchMode = Forward | Backward
   deriving (Eq, Ord, Show)
 
--- Like @searchpos@ from vim, but specialized to find one of many patterns
-searchpos :: Buffer -> [Text] -> SearchMode -> Neovim env Pos
+searchpos :: Buffer -> [Text] -> SearchMode -> Neovim env AgdaPos
 searchpos b pats dir = do
-  ObjectArray [objectToInt -> Just row, objectToInt -> Just col]
+  -- unlike getpos, these columns are 0 indexed W T F
+  ObjectArray [objectToInt @Int -> Just (toOneIndexed -> line), objectToInt @Int -> Just (toZeroIndexed -> col)]
     <- vim_call_function "searchpos" $ V.fromList
         [ ObjectString $ encodeUtf8 $ T.intercalate "\\|" pats
         , ObjectString $ encodeUtf8 $ case dir of
             Forward -> "n"
             Backward -> "bn"
         ]
-  -- getpos gives us a 1-indexed line, but that is the same way that
-  -- lines are indexed.
-  let line = LineNumber row
-  col' <- unvimifyColumn b line col
-  -- unlike getpos, these columns are 0 indexed W T F
-  pure $ Pos line col'
+  unvimify b (Pos (zeroIndex line) col)
 
-
-setWindowCursor :: Window -> Pos -> Neovim env ()
+setWindowCursor :: Window -> AgdaPos -> Neovim env ()
 setWindowCursor w p = do
   b <- window_get_buffer w
-  Pos (LineNumber l) c <- vimifyPositionM b p
-  -- lines are 1-indexed, but window_set_cursor also wants a 1-index, so we're
-  -- cool to not call 'getVimLineNumber' here.
-  window_set_cursor w (fromIntegral l, c)
+  Pos l c <- vimify b p
+  window_set_cursor w (fromOneIndexed (oneIndex l), fromZeroIndexed c)
 
-replaceInterval :: Buffer -> Pos -> Pos -> Text -> Neovim env ()
-replaceInterval b start end str
+replaceInterval :: Buffer -> Interval AgdaPos -> Text -> Neovim env ()
+replaceInterval b ival str
   = do
-    (sl, sc) <- fmap positionToVim $ vimifyPositionM b start
-    (el, ec) <- fmap positionToVim $ vimifyPositionM b end
-    nvim_buf_set_text b sl sc el ec $ V.fromList $ T.lines str
-
+    Interval (Pos sl sc) (Pos el ec) <- traverse (vimify b) ival
+    nvim_buf_set_text b (from0 sl) (from0 sc) (from0 el) (from0 ec) $ V.fromList $ T.lines str
+  where
+    from0 = fromZeroIndexed
 
 ------------------------------------------------------------------------------
 -- | Vim insists on returning byte-based offsets for the cursor positions...
 -- why the fuck? This function undoes the problem.
-unvimifyColumn :: Buffer -> LineNumber -> Int64 -> Neovim env LineOffset
-unvimifyColumn b l c = do
-  lstr <- getBufferLine b l
-  pure $ fromBytes lstr $ fromIntegral c
+unvimify :: Buffer -> VimPos -> Neovim env AgdaPos
+unvimify b (Pos line col) = do
+  txt <- getBufferLine b line
+  let col' = fromBytes txt col
+  pure (Pos (oneIndex line) (oneIndex col'))
 
-unvimifyColumnPos :: Buffer -> Pos' Int64 -> Neovim env (Pos' LineOffset)
-unvimifyColumnPos b (Pos l c) = do
-  c' <- unvimifyColumn b l c
-  pure $ Pos l c'
+vimify :: Buffer -> AgdaPos -> Neovim env VimPos
+vimify b (Pos (zeroIndex -> line) (zeroIndex -> col)) = do
+  txt <- getBufferLine b line
+  let col' = toBytes txt col
+  pure (Pos line col')
 
-vimifyPositionM :: Buffer -> Pos -> Neovim env (Pos' Int64)
-vimifyPositionM b p = do
-  l <- getBufferLine b $ p_line p
-  pure $ vimifyPosition l p
-
-
-getIndent :: Buffer -> LineNumber -> Neovim env Int
+getIndent :: Buffer -> LineNumber 'ZeroIndexed -> Neovim env Int
 getIndent b l = do
   txt <- getBufferLine b l
   pure $ T.length $ T.takeWhile (== ' ') txt
 
 
-getBufferLine :: Buffer -> LineNumber -> Neovim env Text
-getBufferLine b = buffer_get_line b . getVimLineNumber
+getBufferLine :: Buffer -> LineNumber 'ZeroIndexed -> Neovim env Text
+getBufferLine b l = buffer_get_line b (fromZeroIndexed l)
 
-
-vimifyPosition :: Text -> Pos' LineOffset -> Pos' Int64
-vimifyPosition t = #p_col %~ fromIntegral . toBytes t
-
-getBufferInterval :: Buffer -> Interval' LineOffset -> Neovim env Text
+getBufferInterval :: Buffer -> Interval AgdaPos -> Neovim env Text
 getBufferInterval b (Interval start end) = do
-    (sl, _) <- fmap positionToVim $ vimifyPositionM b start
-    (el, _) <- fmap positionToVim $ vimifyPositionM b end
+    Pos sl _ <- vimify b start
+    Pos el _ <- vimify b end
     -- nvim_buf_get_lines is exclusive in its end line, thus the plus 1
-    ls <- fmap toList $ nvim_buf_get_lines b sl (el + 1) False
-    let unoffset (Offset i) = i
+    ls <- fmap toList $ nvim_buf_get_lines b (from0 sl) (from0 el + 1) False
     pure $ T.unlines $
-      ls & _last %~ T.take (fromIntegral $ unoffset $ p_col end)
-         & _head %~ T.drop (fromIntegral $ unoffset $ p_col start)
-
-positionToVim :: Pos' Int64 -> (Int64, Int64)
-positionToVim p =
-  ( fromIntegral $ getVimLineNumber $ p_line p
-  , fromIntegral $ p_col p
-  )
+      ls & _last %~ T.take (from1 (p_col end))
+         & _head %~ T.drop (from1 (p_col start))
+  where
+    from0 = fromZeroIndexed
+    from1 = fromZeroIndexed . zeroIndex  -- add 1 to a one-indexed arg before passing it to take/drop
 
 reportError :: Text -> Neovim env ()
 reportError = vim_report_error
@@ -157,8 +131,8 @@ getSurroundingMotion
     :: Window
     -> Buffer
     -> Text
-    -> Pos
-    -> Neovim env (Pos, Pos)
+    -> AgdaPos
+    -> Neovim env (AgdaPos, AgdaPos)
 getSurroundingMotion w b motion p = do
   savingCurrentWindow $ do
     savingCurrentPosition w $ do
@@ -175,10 +149,9 @@ getSurroundingMotion w b motion p = do
 getLambdaClause
     :: Window
     -> Buffer
-    -> Pos -- ^ Start of IP interval
-    -> Pos -- ^ End of IP interval
-    -> Neovim env (Pos, Pos)
-getLambdaClause w b p0 p1 = do
+    -> AgdaInterval
+    -> Neovim env AgdaInterval
+getLambdaClause w b (Interval p0 p1) = do
   savingCurrentWindow $ do
     savingCurrentPosition w $ do
       nvim_set_current_win w
@@ -186,5 +159,5 @@ getLambdaClause w b p0 p1 = do
       start <- searchpos b ["{", ";"] Backward
       setWindowCursor w p1
       end <- searchpos b [";", "}"] Forward
-      pure (start, end)
+      pure (Interval start end)
 

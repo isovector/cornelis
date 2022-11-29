@@ -37,7 +37,7 @@ import           Text.Read (readMaybe)
 
 
 
-getDefinitionSites :: Buffer -> Pos -> Neovim CornelisEnv (First DefinitionSite)
+getDefinitionSites :: Buffer -> AgdaPos -> Neovim CornelisEnv (First DefinitionSite)
 getDefinitionSites b p = withBufferStuff b $ \bs -> do
   marks <- getExtmarks b p
   pure $ flip foldMap marks $ \es ->
@@ -60,7 +60,7 @@ gotoDefinition = withAgda $ do
       vim_command $ "edit " <> ds_filepath ds
       b' <- window_get_buffer w
       contents <- fmap (T.unlines . V.toList) $ buffer_get_lines b' 0 (-1) False
-      let buffer_idx = toBytes contents $ ds_position ds
+      let buffer_idx = toBytes contents $ zeroIndex $ ds_position ds
       -- TODO(sandy): use window_set_cursor instead?
       vim_command $ "keepjumps normal! " <> T.pack (show buffer_idx) <> "go"
 
@@ -90,14 +90,8 @@ questionToMeta b = withBufferStuff b $ \bs -> do
     getGoalContents_maybe b int >>= \case
       -- We only don't have a goal contents if we are a ? goal
       Nothing -> do
-        replaceInterval b (iStart int) (iEnd int) "{! !}"
-        let int' = int
-                  { iEnd = (iStart int)
-                              -- Inclusive, so we add only 4 offset, rather
-                              -- than the 5 for the characters
-                    { p_col = offsetPlus (p_col $ iStart int) (Offset 4)
-                    }
-                  }
+        replaceInterval b int "{! !}"
+        let int' = int { iEnd = (iStart int) `addCol` Offset 5 }
         void $ highlightInterval b int' Todo
         modifyBufferStuff b $
           #bs_ips %~ IM.insert (ip_id ip) (ip & #ip_interval' . #_Identity .~ int')

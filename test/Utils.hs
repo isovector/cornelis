@@ -9,7 +9,7 @@ module Utils
 
 import           Control.Concurrent (threadDelay)
 import           Cornelis.Types
-import           Cornelis.Types.Agda
+import           Cornelis.Offsets
 import           Cornelis.Utils (withLocalEnv)
 import           Cornelis.Vim
 import           Data.Foldable.Levenshtein (levenshtein, Edit(..))
@@ -110,9 +110,6 @@ vimSpec name secs fp m = do
           liftIO $ threadDelay 5e6
           m w b
 
-mkPos :: Int32 -> Int32 -> Pos
-mkPos line col = Pos (LineNumber line) $ Offset col
-
-goto :: Window -> Int32 -> Int32 -> Neovim env ()
-goto w row col = setWindowCursor w $ mkPos row col
+goto :: Window -> Int -> Int -> Neovim env ()
+goto w row col = setWindowCursor w $ Pos (toOneIndexed row) (toOneIndexed col)
 

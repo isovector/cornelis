@@ -12,10 +12,6 @@
 
 module Cornelis.Types
   ( module Cornelis.Types
-  , Interval' (..)
-  , Pos' (..)
-  , BufferOffset
-  , LineOffset
   , Buffer
   , Window
   , Text
@@ -26,7 +22,7 @@ module Cornelis.Types
 import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
 import Cornelis.Debug
-import Cornelis.Types.Agda (IntervalWithoutFile, Interval' (..), BufferOffset, LineOffset, AgdaOffset, Pos' (..))
+import Cornelis.Offsets (Pos(..), Interval(..), AgdaIndex, AgdaPos, AgdaInterval)
 import Data.Aeson hiding (Error)
 import Data.Generics.Labels ()
 import Data.IntMap.Strict (IntMap)
@@ -44,9 +40,6 @@ import Data.IORef
 
 deriving stock instance Ord Buffer
 
-type Pos = Pos' LineOffset
-
-
 data Agda = Agda
   { a_buffer :: Buffer
   , a_req    :: InChan String
@@ -56,7 +49,7 @@ data Agda = Agda
 
 data BufferStuff = BufferStuff
   { bs_agda_proc  :: Agda
-  , bs_ips        :: IntMap (InteractionPoint Identity LineOffset)
+  , bs_ips        :: IntMap (InteractionPoint Identity)
   , bs_goto_sites :: Map Extmark DefinitionSite
   , bs_goals      :: DisplayInfo
   , bs_info_win   :: InfoBuffer
@@ -140,9 +133,9 @@ data Response
     , status_showIrrelevant :: Bool
     , status_showImplicits :: Bool
     }
-  | JumpToError FilePath BufferOffset
-  | InteractionPoints [InteractionPoint Maybe AgdaOffset]
-  | GiveAction Text (InteractionPoint (Const ()) AgdaOffset)
+  | JumpToError FilePath AgdaIndex
+  | InteractionPoints [InteractionPoint Maybe]
+  | GiveAction Text (InteractionPoint (Const ()))
   | MakeCase MakeCase
   | SolveAll [Solution]
   | Unknown Text Value
@@ -150,7 +143,7 @@ data Response
 
 data DefinitionSite = DefinitionSite
   { ds_filepath :: Text
-  , ds_position :: BufferOffset
+  , ds_position :: AgdaIndex
   }
   deriving (Eq, Ord, Show)
 
@@ -161,8 +154,8 @@ instance FromJSON DefinitionSite where
 data Highlight = Highlight
   { hl_atoms          :: [Text]
   , hl_definitionSite :: Maybe DefinitionSite
-  , hl_start          :: BufferOffset
-  , hl_end            :: BufferOffset
+  , hl_start          :: AgdaIndex
+  , hl_end            :: AgdaIndex
   }
   deriving (Eq, Ord, Show)
 
@@ -175,7 +168,7 @@ instance FromJSON Highlight where
       <*> fmap (!! 1) (obj .: "range")
 
 data MakeCase
-  = RegularCase MakeCaseVariant [Text] (InteractionPoint Identity AgdaOffset)
+  = RegularCase MakeCaseVariant [Text] (InteractionPoint Identity)
   deriving (Eq, Ord, Show, Generic)
 
 data MakeCaseVariant = Function | ExtendedLambda
@@ -193,52 +186,55 @@ data Solution = Solution
   }
   deriving (Eq, Ord, Show)
 
-data InteractionPoint f a = InteractionPoint
+data InteractionPoint f = InteractionPoint
   { ip_id :: Int
-  , ip_interval' :: f (Interval' a)
-  }
-  deriving stock (Generic, Functor)
+  , ip_interval' :: f AgdaInterval
+  } deriving Generic
 
-deriving instance Eq (f (Interval' a)) => Eq (InteractionPoint f a)
-deriving instance Ord (f (Interval' a)) => Ord (InteractionPoint f a)
-deriving instance Show (f (Interval' a)) => Show (InteractionPoint f a)
+deriving instance Eq (f AgdaInterval) => Eq (InteractionPoint f)
+deriving instance Ord (f AgdaInterval) => Ord (InteractionPoint f)
+deriving instance Show (f AgdaInterval) => Show (InteractionPoint f)
 
-ip_interval :: InteractionPoint Identity a -> Interval' a
+ip_interval :: InteractionPoint Identity -> AgdaInterval
 ip_interval (InteractionPoint _ (Identity i)) = i
 
-sequenceInteractionPoint :: Applicative f => InteractionPoint f a -> f (InteractionPoint Identity a)
+sequenceInteractionPoint :: Applicative f => InteractionPoint f -> f (InteractionPoint Identity)
 sequenceInteractionPoint (InteractionPoint n f) = InteractionPoint <$> pure n <*> fmap Identity f
 
 
 data NamedPoint = NamedPoint
   { np_name :: Text
-  , np_interval :: Maybe (IntervalWithoutFile)
+  , np_interval :: Maybe AgdaInterval
   }
   deriving (Eq, Ord, Show)
 
-instance FromJSON IntervalWithoutFile where
+instance FromJSON AgdaInterval where
   parseJSON = withObject "IntervalWithoutFile" $ \obj -> do
-    Interval <$> obj .: "start" <*> obj .: "end"
+    mkInterval <$> obj .: "start" <*> obj .: "end"
+    where
+      mkInterval (AgdaPos p) (AgdaPos q) = Interval p q
 
-instance FromJSON (Interval' a) => FromJSON (InteractionPoint Maybe a) where
+newtype AgdaPos' = AgdaPos AgdaPos
+
+instance FromJSON AgdaPos' where
+  parseJSON = withObject "Position" $ \obj -> do
+    AgdaPos <$> (Pos <$> obj .: "line" <*> obj .: "col")
+
+instance FromJSON (InteractionPoint Maybe) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> fmap listToMaybe (obj .: "range")
 
-instance FromJSON (Interval' a) => FromJSON (InteractionPoint Identity a) where
+instance FromJSON (InteractionPoint Identity) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range")
 
-instance FromJSON (Interval' a) => FromJSON (InteractionPoint (Const ()) a) where
+instance FromJSON (InteractionPoint (Const ())) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> pure (Const ())
 
 instance FromJSON NamedPoint where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     NamedPoint <$> obj .: "name" <*> fmap listToMaybe (obj .: "range")
-
-instance FromJSON b => FromJSON (Pos' b) where
-  parseJSON = withObject "Position" $ \obj -> do
-    Pos <$> obj .: "line" <*> obj .: "col"
 
 instance FromJSON Solution where
   parseJSON = withObject "Solution" $ \obj ->
@@ -282,13 +278,13 @@ instance FromJSON Message where
 
 data DisplayInfo
   = AllGoalsWarnings
-      { di_all_visible :: [GoalInfo (InteractionPoint Identity AgdaOffset)]
+      { di_all_visible :: [GoalInfo (InteractionPoint Identity)]
       , di_all_invisible :: [GoalInfo NamedPoint]
       , di_errors :: [Message]
       , di_warnings :: [Message]
       }
   | GoalSpecific
-      { di_ips :: InteractionPoint Identity AgdaOffset
+      { di_ips :: InteractionPoint Identity
       , di_in_scope :: [InScope]
       , di_type :: Type
       , di_type_aux :: Maybe Type
@@ -382,7 +378,7 @@ newtype Extmark = Extmark Int64
 data ExtmarkStuff = ExtmarkStuff
   { es_mark     :: Extmark
   , es_hlgroup  :: Text
-  , es_interval :: Interval' LineOffset
+  , es_interval :: AgdaInterval
   }
   deriving (Eq, Ord, Show)
 

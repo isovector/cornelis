@@ -187,7 +187,7 @@ getExtmarks :: Buffer -> AgdaPos -> Neovim CornelisEnv [ExtmarkStuff]
 getExtmarks b p = do
   ns <- asks ce_namespace
   vp <- vimify b p
-  let -- i = 0 for beginning of line, i = 1 for end of line
+  let -- i = 0 for beginning of line, i = -1 for end of line
       pos i = ObjectArray [ ObjectInt $ fromZeroIndexed (p_line vp)
                           , ObjectInt i
                           ]

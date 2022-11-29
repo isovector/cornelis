@@ -18,7 +18,7 @@ debug :: Show a => a -> Neovim env ()
 debug x = liftIO $ go 100
   where
     go 0 = pure ()
-    go n = 
+    go n =
       catch
        (appendFile  "/tmp/agda.log" (show x <> "\n"))
        (\e -> if isAlreadyInUseError e then go (n-1 :: Int) else throw e)

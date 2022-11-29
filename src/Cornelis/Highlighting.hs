@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedLabels   #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Cornelis.Highlighting where
 
@@ -13,7 +14,6 @@ import           Cornelis.Pretty
 import           Cornelis.Types hiding (Type)
 import           Cornelis.Utils
 import           Cornelis.Vim (unvimify, vimify)
-import           Data.Bifunctor (first)
 import           Data.Coerce (coerce)
 import           Data.IntervalMap.FingerTree (IntervalMap)
 import qualified Data.IntervalMap.FingerTree as IM
@@ -80,7 +80,7 @@ newtype LineIntervals = LineIntervals
   deriving newtype (Semigroup, Monoid)
 
 getLineIntervals :: Vector Text -> LineIntervals
-getLineIntervals = LineIntervals . go (toOneIndexed 1) (toZeroIndexed 0)
+getLineIntervals = LineIntervals . go (toOneIndexed @Int 1) (toZeroIndexed @Int 0)
   where
     go
         :: AgdaIndex
@@ -98,7 +98,7 @@ getLineIntervals = LineIntervals . go (toOneIndexed 1) (toZeroIndexed 0)
 lookupPoint :: LineIntervals -> AgdaIndex -> Maybe VimPos
 lookupPoint (LineIntervals im) i = do
   (IM.Interval lineStart _, (line, s)) <- listToMaybe $ IM.search i im
-  let col = toBytes s (toZeroIndexed 0 .+ (i .-. lineStart))
+  let col = toBytes s (toZeroIndexed @Int 0 .+ (i .-. lineStart))
   pure (Pos line col)
 
 ------------------------------------------------------------------------------
@@ -112,14 +112,14 @@ addHighlight b lis hl = do
   case Interval
            <$> lookupPoint lis (hl_start hl)
            <*> lookupPoint lis (hl_end hl) of
-    Just (int@(Interval start end@(Pos el ec))) -> do
+    Just (int@(Interval start end)) -> do
       let atom = fromMaybe "" $ listToMaybe $ hl_atoms hl
       ext <- setHighlight b int $ hlGroup atom
 
       pure $ (, ext) $ case atom == "hole" of
         False -> []
         True ->
-          pure $ Interval start (Pos el (incIndex ec))
+          pure $ Interval start (end `addCol` Offset 1)
     Nothing -> pure ([], Nothing)
 
 
@@ -128,7 +128,7 @@ setHighlight
     -> Interval VimPos
     -> HighlightGroup
     -> Neovim CornelisEnv (Maybe Extmark)
-setHighlight b x@(Interval (Pos sl sc) (Pos el ec)) hl = do
+setHighlight b (Interval (Pos sl sc) (Pos el ec)) hl = do
   ns <- asks ce_namespace
   let from0 = fromZeroIndexed
   flip catchNeovimException (const (pure Nothing))

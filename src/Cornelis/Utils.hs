@@ -14,7 +14,6 @@ import           Control.Monad.IO.Unlift (MonadUnliftIO(withRunInIO))
 import           Control.Monad.Reader (withReaderT)
 import           Control.Monad.State.Class
 import           Control.Monad.Trans.Resource (transResourceT)
-import           Cornelis.Offsets (AgdaPos, AgdaInterval, Interval(..))
 import           Cornelis.Types
 import qualified Data.Map as M
 import           Data.Maybe

@@ -3,22 +3,12 @@
 
 module Cornelis.Types.Agda where
 
-import           Control.Applicative (liftA2)
-import           Control.Monad (mplus, liftM2)
-import           Control.Monad.Except (ExceptT, throwError)
-import           Control.Monad.State.Strict (StateT, runStateT, put, get)
-import           Control.Monad.Trans (lift)
-import           Control.Monad.Trans.Except (runExceptT)
 import           Data.Foldable (toList)
-import           Data.Functor.Identity
-import qualified Data.List as List
-import           Data.Maybe (listToMaybe)
 import           Data.Sequence
 import qualified Data.Sequence as Seq
 import           Data.Text (Text)
 import           GHC.Generics
 import           GHC.Show (showSpace)
-import           System.FilePath
 import           Cornelis.Offsets
 
 data Rewrite =  AsIs | Instantiated | HeadNormal | Simplified | Normalised
@@ -298,77 +288,8 @@ data Remove
   | Keep
   deriving (Show, Read)
 
-{-
-
-instance Read a => Read (Range' a) where
-    readsPrec = parseToReadsPrec $
-      (exact "intervalsToRange" >>
-       liftM2 intervalsToRange readParse readParse)
-        `mplus`
-      (exact "noRange" >> return noRange)
-
-instance (Read a) => Read (Interval' a) where
-    readsPrec = parseToReadsPrec $ do
-        exact "Interval"
-        liftM2 Interval readParse readParse
-
-instance Read AbsolutePath where
-    readsPrec = parseToReadsPrec $ do
-        exact "mkAbsolute"
-        fmap mkAbsolute readParse
-
-
-mkAbsolute :: FilePath -> AbsolutePath
-mkAbsolute f
-  | isAbsolute f =
-      AbsolutePath $ dropTrailingPathSeparator $ normalise f
-        -- normalize does not resolve symlinks
-  | otherwise    = error "impossible"
-
-
-instance (Read a) => Read (Pos' a) where
-    readsPrec = parseToReadsPrec $ do
-        exact "Pn"
-        liftA2 Pos readParse readParse
-
-type Parse a = ExceptT String (StateT String Identity) a
-
-
-readsToParse :: String -> (String -> Maybe (a, String)) -> Parse a
-readsToParse s f = do
-  st <- lift get
-  case f st of
-    Nothing -> throwError s
-    Just (a, st') -> do
-        lift $ put st'
-        return a
-
-
-
-parseToReadsPrec :: Parse a -> Int -> String -> [(a, String)]
-parseToReadsPrec p _ s = case runIdentity . flip runStateT s . runExceptT $ parens' p of
-  (Right a, s') -> [(a,s')]
-  _            -> []
-
-exact :: String -> Parse ()
-exact s = readsToParse (show s) $ fmap ((),) . List.stripPrefix s . dropWhile (==' ')
-
-readParse :: Read a => Parse a
-readParse = readsToParse "read failed" $ listToMaybe . reads
-
-parens' :: Parse a -> Parse a
-parens' p = do
-    exact "("
-    x <- p
-    exact ")"
-    return x
-  `mplus`
-    p
--}
-
 noRange :: Range' a
 noRange = NoRange
-
 
 
 -- | Converts a file name and an interval to a range.

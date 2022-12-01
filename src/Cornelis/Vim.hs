@@ -9,7 +9,6 @@ import           Cornelis.Offsets
 import           Cornelis.Types
 import           Cornelis.Utils (objectToInt, savingCurrentPosition, savingCurrentWindow)
 import           Data.Foldable (toList)
-import           Data.Functor.Identity (Identity)
 import           Data.Int
 import qualified Data.Map as M
 import qualified Data.Text as T
@@ -123,11 +122,6 @@ setreg reg val
     [ ObjectString $ encodeUtf8 reg
     , ObjectString $ encodeUtf8 val
     ]
-
-getIpInterval :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv AgdaInterval
-getIpInterval b ip = do
-  ns <- asks ce_namespace
-  maybe (pure $ ip_interval' ip) (getExtmarkIntervalById ns b) $ ip_extmark ip
 
 getExtmarkIntervalById :: Int64 -> Buffer -> Extmark -> Neovim env AgdaInterval
 getExtmarkIntervalById ns b (Extmark x) = do

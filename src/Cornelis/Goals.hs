@@ -20,6 +20,16 @@ import           Neovim
 import           Neovim.API.Text
 
 
+------------------------------------------------------------------------------
+-- | Get the spanning interval of an interaction point. If we already have
+-- highlighting information from vim, use the extmark for this goal, otherwise
+-- using the interval that Agda knows about.
+getIpInterval :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv AgdaInterval
+getIpInterval b ip = do
+  ns <- asks ce_namespace
+  maybe (pure $ ip_interval' ip) (getExtmarkIntervalById ns b) $ ip_extmark ip
+
+
 --------------------------------------------------------------------------------
 -- | Move the vim cursor to a goal in the current window
 findGoal :: Ord a => (AgdaPos -> AgdaPos -> Maybe a) -> Neovim CornelisEnv ()
@@ -103,10 +113,7 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
 
 
 ------------------------------------------------------------------------------
--- | Get the contents of a goal. PRECONDITION: The given interval correctly
--- spans an interaction point.
---
--- TODO(sandy): make this call correct by construction
+-- | Get the contents of a goal.
 getGoalContents_maybe :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv (Maybe Text)
 getGoalContents_maybe b ip = do
   int <- getIpInterval b ip
@@ -118,7 +125,7 @@ getGoalContents_maybe b ip = do
 
 
 ------------------------------------------------------------------------------
--- | Like 'getGoalContents_maybe', subject to the same limitations.
+-- | Like 'getGoalContents_maybe'.
 getGoalContents :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv Text
 getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 

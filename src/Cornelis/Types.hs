@@ -188,18 +188,19 @@ data Solution = Solution
 
 data InteractionPoint f = InteractionPoint
   { ip_id :: Int
-  , ip_interval' :: f AgdaInterval
+  , ip_intervalM :: f AgdaInterval
+  , ip_extmark :: Maybe Extmark
   } deriving Generic
 
 deriving instance Eq (f AgdaInterval) => Eq (InteractionPoint f)
 deriving instance Ord (f AgdaInterval) => Ord (InteractionPoint f)
 deriving instance Show (f AgdaInterval) => Show (InteractionPoint f)
 
-ip_interval :: InteractionPoint Identity -> AgdaInterval
-ip_interval (InteractionPoint _ (Identity i)) = i
+ip_interval' :: InteractionPoint Identity -> AgdaInterval
+ip_interval' (InteractionPoint _ (Identity i) _) = i
 
 sequenceInteractionPoint :: Applicative f => InteractionPoint f -> f (InteractionPoint Identity)
-sequenceInteractionPoint (InteractionPoint n f) = InteractionPoint <$> pure n <*> fmap Identity f
+sequenceInteractionPoint (InteractionPoint n f x) = InteractionPoint <$> pure n <*> fmap Identity f <*> pure x
 
 
 data NamedPoint = NamedPoint
@@ -222,15 +223,15 @@ instance FromJSON AgdaPos' where
 
 instance FromJSON (InteractionPoint Maybe) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
-    InteractionPoint <$> obj .: "id" <*> fmap listToMaybe (obj .: "range")
+    InteractionPoint <$> obj .: "id" <*> fmap listToMaybe (obj .: "range") <*> pure Nothing
 
 instance FromJSON (InteractionPoint Identity) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
-    InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range")
+    InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range") <*> pure Nothing
 
 instance FromJSON (InteractionPoint (Const ())) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
-    InteractionPoint <$> obj .: "id" <*> pure (Const ())
+    InteractionPoint <$> obj .: "id" <*> pure (Const ()) <*> pure Nothing
 
 instance FromJSON NamedPoint where
   parseJSON = withObject "InteractionPoint" $ \obj -> do

@@ -25,6 +25,8 @@ import           Cornelis.Vim
 import           Data.Foldable (for_)
 import           Data.IORef (newIORef)
 import qualified Data.IntMap.Strict as IM
+import           Data.Map (Map)
+import qualified Data.Map as M
 import           Data.Maybe
 import qualified Data.Text as T
 import           Neovim
@@ -40,6 +42,11 @@ getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
 respondToHelperFunction :: DisplayInfo -> Neovim env ()
 respondToHelperFunction (HelperFunction sig) = setreg "\"" sig
 respondToHelperFunction _ = pure ()
+
+
+addExtmarksToGoal :: Map AgdaInterval Extmark -> InteractionPoint Identity -> InteractionPoint Identity
+addExtmarksToGoal m (InteractionPoint i f x) =
+  InteractionPoint i f $ maybe x Just $ M.lookup (runIdentity f) m
 
 
 respond :: Buffer -> Response -> Neovim CornelisEnv ()
@@ -62,14 +69,18 @@ respond b (GiveAction result ip) = do
   let i = ip_id ip
   getInteractionPoint b i >>= \case
     Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
-    Just ip' -> replaceInterval b (ip_interval ip') $ replaceQuestion result
+    Just ip' -> do
+      int <- getIpInterval b ip'
+      replaceInterval b int $ replaceQuestion result
   reload
 -- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) ->
     getInteractionPoint b i >>= \case
       Nothing -> reportError $ T.pack $ "Can't find interaction point " <> show i
-      Just ip -> replaceInterval b (ip_interval ip) $ replaceQuestion ex
+      Just ip -> do
+        int <- getIpInterval b ip
+        replaceInterval b int $ replaceQuestion ex
   reload
 respond b ClearHighlighting = do
   -- delete what we know about goto positions
@@ -77,8 +88,10 @@ respond b ClearHighlighting = do
   -- remove the extmarks and highlighting
   ns <- asks ce_namespace
   nvim_buf_clear_namespace b ns 0 (-1)
-respond b (HighlightingInfo _remove hl) =
-  void $ highlightBuffer b hl
+respond b (HighlightingInfo _remove hl) = do
+  extmap <- highlightBuffer b hl
+  modifyBufferStuff b $
+    #bs_ips %~ fmap (addExtmarksToGoal extmap)
 respond _ (RunningInfo _ x) = reportInfo x
 respond _ (ClearRunningInfo) = reportInfo ""
 respond b (JumpToError _ pos) = do
@@ -94,7 +107,8 @@ respond _ (Unknown k _) = reportError k
 
 doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
 doMakeCase b (RegularCase Function clauses ip) = do
-  let int = ip_interval ip & #iStart . #p_col .~ toOneIndexed @Int 1
+  int' <- getIpInterval b ip
+  let int = int' & #iStart . #p_col .~ toOneIndexed @Int 1
   ins <- getIndent b (zeroIndex (p_line (iStart int)))
   replaceInterval b int
     $ T.unlines
@@ -108,8 +122,9 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
       reportError
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a limitation in cornelis."
     Just w -> do
+      int' <- getIpInterval b ip
       Interval start end
-        <- getLambdaClause w b (ip_interval ip & #iStart . #p_col %~ (.+ Offset (- 1)))
+        <- getLambdaClause w b (int' & #iStart . #p_col %~ (.+ Offset (- 1)))
            -- Subtract one so we are outside of a {! !} goal and the i} movement
            -- works correctly
       -- Add an extra character to the start so we leave a space after the

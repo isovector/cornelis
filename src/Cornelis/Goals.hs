@@ -6,13 +6,11 @@ module Cornelis.Goals where
 import           Control.Arrow ((&&&))
 import           Control.Lens
 import           Cornelis.Agda (withAgda)
-import           Cornelis.Highlighting (getExtmarks, holeHlGroup)
 import           Cornelis.Offsets
 import           Cornelis.Types
 import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Foldable (toList, fold)
-import qualified Data.IntMap as IM
 import           Data.List
 import           Data.Maybe
 import           Data.Ord
@@ -31,12 +29,12 @@ findGoal hunt = withAgda $ do
   withBufferStuff b $ \bs -> do
     pos <- getWindowCursor w
     let goals = toList $ bs_ips bs
-        judged_goals
-              = mapMaybe ( sequenceA
-                         . (id &&& hunt pos)
-                         . iStart
-                         . ip_interval
-                         ) goals
+    judged_goals <- fmap catMaybes $ for goals $ \ip -> do
+      int <- getIpInterval b ip
+      pure
+        . sequenceA
+        . (id &&& hunt pos)
+        $ iStart int
     case judged_goals of
       [] -> reportInfo "No hole matching predicate"
       _ -> do
@@ -78,36 +76,17 @@ getGoalAtCursor = do
   fmap (b, ) $ getGoalAtPos b p
 
 
-------------------------------------------------------------------------------
--- | VERY BIG HACK
---
--- Not only does this get the goal at the position, it also updates the
--- internal state tracking where the goal is!!!
 getGoalAtPos
     :: Buffer
     -> AgdaPos
     -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
 getGoalAtPos b p = do
-  z <- withBufferStuff b $ \bs -> do
-    marks <- getExtmarks b p
-    let todo = T.pack $ show holeHlGroup
-
-    fmap fold $ for marks $ \es -> do
-      case es_hlgroup es == todo of
-        False -> pure mempty
-        True -> do
-          case find ((== (iStart $ es_interval es)) . iStart . ip_interval)
-                  $ toList (bs_ips bs) of
-            Nothing -> pure mempty
-            Just ip -> do
-              let ip' = ip { ip_interval' = Identity $ es_interval es }
-              -- BIG HACK!!
-              -- This is a convenient place to update our global mapping of
-              -- where our holes are, since we just found one.
-              modifyBufferStuff b $ #bs_ips %~ IM.insert (ip_id ip') ip'
-              pure $ pure ip'
-
-  pure $ getFirst z
+  fmap (getFirst . fold) $ withBufferStuff b $ \bs -> do
+    for (bs_ips bs) $ \ip -> do
+      int <- getIpInterval b ip
+      pure $ case containsPoint int p of
+        False -> mempty
+        True -> pure ip
 
 
 ------------------------------------------------------------------------------
@@ -128,9 +107,10 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
 -- spans an interaction point.
 --
 -- TODO(sandy): make this call correct by construction
-getGoalContents_maybe :: Buffer -> AgdaInterval -> Neovim CornelisEnv (Maybe Text)
+getGoalContents_maybe :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv (Maybe Text)
 getGoalContents_maybe b ip = do
-  iv <- fmap T.strip $ getBufferInterval b ip
+  int <- getIpInterval b ip
+  iv <- fmap T.strip $ getBufferInterval b int
   pure $ case iv of
     "?" -> Nothing
          -- Chop off {!, !} and trim any spaces.
@@ -139,7 +119,7 @@ getGoalContents_maybe b ip = do
 
 ------------------------------------------------------------------------------
 -- | Like 'getGoalContents_maybe', subject to the same limitations.
-getGoalContents :: Buffer -> AgdaInterval -> Neovim CornelisEnv Text
+getGoalContents :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv Text
 getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 
 

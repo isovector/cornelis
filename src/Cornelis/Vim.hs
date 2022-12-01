@@ -9,7 +9,9 @@ import           Cornelis.Offsets
 import           Cornelis.Types
 import           Cornelis.Utils (objectToInt, savingCurrentPosition, savingCurrentWindow)
 import           Data.Foldable (toList)
+import           Data.Functor.Identity (Identity)
 import           Data.Int
+import qualified Data.Map as M
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.Vector as V
@@ -121,6 +123,25 @@ setreg reg val
     [ ObjectString $ encodeUtf8 reg
     , ObjectString $ encodeUtf8 val
     ]
+
+getIpInterval :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv AgdaInterval
+getIpInterval b ip = do
+  ns <- asks ce_namespace
+  maybe (pure $ ip_interval' ip) (getExtmarkIntervalById ns b) $ ip_extmark ip
+
+getExtmarkIntervalById :: Int64 -> Buffer -> Extmark -> Neovim env AgdaInterval
+getExtmarkIntervalById ns b (Extmark x) = do
+  ObjectArray [ objectToInt @Int -> Just (toZeroIndexed -> sline)
+              , objectToInt @Int -> Just (toZeroIndexed -> scol)
+              , ObjectMap details
+              ]
+    <- nvim_call_function "nvim_buf_get_extmark_by_id"
+     $ V.fromList
+     $ b +: ns +: x +: M.singleton @Text "details" True +: []
+  let toZ = fmap toZeroIndexed . objectToInt @Int
+      Just eline = toZ $ details M.! ObjectString "end_row"
+      Just ecol  = toZ $ details M.! ObjectString "end_col"
+  traverse (unvimify b) $ Interval (Pos sline scol) $ Pos eline ecol
 
 ------------------------------------------------------------------------------
 -- | Awful function that does the motion in visual mode and gives you back

@@ -85,16 +85,16 @@ questionToMeta :: Buffer -> Neovim CornelisEnv ()
 questionToMeta b = withBufferStuff b $ \bs -> do
   let ips = toList $ bs_ips bs
 
-  res <- fmap fold $ for (sortOn (Down . iStart . ip_interval) ips) $ \ip -> do
-    let int = ip_interval ip
-    getGoalContents_maybe b int >>= \case
+  res <- fmap fold $ for (sortOn (Down . iStart . ip_interval') ips) $ \ip -> do
+    int <- getIpInterval b ip
+    getGoalContents_maybe b ip >>= \case
       -- We only don't have a goal contents if we are a ? goal
       Nothing -> do
         replaceInterval b int "{! !}"
         let int' = int { iEnd = (iStart int) `addCol` Offset 5 }
         void $ highlightInterval b int' Todo
         modifyBufferStuff b $
-          #bs_ips %~ IM.insert (ip_id ip) (ip & #ip_interval' . #_Identity .~ int')
+          #bs_ips %~ IM.insert (ip_id ip) (ip & #ip_intervalM . #_Identity .~ int')
 
         pure $ Any True
       Just _ -> pure $ Any False
@@ -138,10 +138,10 @@ solveOne _ ms = withNormalizationMode ms $ \mode ->
     flip runIOTCM agda $ Cmd_solveOne mode (InteractionId $ ip_id goal) noRange ""
 
 autoOne :: CommandArguments -> Neovim CornelisEnv ()
-autoOne _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
+autoOne _ = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   agda <- getAgda b
-  t <- getGoalContents b $ ip_interval goal
-  flip runIOTCM agda $ Cmd_autoOne (InteractionId $ ip_id goal) noRange $ T.unpack t
+  t <- getGoalContents b ip
+  flip runIOTCM agda $ Cmd_autoOne (InteractionId $ ip_id ip) noRange $ T.unpack t
 
 withNormalizationMode :: Maybe String -> (Rewrite -> Neovim e ()) -> Neovim e ()
 withNormalizationMode Nothing f = normalizationMode >>= f
@@ -168,30 +168,30 @@ typeContext _ ms = withNormalizationMode ms $ \mode ->
 
 typeContextInfer :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
 typeContextInfer _ ms = withNormalizationMode ms $ \mode ->
-  withAgda $ void $ withGoalAtCursor $ \b goal -> do
+  withAgda $ void $ withGoalAtCursor $ \b ip -> do
     agda <- getAgda b
-    contents <- getGoalContents b $ ip_interval goal
+    contents <- getGoalContents b ip
     flip runIOTCM agda
-      $ Cmd_goal_type_context_infer mode (InteractionId $ ip_id goal) noRange
+      $ Cmd_goal_type_context_infer mode (InteractionId $ ip_id ip) noRange
       $ T.unpack contents
 
 doRefine :: CommandArguments -> Neovim CornelisEnv ()
 doRefine = const refine
 
 refine :: Neovim CornelisEnv ()
-refine = withAgda $ void $ withGoalAtCursor $ \b goal -> do
+refine = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   agda <- getAgda b
-  t <- getGoalContents b $ ip_interval goal
-  flip runIOTCM agda $ Cmd_refine_or_intro True (InteractionId $ ip_id goal) noRange $ T.unpack t
+  t <- getGoalContents b ip
+  flip runIOTCM agda $ Cmd_refine_or_intro True (InteractionId $ ip_id ip) noRange $ T.unpack t
 
 doGive :: CommandArguments -> Neovim CornelisEnv ()
 doGive = const give
 
 give :: Neovim CornelisEnv ()
-give = withAgda $ void $ withGoalAtCursor $ \b goal -> do
+give = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   agda <- getAgda b
-  t <- getGoalContents b $ ip_interval goal
-  flip runIOTCM agda $ Cmd_give WithoutForce (InteractionId $ ip_id goal) noRange $ T.unpack t
+  t <- getGoalContents b ip
+  flip runIOTCM agda $ Cmd_give WithoutForce (InteractionId $ ip_id ip) noRange $ T.unpack t
 
 doElaborate :: CommandArguments -> Maybe String-> Neovim CornelisEnv ()
 doElaborate _ ms = withNormalizationMode ms elaborate
@@ -199,11 +199,11 @@ doElaborate _ ms = withNormalizationMode ms elaborate
 elaborate :: Rewrite -> Neovim CornelisEnv ()
 elaborate mode = withAgda $
   void $
-    withGoalAtCursor $ \b goal -> do
+    withGoalAtCursor $ \b ip -> do
       agda <- getAgda b
-      t <- getGoalContents b $ ip_interval goal
+      t <- getGoalContents b ip
       flip runIOTCM agda $
-        Cmd_elaborate_give mode (InteractionId $ ip_id goal) noRange $ T.unpack t
+        Cmd_elaborate_give mode (InteractionId $ ip_id ip) noRange $ T.unpack t
 
 
 doWhyInScope :: CommandArguments -> Neovim CornelisEnv ()
@@ -227,7 +227,7 @@ doNormalize _ ms = withComputeMode ms $ \mode ->
             thing <- input "Normalize what? " Nothing Nothing
             flip runIOTCM agda $ Cmd_compute_toplevel mode thing
         Just ip -> do
-            t <- getGoalContents b $ ip_interval ip
+            t <- getGoalContents b ip
             flip runIOTCM agda $ Cmd_compute mode (InteractionId $ ip_id ip) noRange $ T.unpack t
 
 helperFunc :: Rewrite -> Text -> Neovim CornelisEnv ()
@@ -242,8 +242,8 @@ doHelperFunc _ ms = withNormalizationMode ms $ \mode -> do
   helperFunc mode expr
 
 doCaseSplit :: CommandArguments -> Neovim CornelisEnv ()
-doCaseSplit _ = withAgda $ void $ withGoalAtCursor $ \b goal -> do
-  contents <- fmap T.strip $ getGoalContents b $ ip_interval goal
+doCaseSplit _ = withAgda $ void $ withGoalAtCursor $ \b ip -> do
+  contents <- fmap T.strip $ getGoalContents b ip
   thing <- bool (pure contents)
                 (input @Text "Split on what?" Nothing Nothing)
          $ T.null contents

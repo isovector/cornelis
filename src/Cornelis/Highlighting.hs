@@ -56,7 +56,7 @@ lineIntervalsForBuffer b = do
   buf_lines <- nvim_buf_get_lines b 0 (-1) True
   pure $ getLineIntervals buf_lines
 
-highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv [VimInterval]
+highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv (M.Map AgdaInterval Extmark)
 highlightBuffer b hs = do
   li <- lineIntervalsForBuffer b
   (holes, exts) <- fmap unzip $ for hs $ \hl -> do
@@ -71,7 +71,7 @@ highlightBuffer b hs = do
           pure (ext, ds)
 
   modifyBufferStuff b $ #bs_goto_sites <>~ M.fromList zs
-  pure $ concat holes
+  pure $ mconcat holes
 
 newtype LineIntervals = LineIntervals
   { li_intervalMap :: IntervalMap AgdaIndex (LineNumber 'ZeroIndexed, Text)
@@ -107,7 +107,7 @@ addHighlight
     :: Buffer
     -> LineIntervals
     -> Highlight
-    -> Neovim CornelisEnv ([VimInterval], Maybe Extmark)
+    -> Neovim CornelisEnv (M.Map AgdaInterval Extmark, Maybe Extmark)
 addHighlight b lis hl = do
   case Interval
            <$> lookupPoint lis (hl_start hl)
@@ -116,11 +116,13 @@ addHighlight b lis hl = do
       let atom = fromMaybe "" $ listToMaybe $ hl_atoms hl
       ext <- setHighlight b int $ hlGroup atom
 
-      pure $ (, ext) $ case atom == "hole" of
-        False -> []
-        True ->
-          pure $ Interval start (end `addCol` Offset 1)
-    Nothing -> pure ([], Nothing)
+      fmap (, ext) $ case atom == "hole" of
+        False -> pure mempty
+        True -> do
+          let vint = Interval start end
+          aint <- traverse (unvimify b) vint
+          pure $ maybe mempty (M.singleton aint) ext
+    Nothing -> pure (mempty, Nothing)
 
 
 setHighlight

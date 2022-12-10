@@ -59,7 +59,7 @@ respond b (InteractionPoints ips) = do
 -- Replace a function clause
 respond b (MakeCase mkcase) = do
   doMakeCase b mkcase
-  reload
+  load
 -- Replace the interaction point with a result
 respond b (GiveAction result ip) = do
   let i = ip_id ip
@@ -68,7 +68,7 @@ respond b (GiveAction result ip) = do
     Just ip' -> do
       int <- getIpInterval b ip'
       replaceInterval b int $ replaceQuestion result
-  reload
+  load
 -- Replace the interaction point with a result
 respond b (SolveAll solutions) = do
   for_ solutions $ \(Solution i ex) ->
@@ -77,7 +77,7 @@ respond b (SolveAll solutions) = do
       Just ip -> do
         int <- getIpInterval b ip
         replaceInterval b int $ replaceQuestion ex
-  reload
+  load
 respond b ClearHighlighting = do
   -- delete what we know about goto positions and stored extmarks
   modifyBufferStuff b $ \bs -> bs

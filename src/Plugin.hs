@@ -22,6 +22,7 @@ import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Bool (bool)
 import           Data.Foldable (for_, fold, toList)
+import           Data.IORef (readIORef)
 import           Data.List
 import qualified Data.Map as M
 import           Data.Ord
@@ -64,12 +65,6 @@ gotoDefinition = withAgda $ do
       vim_command $ "keepjumps normal! " <> T.pack (show buffer_idx) <> "go"
 
 
-reload :: Neovim CornelisEnv ()
-reload = do
-  vim_command "noautocmd w"
-  load
-
-
 doLoad :: CommandArguments -> Neovim CornelisEnv ()
 doLoad = const load
 
@@ -77,8 +72,12 @@ doLoad = const load
 load :: Neovim CornelisEnv ()
 load = withAgda $ withCurrentBuffer $ \b -> do
   agda <- getAgda b
-  name <- buffer_get_name $ a_buffer agda
-  flip runIOTCM agda $ Cmd_load name []
+  ready <- liftIO $ readIORef $ a_ready agda
+  if ready then do
+    vim_command "noautocmd w"
+    name <- buffer_get_name $ a_buffer agda
+    flip runIOTCM agda $ Cmd_load name []
+  else vim_report_error "Agda is busy, not ready to load"
 
 questionToMeta :: Buffer -> Neovim CornelisEnv ()
 questionToMeta b = withBufferStuff b $ \bs -> do
@@ -100,7 +99,7 @@ questionToMeta b = withBufferStuff b $ \bs -> do
 
   -- Force a save if we replaced any goals
   case getAny res of
-    True -> reload
+    True -> load
     False -> pure ()
 
 

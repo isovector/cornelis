@@ -44,6 +44,7 @@ deriving stock instance Ord Buffer
 
 data Agda = Agda
   { a_buffer :: Buffer
+  , a_ready  :: IORef Bool
   , a_req    :: InChan String
   , a_hdl    :: ProcessHandle
   }

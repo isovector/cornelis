@@ -96,7 +96,7 @@ getGoalAtPos b p = do
       int <- getIpInterval b ip
       pure $ case containsPoint int p of
         False -> mempty
-        True -> pure ip
+        True -> pure $ ip { ip_intervalM = Identity int }
 
 
 ------------------------------------------------------------------------------

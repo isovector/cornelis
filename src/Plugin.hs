@@ -68,7 +68,7 @@ gotoDefinition = withAgda $ do
 reload :: Neovim CornelisEnv ()
 reload = do
   vim_command "noautocmd w"
-  load
+  -- load
 
 
 doLoad :: CommandArguments -> Neovim CornelisEnv ()
@@ -133,15 +133,26 @@ computeMode = pure DefaultCompute
 
 solveOne :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
 solveOne _ ms = withNormalizationMode ms $ \mode ->
-  withAgda $ void $ withGoalAtCursor $ \b goal -> do
+  withAgda $ void $ withGoalAtCursor $ \b ip -> do
     agda <- getAgda b
-    flip runIOTCM agda $ Cmd_solveOne mode (InteractionId $ ip_id goal) noRange ""
+    fp <- buffer_get_name b
+    flip runIOTCM agda $
+      Cmd_solveOne
+        mode
+        (InteractionId $ ip_id ip)
+        (mkAbsPathRnage fp $ ip_interval' ip)
+        ""
 
 autoOne :: CommandArguments -> Neovim CornelisEnv ()
 autoOne _ = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   agda <- getAgda b
   t <- getGoalContents b ip
-  flip runIOTCM agda $ Cmd_autoOne (InteractionId $ ip_id ip) noRange $ T.unpack t
+  fp <- buffer_get_name b
+  flip runIOTCM agda $
+    Cmd_autoOne
+      (InteractionId $ ip_id ip)
+      (mkAbsPathRnage fp $ ip_interval' ip)
+      (T.unpack t)
 
 withNormalizationMode :: Maybe String -> (Rewrite -> Neovim e ()) -> Neovim e ()
 withNormalizationMode Nothing f = normalizationMode >>= f
@@ -164,15 +175,25 @@ typeContext :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
 typeContext _ ms = withNormalizationMode ms $ \mode ->
   withAgda $ void $ withGoalAtCursor $ \b goal -> do
     agda <- getAgda b
-    flip runIOTCM agda $ Cmd_goal_type_context mode (InteractionId $ ip_id goal) noRange ""
+    fp <- buffer_get_name b
+    flip runIOTCM agda $
+      Cmd_goal_type_context
+        mode
+        (InteractionId $ ip_id goal)
+        (mkAbsPathRnage fp $ ip_interval' goal)
+        ""
 
 typeContextInfer :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
 typeContextInfer _ ms = withNormalizationMode ms $ \mode ->
   withAgda $ void $ withGoalAtCursor $ \b ip -> do
     agda <- getAgda b
+    fp <- buffer_get_name b
     contents <- getGoalContents b ip
     flip runIOTCM agda
-      $ Cmd_goal_type_context_infer mode (InteractionId $ ip_id ip) noRange
+      $ Cmd_goal_type_context_infer
+          mode
+          (InteractionId $ ip_id ip)
+          (mkAbsPathRnage fp $ ip_interval' ip)
       $ T.unpack contents
 
 doRefine :: CommandArguments -> Neovim CornelisEnv ()
@@ -181,8 +202,14 @@ doRefine = const refine
 refine :: Neovim CornelisEnv ()
 refine = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   agda <- getAgda b
+  fp <- buffer_get_name b
   t <- getGoalContents b ip
-  flip runIOTCM agda $ Cmd_refine_or_intro True (InteractionId $ ip_id ip) noRange $ T.unpack t
+  flip runIOTCM agda
+    $ Cmd_refine_or_intro
+        True
+        (InteractionId $ ip_id ip)
+        (mkAbsPathRnage fp $ ip_interval' ip)
+    $ T.unpack t
 
 doGive :: CommandArguments -> Neovim CornelisEnv ()
 doGive = const give
@@ -190,20 +217,29 @@ doGive = const give
 give :: Neovim CornelisEnv ()
 give = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   agda <- getAgda b
+  fp <- buffer_get_name b
   t <- getGoalContents b ip
-  flip runIOTCM agda $ Cmd_give WithoutForce (InteractionId $ ip_id ip) noRange $ T.unpack t
+  flip runIOTCM agda
+    $ Cmd_give
+        WithoutForce
+        (InteractionId $ ip_id ip)
+        (mkAbsPathRnage fp $ ip_interval' ip)
+    $ T.unpack t
 
 doElaborate :: CommandArguments -> Maybe String-> Neovim CornelisEnv ()
 doElaborate _ ms = withNormalizationMode ms elaborate
 
 elaborate :: Rewrite -> Neovim CornelisEnv ()
-elaborate mode = withAgda $
-  void $
-    withGoalAtCursor $ \b ip -> do
-      agda <- getAgda b
-      t <- getGoalContents b ip
-      flip runIOTCM agda $
-        Cmd_elaborate_give mode (InteractionId $ ip_id ip) noRange $ T.unpack t
+elaborate mode = withAgda $ void $ withGoalAtCursor $ \b ip -> do
+  agda <- getAgda b
+  fp <- buffer_get_name b
+  t <- getGoalContents b ip
+  flip runIOTCM agda
+    $ Cmd_elaborate_give
+        mode
+        (InteractionId $ ip_id ip)
+        (mkAbsPathRnage fp $ ip_interval' ip)
+    $ T.unpack t
 
 
 doWhyInScope :: CommandArguments -> Neovim CornelisEnv ()
@@ -222,19 +258,31 @@ doNormalize _ ms = withComputeMode ms $ \mode ->
   withAgda $ void $ do
     (b , goal) <- getGoalAtCursor
     agda <- getAgda b
+    fp <- buffer_get_name b
     case goal of
         Nothing -> do
             thing <- input "Normalize what? " Nothing Nothing
             flip runIOTCM agda $ Cmd_compute_toplevel mode thing
         Just ip -> do
             t <- getGoalContents b ip
-            flip runIOTCM agda $ Cmd_compute mode (InteractionId $ ip_id ip) noRange $ T.unpack t
+            flip runIOTCM agda
+              $ Cmd_compute
+                  mode
+                  (InteractionId $ ip_id ip)
+                  (mkAbsPathRnage fp $ ip_interval' ip)
+              $ T.unpack t
 
 helperFunc :: Rewrite -> Text -> Neovim CornelisEnv ()
 helperFunc mode expr = do
-  withAgda $ void $ withGoalAtCursor $ \b goal -> do
+  withAgda $ void $ withGoalAtCursor $ \b ip -> do
     agda <- getAgda b
-    flip runIOTCM agda $ Cmd_helper_function mode (InteractionId $ ip_id goal) noRange $ T.unpack expr
+    fp <- buffer_get_name b
+    flip runIOTCM agda
+      $ Cmd_helper_function
+          mode
+          (InteractionId $ ip_id ip)
+          (mkAbsPathRnage fp $ ip_interval' ip)
+      $ T.unpack expr
 
 doHelperFunc :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
 doHelperFunc _ ms = withNormalizationMode ms $ \mode -> do
@@ -250,9 +298,14 @@ doCaseSplit _ = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   caseSplit thing
 
 caseSplit :: Text -> Neovim CornelisEnv ()
-caseSplit thing = withAgda $ void $ withGoalAtCursor $ \b goal -> do
+caseSplit thing = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   agda <- getAgda b
-  flip runIOTCM agda $ Cmd_make_case (InteractionId $ ip_id goal) noRange $ T.unpack thing
+  fp <- buffer_get_name b
+  flip runIOTCM agda
+    $ Cmd_make_case
+        (InteractionId $ ip_id ip)
+        (mkAbsPathRnage fp $ ip_interval' ip)
+    $ T.unpack thing
 
 doQuestionToMeta :: CommandArguments -> Neovim CornelisEnv ()
 doQuestionToMeta _ = withCurrentBuffer questionToMeta
@@ -261,8 +314,10 @@ goalWindow :: Buffer -> DisplayInfo ->  Neovim CornelisEnv ()
 goalWindow b = showInfoWindow b . prettyGoals
 
 computeModeCompletion :: String -> String -> Int -> Neovim env String
-computeModeCompletion _ _ _ = pure $ unlines $ fmap show $ enumFromTo @ComputeMode minBound maxBound
+computeModeCompletion _ _ _ =
+  pure $ unlines $ fmap show $ enumFromTo @ComputeMode minBound maxBound
 
 rewriteModeCompletion :: String -> String -> Int -> Neovim env String
-rewriteModeCompletion _ _ _ = pure $ unlines $ fmap show $ enumFromTo @Rewrite minBound maxBound
+rewriteModeCompletion _ _ _ =
+  pure $ unlines $ fmap show $ enumFromTo @Rewrite minBound maxBound
 

@@ -10,6 +10,7 @@ import           Data.Text (Text)
 import           GHC.Generics
 import           GHC.Show (showSpace)
 import           Cornelis.Offsets
+import qualified Data.Text as T
 
 data Rewrite =  AsIs | Instantiated | HeadNormal | Simplified | Normalised
     deriving (Show, Read, Eq, Ord, Enum, Bounded)
@@ -303,4 +304,7 @@ intervalToRange f i = Range f (Seq.singleton i)
 intervalsToRange :: a -> [IntervalWithoutFile] -> Range' a
 intervalsToRange _ [] = NoRange
 intervalsToRange f is = Range f (Seq.fromList is)
+
+mkAbsPathRnage :: Text -> IntervalWithoutFile -> Range
+mkAbsPathRnage = intervalToRange . Just . AbsolutePath . T.unpack
 

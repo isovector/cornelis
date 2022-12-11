@@ -115,7 +115,11 @@ type role Offset nominal
 data Pos e i j = Pos
   { p_line :: Index 'Line i
   , p_col :: Index e j
-  } deriving (Eq, Ord, Show, Generic)
+  } deriving (Eq, Ord, Generic)
+
+instance Show (Pos e i j) where
+  showsPrec n (Pos l c) =
+    showParen (n >= 11) $ showString "Pn () 0 " . showsPrec 11 l . showSpace . showsPrec 11 c
 
 data Interval p = Interval { iStart, iEnd :: !p }
   deriving (Eq, Ord, Functor, Foldable, Traversable, Generic)

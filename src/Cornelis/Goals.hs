@@ -27,8 +27,9 @@ import           Neovim.API.Text
 getIpInterval :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv AgdaInterval
 getIpInterval b ip = do
   ns <- asks ce_namespace
-  maybe (pure $ ip_interval' ip) (getExtmarkIntervalById ns b) $ ip_extmark ip
-
+  fromMaybe (ip_interval' ip) <$> case ip_extmark ip of
+    Just i -> getExtmarkIntervalById ns b i
+    Nothing -> pure Nothing
 
 --------------------------------------------------------------------------------
 -- | Move the vim cursor to a goal in the current window

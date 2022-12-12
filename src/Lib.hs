@@ -135,7 +135,11 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
 ------------------------------------------------------------------------------
 -- | Indent a string with the given offset.
 indent :: AgdaPos -> Text -> Text
-indent (Pos _ c) s = T.replicate (fromZeroIndexed (zeroIndex c)) " " <> "; " <> s -- TODO: subtract one more?
+indent (Pos _ c) s = mconcat
+  [ flip T.replicate " " $ fromZeroIndexed (zeroIndex c) - 1
+  , "; "
+  , s
+  ]
 
 
 doPrevGoal :: CommandArguments -> Neovim CornelisEnv ()

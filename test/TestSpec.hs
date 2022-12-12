@@ -39,9 +39,7 @@ spec = focus $ do
     liftIO $ threadDelay 5e5
     void $ vim_command "normal! G\"\"p"
 
-  -- TODO(sandy): not broken on sandy's machine, but reliably broken in the
-  -- test suite?
-  broken $ diffSpec "should case split (unicode lambda)" timeout "test/Hello.agda"
+  diffSpec "should case split (unicode lambda)" timeout "test/Hello.agda"
       [ Add                       "slap = λ { true → {! !}"
       , Swap "slap = λ { x → ? }" "         ; false → {! !} }"
       ] $ \w _ -> do

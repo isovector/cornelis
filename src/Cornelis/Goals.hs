@@ -29,11 +29,10 @@ getIpInterval :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv AgdaI
 getIpInterval b ip = do
   ns <- asks ce_namespace
   extmap <- withBufferStuff b $ pure . bs_ip_exts
-  maybe
-      (pure $ ip_interval' ip)
-      (getExtmarkIntervalById ns b)
-    $ flip M.lookup extmap
-    $ ip_id ip
+  fmap (fromMaybe (ip_interval' ip)) $
+    case flip M.lookup extmap $ ip_id ip of
+      Just i -> getExtmarkIntervalById ns b i
+      Nothing -> pure Nothing
 
 
 --------------------------------------------------------------------------------

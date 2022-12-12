@@ -123,19 +123,22 @@ setreg reg val
     , ObjectString $ encodeUtf8 val
     ]
 
-getExtmarkIntervalById :: Int64 -> Buffer -> Extmark -> Neovim env AgdaInterval
+getExtmarkIntervalById :: Int64 -> Buffer -> Extmark -> Neovim env (Maybe AgdaInterval)
 getExtmarkIntervalById ns b (Extmark x) = do
-  ObjectArray [ objectToInt @Int -> Just (toZeroIndexed -> sline)
-              , objectToInt @Int -> Just (toZeroIndexed -> scol)
-              , ObjectMap details
-              ]
+  res
     <- nvim_call_function "nvim_buf_get_extmark_by_id"
      $ V.fromList
      $ b +: ns +: x +: M.singleton @Text "details" True +: []
-  let toZ = fmap toZeroIndexed . objectToInt @Int
-      Just eline = toZ $ details M.! ObjectString "end_row"
-      Just ecol  = toZ $ details M.! ObjectString "end_col"
-  traverse (unvimify b) $ Interval (Pos sline scol) $ Pos eline ecol
+  case res of
+    ObjectArray [ objectToInt @Int -> Just (toZeroIndexed -> sline)
+                , objectToInt @Int -> Just (toZeroIndexed -> scol)
+                , ObjectMap details
+                ] -> do
+      let toZ = fmap toZeroIndexed . objectToInt @Int
+          Just eline = toZ $ details M.! ObjectString "end_row"
+          Just ecol  = toZ $ details M.! ObjectString "end_col"
+      fmap Just $ traverse (unvimify b) $ Interval (Pos sline scol) $ Pos eline ecol
+    _ -> pure Nothing
 
 ------------------------------------------------------------------------------
 -- | Awful function that does the motion in visual mode and gives you back

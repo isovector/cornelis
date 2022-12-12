@@ -11,7 +11,7 @@ import           Control.Concurrent.Chan.Unagi
 import           Control.Lens
 import           Control.Monad (forever)
 import           Control.Monad (when)
-import           Control.Monad.State.Class (gets)
+import           Control.Monad.State.Class (gets, modify)
 import           Cornelis.Config (getConfig)
 import           Cornelis.Debug (reportExceptions)
 import           Cornelis.Goals
@@ -58,8 +58,12 @@ respond b (DisplayInfo dp) = do
   goalWindow b dp
 -- Update the buffer's interaction points map
 respond b (InteractionPoints ips) = do
-  let ips' = mapMaybe sequenceInteractionPoint ips
-  modifyBufferStuff b $ #bs_ips .~ (IM.fromList $ fmap (ip_id &&& id) ips')
+  let ips' = IM.fromList $ fmap (ip_id &&& id)
+           $ mapMaybe sequenceInteractionPoint ips
+  oldips <- withBufferStuff b $ pure . bs_ips
+  traceMX "old" oldips
+  traceMX "new" ips'
+  modifyBufferStuff b $ #bs_ips .~ ips'
 -- Replace a function clause
 respond b (MakeCase mkcase) = do
   doMakeCase b mkcase
@@ -90,6 +94,7 @@ respond b ClearHighlighting = do
   nvim_buf_clear_namespace b ns 0 (-1)
 respond b (HighlightingInfo _remove hl) = do
   extmap <- highlightBuffer b hl
+  when (not . null $ extmap) $ traceMX "extmap" extmap
   modifyBufferStuff b $
     #bs_ips %~ fmap (addExtmarksToGoal extmap)
 respond _ (RunningInfo _ x) = reportInfo x
@@ -137,7 +142,7 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
 ------------------------------------------------------------------------------
 -- | Indent a string with the given offset.
 indent :: AgdaPos -> Text -> Text
-indent (Pos _ c) s = T.replicate (fromZeroIndexed (zeroIndex c)) " " <> "; " <> s -- TODO: subtract one more?
+indent (Pos _ c) s = T.replicate (fromZeroIndexed (zeroIndex c) - 1) " " <> "; " <> s
 
 
 doPrevGoal :: CommandArguments -> Neovim CornelisEnv ()
@@ -146,6 +151,8 @@ doPrevGoal = const prevGoal
 doNextGoal :: CommandArguments -> Neovim CornelisEnv ()
 doNextGoal = const nextGoal
 
+doToggleDebug :: CommandArguments -> Neovim CornelisEnv ()
+doToggleDebug _ = modify $ #cs_debug %~ not
 
 doIncNextDigitSeq :: CommandArguments -> Neovim CornelisEnv ()
 doIncNextDigitSeq = const incNextDigitSeq
@@ -158,7 +165,7 @@ cornelisInit :: Neovim env CornelisEnv
 cornelisInit = do
   (inchan, outchan) <- liftIO newChan
   ns <- nvim_create_namespace "cornelis"
-  mvar <- liftIO $ newIORef $ CornelisState mempty
+  mvar <- liftIO $ newIORef $ CornelisState mempty False
 
   cfg <- getConfig
 
@@ -211,6 +218,7 @@ cornelis = do
         , $(command "CornelisQuestionToMeta"   'doQuestionToMeta) [CmdSync Async]
         , $(command "CornelisInc"              'doIncNextDigitSeq) [CmdSync Async]
         , $(command "CornelisDec"              'doDecNextDigitSeq) [CmdSync Async]
+        , $(command "InternalCornelisToggleDebug"            'doToggleDebug) [CmdSync Async]
         , $(function "InternalCornelisRewriteModeCompletion" 'rewriteModeCompletion) Sync
         , $(function "InternalCornelisComputeModeCompletion" 'computeModeCompletion) Sync
         ]

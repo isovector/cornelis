@@ -66,8 +66,8 @@ gotoDefinition = withAgda $ do
 
 
 reload :: Neovim CornelisEnv ()
-reload = do
-  vim_command "noautocmd w"
+reload = pure () -- do
+  -- vim_command "noautocmd w"
   -- load
 
 

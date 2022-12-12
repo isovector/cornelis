@@ -4,6 +4,18 @@
 
 module Cornelis.Agda where
 
+-- TODO(sandy): OK
+-- so there is a race where we do highlighting before we get the IPs
+-- therefore our extmarks get clobbered
+-- solution: put them in another map
+--
+-- ALSO
+-- we futz with the ?s to make them {! !}s when they arrive from a give
+-- but this means the new locations we get are wrong
+--
+-- ALSO
+-- we need to request highlighting on the new results
+
 import           Control.Concurrent.Chan.Unagi (newChan, readChan, writeChan)
 import           Control.Lens
 import           Control.Monad.IO.Class
@@ -23,12 +35,6 @@ import           Neovim hiding (err)
 import           Neovim.API.Text
 import           System.IO hiding (hGetLine)
 import           System.Process
-
-
-------------------------------------------------------------------------------
--- | When true, dump out received JSON as it arrives.
-debugJson :: Bool
-debugJson = False
 
 
 ------------------------------------------------------------------------------
@@ -57,9 +63,8 @@ spawnAgda buffer = do
           _ | LT.null resp' -> pure ()
           Left err -> vim_report_error $ T.pack err
           Right res -> do
-            case res of
-              HighlightingInfo _ _ -> pure ()
-              _ -> when debugJson $ vim_report_error $ T.pack $ show resp
+            debug <- gets cs_debug
+            when debug $ vim_report_error $ T.pack $ show resp
             liftIO $ writeChan chan $ AgdaResp buffer res
 
       void $ neovimAsync $ liftIO $ forever $ do

@@ -91,6 +91,7 @@ getGoalAtPos
     -> AgdaPos
     -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
 getGoalAtPos b p = do
+  traceMX "pos" p
   fmap (getFirst . fold) $ withBufferStuff b $ \bs -> do
     for (bs_ips bs) $ \ip -> do
       int <- getIpInterval b ip

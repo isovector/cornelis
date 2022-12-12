@@ -63,6 +63,7 @@ newtype InfoBuffer = InfoBuffer
 
 data CornelisState = CornelisState
   { cs_buffers :: Map Buffer BufferStuff
+  , cs_debug :: Bool
   }
   deriving Generic
 

@@ -322,3 +322,18 @@ rewriteModeCompletion :: String -> String -> Int -> Neovim env String
 rewriteModeCompletion _ _ _ =
   pure $ unlines $ fmap show $ enumFromTo @Rewrite minBound maxBound
 
+debugCommandCompletion :: String -> String -> Int -> Neovim env String
+debugCommandCompletion _ _ _ =
+  pure $ unlines $ fmap show $ enumFromTo @DebugCommand minBound maxBound
+
+
+doDebug :: CommandArguments -> String -> Neovim CornelisEnv ()
+doDebug _ str =
+  case readMaybe str of
+    Just DumpIPs ->
+      withAgda $ withCurrentBuffer $ \b -> withBufferStuff b $ \bs -> do
+        traceMX "ips" $ bs_ips bs
+        traceMX "ipexts" $ bs_ip_exts bs
+    Nothing ->
+      vim_report_error $ T.pack $ "No matching debug command for " <> show str
+

@@ -385,3 +385,8 @@ data ExtmarkStuff = ExtmarkStuff
   }
   deriving (Eq, Ord, Show)
 
+
+data DebugCommand
+  = DumpIPs
+  deriving (Eq, Ord, Show, Read, Enum, Bounded)
+

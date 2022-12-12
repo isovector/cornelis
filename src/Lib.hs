@@ -188,6 +188,7 @@ cornelis = do
 
   let rw_complete = CmdComplete "custom,InternalCornelisRewriteModeCompletion"
       cm_complete = CmdComplete "custom,InternalCornelisComputeModeCompletion"
+      debug_complete = CmdComplete "custom,InternalCornelisDebugCommandCompletion"
 
   wrapPlugin $ Plugin
     { environment = env
@@ -213,8 +214,10 @@ cornelis = do
         , $(command "CornelisQuestionToMeta"   'doQuestionToMeta) [CmdSync Async]
         , $(command "CornelisInc"              'doIncNextDigitSeq) [CmdSync Async]
         , $(command "CornelisDec"              'doDecNextDigitSeq) [CmdSync Async]
+        , $(command "CornelisDebug"            'doDebug)          [CmdSync Async, debug_complete]
         , $(function "InternalCornelisRewriteModeCompletion" 'rewriteModeCompletion) Sync
         , $(function "InternalCornelisComputeModeCompletion" 'computeModeCompletion) Sync
+        , $(function "InternalCornelisDebugCommandCompletion" 'debugCommandCompletion) Sync
         ]
     }
 

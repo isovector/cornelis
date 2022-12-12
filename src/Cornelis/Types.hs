@@ -12,6 +12,7 @@
 
 module Cornelis.Types
   ( module Cornelis.Types
+  , InteractionId
   , Buffer
   , Window
   , Text
@@ -23,9 +24,12 @@ import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
 import Cornelis.Debug
 import Cornelis.Offsets (Pos(..), Interval(..), AgdaIndex, AgdaPos, AgdaInterval)
+import Cornelis.Types.Agda (InteractionId)
 import Data.Aeson hiding (Error)
+import Data.Char (toLower)
+import Data.Functor.Identity
 import Data.Generics.Labels ()
-import Data.IntMap.Strict (IntMap)
+import Data.IORef
 import Data.Map (Map)
 import Data.Maybe (listToMaybe)
 import Data.Text (Text)
@@ -34,9 +38,7 @@ import GHC.Stack
 import Neovim hiding (err)
 import Neovim.API.Text (Buffer(..), Window)
 import System.Process (ProcessHandle)
-import Data.Functor.Identity
-import Data.Char (toLower)
-import Data.IORef
+
 
 deriving stock instance Ord Buffer
 
@@ -49,7 +51,7 @@ data Agda = Agda
 
 data BufferStuff = BufferStuff
   { bs_agda_proc  :: Agda
-  , bs_ips        :: IntMap (InteractionPoint Identity)
+  , bs_ips        :: Map InteractionId (InteractionPoint Identity)
   , bs_goto_sites :: Map Extmark DefinitionSite
   , bs_goals      :: DisplayInfo
   , bs_info_win   :: InfoBuffer
@@ -181,13 +183,13 @@ instance FromJSON MakeCase where
 
 
 data Solution = Solution
-  { s_ip :: Int
+  { s_ip :: InteractionId
   , s_expression :: Text
   }
   deriving (Eq, Ord, Show)
 
 data InteractionPoint f = InteractionPoint
-  { ip_id :: Int
+  { ip_id :: InteractionId
   , ip_intervalM :: f AgdaInterval
   , ip_extmark :: Maybe Extmark
   } deriving Generic

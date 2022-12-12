@@ -22,7 +22,6 @@ import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Bool (bool)
 import           Data.Foldable (for_, fold, toList)
-import qualified Data.IntMap as IM
 import           Data.List
 import qualified Data.Map as M
 import           Data.Ord
@@ -94,7 +93,7 @@ questionToMeta b = withBufferStuff b $ \bs -> do
         let int' = int { iEnd = (iStart int) `addCol` Offset 5 }
         void $ highlightInterval b int' Todo
         modifyBufferStuff b $
-          #bs_ips %~ IM.insert (ip_id ip) (ip & #ip_intervalM . #_Identity .~ int')
+          #bs_ips %~ M.insert (ip_id ip) (ip & #ip_intervalM . #_Identity .~ int')
 
         pure $ Any True
       Just _ -> pure $ Any False
@@ -139,7 +138,7 @@ solveOne _ ms = withNormalizationMode ms $ \mode ->
     flip runIOTCM agda $
       Cmd_solveOne
         mode
-        (InteractionId $ ip_id ip)
+        (ip_id ip)
         (mkAbsPathRnage fp $ ip_interval' ip)
         ""
 
@@ -150,7 +149,7 @@ autoOne _ = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   fp <- buffer_get_name b
   flip runIOTCM agda $
     Cmd_autoOne
-      (InteractionId $ ip_id ip)
+      (ip_id ip)
       (mkAbsPathRnage fp $ ip_interval' ip)
       (T.unpack t)
 
@@ -179,7 +178,7 @@ typeContext _ ms = withNormalizationMode ms $ \mode ->
     flip runIOTCM agda $
       Cmd_goal_type_context
         mode
-        (InteractionId $ ip_id goal)
+        (ip_id goal)
         (mkAbsPathRnage fp $ ip_interval' goal)
         ""
 
@@ -192,7 +191,7 @@ typeContextInfer _ ms = withNormalizationMode ms $ \mode ->
     flip runIOTCM agda
       $ Cmd_goal_type_context_infer
           mode
-          (InteractionId $ ip_id ip)
+          (ip_id ip)
           (mkAbsPathRnage fp $ ip_interval' ip)
       $ T.unpack contents
 
@@ -207,7 +206,7 @@ refine = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   flip runIOTCM agda
     $ Cmd_refine_or_intro
         True
-        (InteractionId $ ip_id ip)
+        (ip_id ip)
         (mkAbsPathRnage fp $ ip_interval' ip)
     $ T.unpack t
 
@@ -222,7 +221,7 @@ give = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   flip runIOTCM agda
     $ Cmd_give
         WithoutForce
-        (InteractionId $ ip_id ip)
+        (ip_id ip)
         (mkAbsPathRnage fp $ ip_interval' ip)
     $ T.unpack t
 
@@ -237,7 +236,7 @@ elaborate mode = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   flip runIOTCM agda
     $ Cmd_elaborate_give
         mode
-        (InteractionId $ ip_id ip)
+        (ip_id ip)
         (mkAbsPathRnage fp $ ip_interval' ip)
     $ T.unpack t
 
@@ -268,7 +267,7 @@ doNormalize _ ms = withComputeMode ms $ \mode ->
             flip runIOTCM agda
               $ Cmd_compute
                   mode
-                  (InteractionId $ ip_id ip)
+                  (ip_id ip)
                   (mkAbsPathRnage fp $ ip_interval' ip)
               $ T.unpack t
 
@@ -280,7 +279,7 @@ helperFunc mode expr = do
     flip runIOTCM agda
       $ Cmd_helper_function
           mode
-          (InteractionId $ ip_id ip)
+          (ip_id ip)
           (mkAbsPathRnage fp $ ip_interval' ip)
       $ T.unpack expr
 
@@ -303,7 +302,7 @@ caseSplit thing = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   fp <- buffer_get_name b
   flip runIOTCM agda
     $ Cmd_make_case
-        (InteractionId $ ip_id ip)
+        (ip_id ip)
         (mkAbsPathRnage fp $ ip_interval' ip)
     $ T.unpack thing
 

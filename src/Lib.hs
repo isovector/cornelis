@@ -24,7 +24,6 @@ import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Foldable (for_)
 import           Data.IORef (newIORef)
-import qualified Data.IntMap.Strict as IM
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Maybe
@@ -35,7 +34,10 @@ import           Neovim.Plugin (CommandOption(CmdComplete))
 import           Plugin
 
 
-getInteractionPoint :: Buffer -> Int -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
+getInteractionPoint
+    :: Buffer
+    -> InteractionId
+    -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
 getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
 
 
@@ -59,7 +61,7 @@ respond b (DisplayInfo dp) = do
 -- Update the buffer's interaction points map
 respond b (InteractionPoints ips) = do
   let ips' = mapMaybe sequenceInteractionPoint ips
-  modifyBufferStuff b $ #bs_ips .~ (IM.fromList $ fmap (ip_id &&& id) ips')
+  modifyBufferStuff b $ #bs_ips .~ (M.fromList $ fmap (ip_id &&& id) ips')
 -- Replace a function clause
 respond b (MakeCase mkcase) = do
   doMakeCase b mkcase

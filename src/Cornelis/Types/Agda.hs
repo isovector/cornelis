@@ -3,14 +3,15 @@
 
 module Cornelis.Types.Agda where
 
+import           Cornelis.Offsets
+import           Data.Aeson (ToJSON, FromJSON)
 import           Data.Foldable (toList)
 import           Data.Sequence
 import qualified Data.Sequence as Seq
 import           Data.Text (Text)
+import qualified Data.Text as T
 import           GHC.Generics
 import           GHC.Show (showSpace)
-import           Cornelis.Offsets
-import qualified Data.Text as T
 
 data Rewrite =  AsIs | Instantiated | HeadNormal | Simplified | Normalised
     deriving (Show, Read, Eq, Ord, Enum, Bounded)
@@ -35,6 +36,8 @@ newtype InteractionId = InteractionId { interactionId :: Int }
            , Integral
            , Real
            , Enum
+           , ToJSON
+           , FromJSON
            )
 
 

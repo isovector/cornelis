@@ -52,6 +52,7 @@ data Agda = Agda
 data BufferStuff = BufferStuff
   { bs_agda_proc  :: Agda
   , bs_ips        :: Map InteractionId (InteractionPoint Identity)
+  , bs_ip_exts    :: Map InteractionId Extmark
   , bs_goto_sites :: Map Extmark DefinitionSite
   , bs_goals      :: DisplayInfo
   , bs_info_win   :: InfoBuffer
@@ -191,7 +192,6 @@ data Solution = Solution
 data InteractionPoint f = InteractionPoint
   { ip_id :: InteractionId
   , ip_intervalM :: f AgdaInterval
-  , ip_extmark :: Maybe Extmark
   } deriving Generic
 
 deriving instance Eq (f AgdaInterval) => Eq (InteractionPoint f)
@@ -199,10 +199,10 @@ deriving instance Ord (f AgdaInterval) => Ord (InteractionPoint f)
 deriving instance Show (f AgdaInterval) => Show (InteractionPoint f)
 
 ip_interval' :: InteractionPoint Identity -> AgdaInterval
-ip_interval' (InteractionPoint _ (Identity i) _) = i
+ip_interval' (InteractionPoint _ (Identity i)) = i
 
 sequenceInteractionPoint :: Applicative f => InteractionPoint f -> f (InteractionPoint Identity)
-sequenceInteractionPoint (InteractionPoint n f x) = InteractionPoint <$> pure n <*> fmap Identity f <*> pure x
+sequenceInteractionPoint (InteractionPoint n f) = InteractionPoint <$> pure n <*> fmap Identity f
 
 
 data NamedPoint = NamedPoint
@@ -225,15 +225,15 @@ instance FromJSON AgdaPos' where
 
 instance FromJSON (InteractionPoint Maybe) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
-    InteractionPoint <$> obj .: "id" <*> fmap listToMaybe (obj .: "range") <*> pure Nothing
+    InteractionPoint <$> obj .: "id" <*> fmap listToMaybe (obj .: "range")
 
 instance FromJSON (InteractionPoint Identity) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
-    InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range") <*> pure Nothing
+    InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range")
 
 instance FromJSON (InteractionPoint (Const ())) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
-    InteractionPoint <$> obj .: "id" <*> pure (Const ()) <*> pure Nothing
+    InteractionPoint <$> obj .: "id" <*> pure (Const ())
 
 instance FromJSON NamedPoint where
   parseJSON = withObject "InteractionPoint" $ \obj -> do

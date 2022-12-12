@@ -12,6 +12,7 @@ import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Foldable (toList, fold)
 import           Data.List
+import qualified Data.Map as M
 import           Data.Maybe
 import           Data.Ord
 import qualified Data.Text as T
@@ -27,7 +28,12 @@ import           Neovim.API.Text
 getIpInterval :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv AgdaInterval
 getIpInterval b ip = do
   ns <- asks ce_namespace
-  maybe (pure $ ip_interval' ip) (getExtmarkIntervalById ns b) $ ip_extmark ip
+  extmap <- withBufferStuff b $ pure . bs_ip_exts
+  maybe
+      (pure $ ip_interval' ip)
+      (getExtmarkIntervalById ns b)
+    $ flip M.lookup extmap
+    $ ip_id ip
 
 
 --------------------------------------------------------------------------------

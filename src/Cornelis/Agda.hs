@@ -113,6 +113,7 @@ withAgda m = do
       modify' $ #cs_buffers %~ M.insert buffer BufferStuff
         { bs_agda_proc = agda
         , bs_ips = mempty
+        , bs_ip_exts = mempty
         , bs_goto_sites = mempty
         , bs_goals = AllGoalsWarnings [] [] [] []
         , bs_info_win = iw

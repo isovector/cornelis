@@ -24,7 +24,6 @@ import           Cornelis.Utils
 import           Cornelis.Vim
 import           Data.Foldable (for_)
 import           Data.IORef (newIORef)
-import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Maybe
 import qualified Data.Text as T
@@ -44,11 +43,6 @@ getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
 respondToHelperFunction :: DisplayInfo -> Neovim env ()
 respondToHelperFunction (HelperFunction sig) = setreg "\"" sig
 respondToHelperFunction _ = pure ()
-
-
-addExtmarksToGoal :: Map AgdaInterval Extmark -> InteractionPoint Identity -> InteractionPoint Identity
-addExtmarksToGoal m (InteractionPoint i f x) =
-  InteractionPoint i f $ maybe x Just $ M.lookup (runIdentity f) m
 
 
 respond :: Buffer -> Response -> Neovim CornelisEnv ()
@@ -85,15 +79,17 @@ respond b (SolveAll solutions) = do
         replaceInterval b int $ replaceQuestion ex
   reload
 respond b ClearHighlighting = do
-  -- delete what we know about goto positions
-  modifyBufferStuff b $ #bs_goto_sites .~ mempty
+  -- delete what we know about goto positions and stored extmarks
+  modifyBufferStuff b $ \bs -> bs
+    & #bs_goto_sites .~ mempty
+    & #bs_ip_exts .~ mempty
   -- remove the extmarks and highlighting
   ns <- asks ce_namespace
   nvim_buf_clear_namespace b ns 0 (-1)
 respond b (HighlightingInfo _remove hl) = do
   extmap <- highlightBuffer b hl
-  modifyBufferStuff b $
-    #bs_ips %~ fmap (addExtmarksToGoal extmap)
+  modifyBufferStuff b $ \bs -> bs
+    & #bs_ip_exts <>~ M.compose extmap (fmap ip_interval' $ bs_ips $ bs)
 respond _ (RunningInfo _ x) = reportInfo x
 respond _ (ClearRunningInfo) = reportInfo ""
 respond b (JumpToError _ pos) = do

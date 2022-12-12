@@ -67,7 +67,7 @@ gotoDefinition = withAgda $ do
 reload :: Neovim CornelisEnv ()
 reload = do
   vim_command "noautocmd w"
-  -- load
+  load
 
 
 doLoad :: CommandArguments -> Neovim CornelisEnv ()
@@ -216,13 +216,15 @@ doGive = const give
 give :: Neovim CornelisEnv ()
 give = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   agda <- getAgda b
-  fp <- buffer_get_name b
   t <- getGoalContents b ip
   flip runIOTCM agda
     $ Cmd_give
         WithoutForce
         (ip_id ip)
-        (mkAbsPathRnage fp $ ip_interval' ip)
+        -- We intentionally don't pass the range here; since doing so changes
+        -- the response from Agda and requires a different codepath to perform
+        -- the necessary edits.
+        noRange
     $ T.unpack t
 
 doElaborate :: CommandArguments -> Maybe String-> Neovim CornelisEnv ()

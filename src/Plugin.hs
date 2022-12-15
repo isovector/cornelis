@@ -201,13 +201,15 @@ doRefine = const refine
 refine :: Neovim CornelisEnv ()
 refine = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   agda <- getAgda b
-  fp <- buffer_get_name b
   t <- getGoalContents b ip
   flip runIOTCM agda
     $ Cmd_refine_or_intro
         True
         (ip_id ip)
-        (mkAbsPathRnage fp $ ip_interval' ip)
+        -- We intentionally don't pass the range here; since doing so changes
+        -- the response from Agda and requires a different codepath to perform
+        -- the necessary edits.
+        noRange
     $ T.unpack t
 
 doGive :: CommandArguments -> Neovim CornelisEnv ()

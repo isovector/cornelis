@@ -64,7 +64,7 @@
           inherit system;
           overlays = [ agda.overlay ];
         };
-        agdaBin = agdaPkgs.agda.withPackages (p: [
+        agdaPackage = agdaPkgs.agda.withPackages (p: [
           (p.standard-library.overrideAttrs (oldAttrs: {
             version = "2.0-experimental";
             src =  pkgs.fetchFromGitHub {
@@ -90,10 +90,11 @@
 
             ${name} = pkgs.${name};
             default = pkgs.${name};
+            agda = agdaPackage;
           };
 
         apps = {
-          agda = flake-utils.lib.mkApp { drv = agdaBin; exePath = "/bin/agda"; };
+          agda = flake-utils.lib.mkApp { drv = self.packages.${system}.agda; exePath = "/bin/agda"; };
         };
 
         formatter = pkgs.alejandra;

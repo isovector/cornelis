@@ -10,12 +10,15 @@
       url = "github:edolstra/flake-compat";
       flake = false;
     };
+
+    agda.url = "github:agda/agda/4d36cb37f8bfb765339b808b13356d760aa6f0ec";
   };
 
   outputs = {
     self,
     nixpkgs,
     flake-utils,
+    agda,
     ...
   }: let
     name = "cornelis";
@@ -57,6 +60,21 @@
           inherit system;
           overlays = builtins.attrValues self.overlays;
         };
+        agdaPkgs = import nixpkgs {
+          inherit system;
+          overlays = [ agda.overlay ];
+        };
+        agdaPackage = agdaPkgs.agda.withPackages (p: [
+          (p.standard-library.overrideAttrs (oldAttrs: {
+            version = "2.0-experimental";
+            src =  pkgs.fetchFromGitHub {
+              repo = "agda-stdlib";
+              owner = "agda";
+              rev = "experimental";
+              sha256 = "sha256-l2+8myyJSufXpt1Opf65AJaTMiHMDeYYbuvkvzbCjDo=";
+            };
+          }))
+        ]);
       in {
         packages =
           builtins.listToAttrs (
@@ -72,7 +90,12 @@
 
             ${name} = pkgs.${name};
             default = pkgs.${name};
+            agda = agdaPackage;
           };
+
+        apps = {
+          agda = flake-utils.lib.mkApp { drv = self.packages.${system}.agda; exePath = "/bin/agda"; };
+        };
 
         formatter = pkgs.alejandra;
       }

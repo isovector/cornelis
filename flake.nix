@@ -3,41 +3,27 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-
     flake-utils.url = "github:numtide/flake-utils";
-
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
-
     agda.url = "github:agda/agda/4d36cb37f8bfb765339b808b13356d760aa6f0ec";
+    flake-compat = { url = "github:edolstra/flake-compat"; flake = false; };
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    flake-utils,
-    agda,
-    ...
-  }: let
-    name = "cornelis";
-    # Update `./.github/workflows/nix.yml` if changed.
-    # Build currently failing on `ghc902`.
-    ghcVersions = map (v: "ghc${v}") ["8107" "902" "924"];
-    defaultGhcVersion = "ghc8107";
-  in
+  outputs = { self, nixpkgs, flake-utils, agda, ... }:
+    let
+      name = "cornelis";
+      # Update `./.github/workflows/nix.yml` if changed.
+      # Build currently failing on `ghc902`.
+      ghcVersions = map (v: "ghc${v}") [ "8107" "902" "924" ];
+      defaultGhcVersion = "ghc8107";
+    in
     {
       overlays = {
         ${name} = final: prev: {
-          haskell =
-            prev.haskell
-            // {
-              packageOverrides =
-                final.lib.composeExtensions
-                prev.haskell.packageOverrides
-                (hfinal: _: {${name} = hfinal.callCabal2nix name ./. {};});
-            };
+          haskell = prev.haskell // {
+            packageOverrides = final.lib.composeExtensions
+              prev.haskell.packageOverrides
+              (hfinal: _: { ${name} = hfinal.callCabal2nix name ./. { }; });
+          };
 
           ${name} = final.haskell.packages.${defaultGhcVersion}.${name};
 
@@ -53,21 +39,14 @@
           });
         };
       };
-    }
-    // flake-utils.lib.eachDefaultSystem (
-      system: let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = builtins.attrValues self.overlays;
-        };
-        agdaPkgs = import nixpkgs {
-          inherit system;
-          overlays = [ agda.overlay ];
-        };
+    } // flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
+        agdaPkgs = import nixpkgs { inherit system; overlays = [ agda.overlay ]; };
         agdaPackage = agdaPkgs.agda.withPackages (p: [
           (p.standard-library.overrideAttrs (oldAttrs: {
             version = "2.0-experimental";
-            src =  pkgs.fetchFromGitHub {
+            src = pkgs.fetchFromGitHub {
               repo = "agda-stdlib";
               owner = "agda";
               rev = "experimental";
@@ -75,16 +54,18 @@
             };
           }))
         ]);
-      in {
+      in
+      {
         packages =
-          builtins.listToAttrs (
-            map
-            (v: {
-              name = "${name}-${v}";
-              value = pkgs.haskell.packages.${v}.${name};
-            })
-            ghcVersions
-          )
+          builtins.listToAttrs
+            (
+              map
+                (v: {
+                  name = "${name}-${v}";
+                  value = pkgs.haskell.packages.${v}.${name};
+                })
+                ghcVersions
+            )
           // {
             "${name}-vim" = pkgs.vimPlugins.${name};
 
@@ -97,7 +78,6 @@
           agda = flake-utils.lib.mkApp { drv = self.packages.${system}.agda; exePath = "/bin/agda"; };
         };
 
-        formatter = pkgs.alejandra;
       }
     );
 }

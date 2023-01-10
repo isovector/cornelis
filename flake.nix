@@ -4,11 +4,15 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    agda.url = "github:agda/agda/4d36cb37f8bfb765339b808b13356d760aa6f0ec";
     flake-compat = { url = "github:edolstra/flake-compat"; flake = false; };
+
+    # See https://github.com/isovector/cornelis#agda-version
+    agda.url = "github:agda/agda/4d36cb37f8bfb765339b808b13356d760aa6f0ec";
+    agda.inputs.flake-utils.follows = "flake-utils";
+    agda-stdlib = { url = "github:agda/agda-stdlib/experimental"; flake = false; };
   };
 
-  outputs = { self, nixpkgs, flake-utils, agda, ... }:
+  outputs = { self, nixpkgs, ... }@inputs:
     let
       name = "cornelis";
       # Update `./.github/workflows/nix.yml` if changed.
@@ -38,46 +42,33 @@
             };
           });
         };
+
       };
-    } // flake-utils.lib.eachDefaultSystem (system:
+    } // inputs.flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
-        agdaPkgs = import nixpkgs { inherit system; overlays = [ agda.overlay ]; };
-        agdaPackage = agdaPkgs.agda.withPackages (p: [
-          (p.standard-library.overrideAttrs (oldAttrs: {
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ self.overlays.${name} inputs.agda.overlay ];
+        };
+        agda = pkgs.agda.withPackages (p: nixpkgs.lib.singleton (
+          p.standard-library.overrideAttrs (_: {
             version = "2.0-experimental";
-            src = pkgs.fetchFromGitHub {
-              repo = "agda-stdlib";
-              owner = "agda";
-              rev = "experimental";
-              sha256 = "sha256-l2+8myyJSufXpt1Opf65AJaTMiHMDeYYbuvkvzbCjDo=";
-            };
-          }))
-        ]);
+            src = inputs.agda-stdlib;
+          })
+        ));
       in
       {
-        packages =
-          builtins.listToAttrs
-            (
-              map
-                (v: {
-                  name = "${name}-${v}";
-                  value = pkgs.haskell.packages.${v}.${name};
-                })
-                ghcVersions
-            )
-          // {
-            "${name}-vim" = pkgs.vimPlugins.${name};
+        packages = {
+          inherit agda;
+          ${name} = pkgs.${name};
+          "${name}-vim" = pkgs.vimPlugins.${name};
+          default = pkgs.${name};
 
-            ${name} = pkgs.${name};
-            default = pkgs.${name};
-            agda = agdaPackage;
-          };
-
-        apps = {
-          agda = flake-utils.lib.mkApp { drv = self.packages.${system}.agda; exePath = "/bin/agda"; };
-        };
-
+          # Create `cornelis` package for all `ghcVersions`.
+        } // builtins.listToAttrs (map
+          (v: { name = "${name}-${v}"; value = pkgs.haskell.packages.${v}.${name}; })
+          ghcVersions
+        );
       }
     );
 }

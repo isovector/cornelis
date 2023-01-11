@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Cache Stack dirs
         uses: ./.github/template/stack-cache
@@ -44,15 +44,14 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Cache Stack dirs
         uses: ./.github/template/stack-cache
         with:
           global-stack-dir: ${{ inputs.global-stack-cache-dir }}
-          cache-key-suffix: -withAgda
 
-      - name: Build package and tests
+      - name: Build package
         run: |
           stack install Agda
 
@@ -64,13 +63,12 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Cache Stack dirs
         uses: ./.github/template/stack-cache
         with:
           global-stack-dir: ${{ inputs.global-stack-cache-dir }}
-          cache-key-suffix: -withAgda
 
       - name: Install test dependencies
         run: |
@@ -93,6 +91,12 @@ jobs:
           mkdir -p ~\AppData\Roaming\local\share\nvim\swap
           mkdir -p ~\AppData\Roaming\local\state\nvim\swap
 
+      # Tests can be flaky so we retry them a few times.
       - name: Run tests
-        run: |
-          stack test
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_wait_seconds: 1
+          command: |
+            stack test

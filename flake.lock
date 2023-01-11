@@ -2,7 +2,9 @@
   "nodes": {
     "agda": {
       "inputs": {
-        "flake-utils": "flake-utils",
+        "flake-utils": [
+          "flake-utils"
+        ],
         "nixpkgs": "nixpkgs"
       },
       "locked": {
@@ -17,6 +19,23 @@
         "owner": "agda",
         "repo": "agda",
         "rev": "4d36cb37f8bfb765339b808b13356d760aa6f0ec",
+        "type": "github"
+      }
+    },
+    "agda-stdlib": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1667069530,
+        "narHash": "sha256-l2+8myyJSufXpt1Opf65AJaTMiHMDeYYbuvkvzbCjDo=",
+        "owner": "agda",
+        "repo": "agda-stdlib",
+        "rev": "236275218f01f8e65c4ea46c1fce1a9d0bca6fd1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "agda",
+        "ref": "experimental",
+        "repo": "agda-stdlib",
         "type": "github"
       }
     },
@@ -37,21 +56,6 @@
       }
     },
     "flake-utils": {
-      "locked": {
-        "lastModified": 1659877975,
-        "narHash": "sha256-zllb8aq3YO3h8B/U0/J1WBgAL8EX5yWf5pMj3G0NAmc=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "c0e246b9b83f637f4681389ecabcb2681b4f3af0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "type": "github"
-      }
-    },
-    "flake-utils_2": {
       "locked": {
         "lastModified": 1659877975,
         "narHash": "sha256-zllb8aq3YO3h8B/U0/J1WBgAL8EX5yWf5pMj3G0NAmc=",
@@ -99,8 +103,9 @@
     "root": {
       "inputs": {
         "agda": "agda",
+        "agda-stdlib": "agda-stdlib",
         "flake-compat": "flake-compat",
-        "flake-utils": "flake-utils_2",
+        "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs_2"
       }
     }

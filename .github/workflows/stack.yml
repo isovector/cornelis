@@ -50,9 +50,8 @@ jobs:
         uses: ./.github/template/stack-cache
         with:
           global-stack-dir: ${{ inputs.global-stack-cache-dir }}
-          cache-key-suffix: -withAgda
 
-      - name: Build package and tests
+      - name: Build package
         run: |
           stack install Agda
 
@@ -70,7 +69,6 @@ jobs:
         uses: ./.github/template/stack-cache
         with:
           global-stack-dir: ${{ inputs.global-stack-cache-dir }}
-          cache-key-suffix: -withAgda
 
       - name: Install test dependencies
         run: |

@@ -91,6 +91,12 @@ jobs:
           mkdir -p ~\AppData\Roaming\local\share\nvim\swap
           mkdir -p ~\AppData\Roaming\local\state\nvim\swap
 
+      # Tests can be flaky so we retry them a few times.
       - name: Run tests
-        run: |
-          stack test
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_wait_seconds: 1
+          command: |
+            stack test

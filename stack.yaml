@@ -1,15 +1,13 @@
-# GHC 8.10.7
+# GHC 9.2.5
 # Update `defaultGHCVersion` in `./flake.nix` when updating to resolver with different GHC version.
-resolver: lts-18.28
+resolver: lts-20.06
 
 packages:
 - .
 
 extra-deps:
 - diff-loc-0.1.0.0
-- nvim-hs-2.3.0.0
-- template-haskell-compat-v0208-0.1.9.1
-- levenshtein-0.1.3.0
+- levenshtein-0.2.1.0
 
 nix:
   packages: [zlib]

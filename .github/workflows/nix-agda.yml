@@ -4,9 +4,11 @@ on:
   push:
     paths:
       - flake.*
+      - .github/workflows/nix-agda.yml
   pull_request:
     paths:
       - flake.*
+      - .github/workflows/nix-agda.yml
     branches: [ master ]
 
 jobs:
@@ -16,7 +18,7 @@ jobs:
       matrix:
         os: ['macos-12', 'ubuntu-22.04']
 
-    name: Build Agda
+    name: Nix Agda
     runs-on: ${{ matrix.os }}
 
     steps:

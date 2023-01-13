@@ -12,25 +12,18 @@ jobs:
     uses: ./.github/workflows/stack.yml
     with:
       os: ubuntu-22.04
-      package-manager: sudo apt
 
   stack-macos:
     name: Stack macOS
     uses: ./.github/workflows/stack.yml
     with:
       os: macos-12
-      package-manager: brew
 
   stack-windows:
     name: Stack Windows
     uses: ./.github/workflows/stack.yml
     with:
       os: windows-latest
-      global-stack-cache-dir: ~\AppData\Roaming\stack
-      package-manager: choco
-      update-path-cmd: |
-        "$env:HOMEPATH\AppData\Roaming\local\bin" >> $env:GITHUB_PATH
-        "C:\tools\neovim\nvim-win64\bin" >> $env:GITHUB_PATH
 
   # Nix CI -----------------------------------------------------------------------------------------
   nix-linux:

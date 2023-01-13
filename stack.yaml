@@ -6,6 +6,7 @@ packages:
 - .
 
 extra-deps:
+- diff-loc-0.1.0.0
 - nvim-hs-2.3.0.0
 - template-haskell-compat-v0208-0.1.9.1
 - levenshtein-0.1.3.0

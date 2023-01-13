@@ -43,3 +43,12 @@ setlocal commentstring=--\ %s
 
 setlocal iskeyword=@,!-~,^\,,^\(,^\),^\",^\',192-255
 
+function InternalCornelisNotifyEditWrapper(bytes, buf, changedtick, srow, scol, boff, orow, ocol, olen, nrow, ncol, nlen)
+  " Swallow errors when the plugin hasn't loaded yet.
+  try
+    call InternalCornelisNotifyEdit(a:bytes, a:buf, a:changedtick, a:srow, a:scol, a:boff, a:orow, a:ocol, a:olen, a:nrow, a:ncol, a:nlen)
+  catch /^Vim\%((\a\+)\)\=:E117:/ " Function doesn't exist
+  endtry
+endfunction
+
+call luaeval("vim.api.nvim_buf_attach(0, false, {on_bytes=function(...) vim.api.nvim_call_function('InternalCornelisNotifyEditWrapper', {...}) end})")

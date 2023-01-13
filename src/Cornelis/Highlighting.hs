@@ -6,9 +6,10 @@
 
 module Cornelis.Highlighting where
 
-import           Control.Lens ((<>~))
+import           Control.Lens ((<>~), (.~))
 import           Control.Monad.Trans (lift)
 import           Control.Monad.Trans.Maybe
+import           Cornelis.Diff
 import           Cornelis.Offsets
 import           Cornelis.Pretty
 import           Cornelis.Types hiding (Type)
@@ -56,9 +57,14 @@ lineIntervalsForBuffer b = do
   buf_lines <- nvim_buf_get_lines b 0 (-1) True
   pure $ getLineIntervals buf_lines
 
-highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv (M.Map AgdaInterval Extmark)
-highlightBuffer b hs = do
+updateLineIntervals :: Buffer -> Neovim CornelisEnv ()
+updateLineIntervals b = do
   li <- lineIntervalsForBuffer b
+  modifyBufferStuff b $ #bs_code_map .~ li
+
+highlightBuffer :: Buffer -> [Highlight] -> Neovim CornelisEnv (M.Map AgdaInterval Extmark)
+highlightBuffer b hs = withBufferStuff b $ \bs -> do
+  let li = bs_code_map bs
   (holes, exts) <- fmap unzip $ for hs $ \hl -> do
     (hole, mext) <- addHighlight b li hl
     pure (hole, (hl, mext))
@@ -72,12 +78,6 @@ highlightBuffer b hs = do
 
   modifyBufferStuff b $ #bs_goto_sites <>~ M.fromList zs
   pure $ mconcat holes
-
-newtype LineIntervals = LineIntervals
-  { li_intervalMap :: IntervalMap AgdaIndex (LineNumber 'ZeroIndexed, Text)
-    -- ^ Mapping from positions to line numbers
-  }
-  deriving newtype (Semigroup, Monoid)
 
 getLineIntervals :: Vector Text -> LineIntervals
 getLineIntervals = LineIntervals . go (toOneIndexed @Int 1) (toZeroIndexed @Int 0)
@@ -124,13 +124,24 @@ addHighlight b lis hl = do
           pure $ maybe mempty (M.singleton aint) ext
     Nothing -> pure (mempty, Nothing)
 
-
 setHighlight
     :: Buffer
     -> Interval VimPos
     -> HighlightGroup
     -> Neovim CornelisEnv (Maybe Extmark)
-setHighlight b (Interval (Pos sl sc) (Pos el ec)) hl = do
+setHighlight b i hl = do
+  bn <- buffer_get_number b
+  mi' <- translateInterval bn i
+  case mi' of
+    Just i' -> setHighlight' b i' hl
+    Nothing -> pure Nothing
+
+setHighlight'
+    :: Buffer
+    -> Interval VimPos
+    -> HighlightGroup
+    -> Neovim CornelisEnv (Maybe Extmark)
+setHighlight' b (Interval (Pos sl sc) (Pos el ec)) hl = do
   ns <- asks ce_namespace
   let from0 = fromZeroIndexed
   flip catchNeovimException (const (pure Nothing))

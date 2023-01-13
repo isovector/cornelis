@@ -1,6 +1,7 @@
 module Cornelis.Debug where
 
 import Control.Exception (catch, throw)
+import Control.Monad.IO.Class
 import System.IO.Error (isAlreadyInUseError)
 import Neovim
 import Neovim.API.String (vim_report_error)
@@ -14,7 +15,7 @@ traceMX :: Show a => String -> a -> Neovim env ()
 traceMX herald a =
   vim_report_error $ "!!!" <> herald <> ": " <> show a
 
-debug :: Show a => a -> Neovim env ()
+debug :: (Show a, MonadIO m) => a -> m ()
 debug x = liftIO $ go 100
   where
     go 0 = pure ()

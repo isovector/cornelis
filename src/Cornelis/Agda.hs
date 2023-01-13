@@ -14,11 +14,12 @@ import           Cornelis.Types
 import           Cornelis.Types.Agda
 import           Cornelis.Utils
 import           Data.Aeson
+import           Data.IORef
 import qualified Data.Map as M
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import           Data.Text.Lazy.Encoding (encodeUtf8)
-import           Data.Text.Lazy.IO (hGetLine)
+import qualified Data.Text.Lazy.IO as LT
 import           Neovim hiding (err)
 import           Neovim.API.Text
 import           System.IO hiding (hGetLine)
@@ -43,18 +44,28 @@ spawnAgda buffer = do
       (proc "agda" ["--interaction-json"])
         { std_in = CreatePipe , std_out = CreatePipe }
   (c_in, c_out) <- liftIO newChan
+  ready <- liftIO $ newIORef True
   case (m_in, m_out) of
     (Just hin, Just hout) -> do
       liftIO $ do
         hSetBuffering hin NoBuffering
         hSetBuffering hout NoBuffering
 
-      void $ neovimAsync $ forever $ reportExceptions $ do
-        resp <- liftIO $ hGetLine hout
+      let whenReady act = liftIO $ do
+            -- Agda outputs "JSON> " when it is ready
+            -- We skip it, and set the ready flag
+            c <- hLookAhead hout
+            case c of
+              'J' -> replicateM_ 6 (hGetChar hout) >> act
+              _ -> pure ()
+
+      -- On the first load, we make ourselves ready before Agda tells us anything
+      void $ neovimAsync $ (whenReady (pure ()) >>) . forever $ reportExceptions $ do
+        whenReady $ atomicWriteIORef ready True
+        resp <- liftIO $ LT.hGetLine hout
         chan <- asks ce_stream
-        let resp' = dropPrefix "JSON> " resp
-        case eitherDecode @Response $ encodeUtf8 resp' of
-          _ | LT.null resp' -> pure ()
+        case eitherDecode @Response $ encodeUtf8 resp of
+          _ | LT.null resp -> pure ()
           Left err -> vim_report_error $ T.pack err
           Right res -> do
             case res of
@@ -64,9 +75,10 @@ spawnAgda buffer = do
 
       void $ neovimAsync $ liftIO $ forever $ do
         msg <- readChan c_out
+        atomicWriteIORef ready False
         hPutStrLn hin msg
 
-      pure $ Agda buffer c_in hdl
+      pure $ Agda buffer ready c_in hdl
     (_, _) -> error "can't start agda"
 
 
@@ -117,6 +129,7 @@ withAgda m = do
         , bs_goto_sites = mempty
         , bs_goals = AllGoalsWarnings [] [] [] []
         , bs_info_win = iw
+        , bs_code_map = mempty
         }
       m
 

@@ -9,6 +9,7 @@
     # See https://github.com/isovector/cornelis#agda-version
     agda.url = "github:agda/agda/4d36cb37f8bfb765339b808b13356d760aa6f0ec";
     agda.inputs.flake-utils.follows = "flake-utils";
+    agda.inputs.nixpkgs.follows = "nixpkgs";
     agda-stdlib = { url = "github:agda/agda-stdlib/experimental"; flake = false; };
   };
 
@@ -16,9 +17,13 @@
     let
       name = "cornelis";
       # Update `./.github/workflows/nix.yml` if changed.
-      # Build currently failing on `ghc902`.
-      ghcVersions = map (v: "ghc${v}") [ "8107" "902" "924" ];
-      defaultGhcVersion = "ghc8107";
+      # `ghc902` excluded due to build issues.
+      ghcVersions = map (v: "ghc${v}") [ "8107" "924" "944" ];
+      # Ensure resolver in `./stack.yaml` is in sync ith `defaultGhcVersion`.
+      defaultGhcVersion = "ghc924";
+      # We use `ghc924` as default rather than `ghc925` (which would match current GHC version of
+      # resolver) since `ghc924` is default version in `nixpkgs` and so we get benefits of binary
+      # cache.
     in
     {
       overlays = {

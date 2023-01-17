@@ -6,17 +6,6 @@ on:
       os:
         required: true
         type: string
-      global-stack-cache-dir:
-        required: false
-        type: string
-        default: ~/.stack
-      package-manager:
-        required: true
-        type: string
-      update-path-cmd:
-        required: false
-        type: string
-        default: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
 jobs:
   build:
@@ -27,36 +16,25 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Cache Stack dirs
+      - name: Cache Stack dirs (Linux/macOS)
+        if: runner.os != 'Windows'
+        uses: ./.github/template/stack-cache
+
+      # We set `key-always-unique` to "true" for Windows to ensure that Agda, which is build with
+      # Stack in the `test-windows` job, is added to cache. This reduces the number of times that
+      # Agda needs to be built and therefore significantly decreases average CI runtime on Windows.
+      - name: Cache Stack dirs (Windows)
+        if: runner.os == 'Windows'
         uses: ./.github/template/stack-cache
         with:
-          global-stack-dir: ${{ inputs.global-stack-cache-dir }}
+          key-always-unique: "true"
 
       - name: Build package and tests
         run: |
           stack test --no-run-tests
 
-  build-and-cache-agda:
-    needs: build
-
-    name: Build and cache Agda
-    runs-on: ${{ inputs.os }}
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Cache Stack dirs
-        uses: ./.github/template/stack-cache
-        with:
-          global-stack-dir: ${{ inputs.global-stack-cache-dir }}
-
-      - name: Build package
-        run: |
-          stack install Agda
-
   test:
-    needs: [ build, build-and-cache-agda ]
+    needs: [ build ]
 
     name: Test
     runs-on: ${{ inputs.os }}
@@ -65,31 +43,46 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Cache Stack dirs
+      - name: Cache Stack dirs (Linux/macOS)
+        if: runner.os != 'Windows'
+        uses: ./.github/template/stack-cache
+
+      # We set `key-always-unique` to "true" for Windows to ensure that Agda, which is build with
+      # Stack in the `test-windows` job, is added to cache. This reduces the number of times that
+      # Agda needs to be built and therefore significantly decreases average CI runtime on Windows.
+      - name: Cache Stack dirs (Windows)
+        if: runner.os == 'Windows'
         uses: ./.github/template/stack-cache
         with:
-          global-stack-dir: ${{ inputs.global-stack-cache-dir }}
+          key-always-unique: "true"
 
-      - name: Install test dependencies
+      # We use Nix to install test dependencies on Linux and macOS since it's much faster for Agda,
+      # and also reduces how much we need to cache with the `cache` action.
+      - name: Install Nix
+        if: runner.os != 'Windows'
+        uses: cachix/install-nix-action@v18
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install test dependencies (Windows)
+        if: runner.os == 'Windows'
         run: |
-          ${{ inputs.package-manager }} install neovim
+          choco install neovim
           stack install Agda
+          "$env:HOMEPATH\AppData\Roaming\local\bin" >> $env:GITHUB_PATH
+          "C:\tools\neovim\nvim-win64\bin" >> $env:GITHUB_PATH
 
-      - name: Update $PATH
+      - name: Create Neovim swap dirs
+        shell: bash
         run: |
-          ${{ inputs.update-path-cmd }}
-
-      - name: Create Neovim swap dirs (Linux/macOS)
-        if: ${{ !startsWith(inputs.os, 'windows') }}
-        run: |
-          mkdir -p ~/.local/share/nvim/swap
-          mkdir -p ~/.local/state/nvim/swap
-
-      - name: Create Neovim swap dirs (Windows)
-        if: ${{ startsWith(inputs.os, 'windows') }}
-        run: |
-          mkdir -p ~\AppData\Roaming\local\share\nvim\swap
-          mkdir -p ~\AppData\Roaming\local\state\nvim\swap
+          if [ $RUNNER_OS == "Windows" ]; then
+            mkdir -p ~/AppData/Roaming/local/share/nvim/swap
+            mkdir -p ~/AppData/Roaming/local/state/nvim/swap
+          else
+            mkdir -p ~/.local/share/nvim/swap
+            mkdir -p ~/.local/state/nvim/swap
+          fi
 
       # Tests can be flaky so we retry them a few times.
       - name: Run tests
@@ -98,5 +91,10 @@ jobs:
           timeout_minutes: 20
           max_attempts: 3
           retry_wait_seconds: 1
+          shell: bash
           command: |
-            stack test
+            if [ $RUNNER_OS = "Windows" ]; then
+             stack test
+            else
+              nix shell nixpkgs#agda nixpkgs#neovim -c stack test
+            fi

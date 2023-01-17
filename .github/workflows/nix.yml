@@ -12,9 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # See `ghcVersions` in `../../flake.nix`
-        # GHC 9.0.2 not included since package doesn't currently build.
-        ghc: ['8107', '924']
+        # Keep in sync with `ghcVersions` in `../../flake.nix`.
+        ghc: ['8107', '924', '944']
 
     name: Build package (ghc${{ matrix.ghc }})
     runs-on: ${{ inputs.os }}

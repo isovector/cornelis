@@ -95,6 +95,7 @@ buildInfoBuffer = do
   -- Setup things in the buffer
   void $ buffer_set_var b cornelisWindowVar $ ObjectBool True
   nvim_buf_set_option b "modifiable" $ ObjectBool False
+  nvim_buf_set_option b "filetype" $ ObjectString "agdainfo"
   pure $ InfoBuffer b
 
 
@@ -103,13 +104,15 @@ buildInfoBuffer = do
 buildInfoWindow :: InfoBuffer -> Window -> Neovim CornelisEnv Window
 buildInfoWindow (InfoBuffer split_buf) w = savingCurrentWindow $ do
   nvim_set_current_win w
+  max_height <-  asks $ T.pack . show . cc_max_height . ce_config
+  max_width <- asks $ T.pack . show . cc_max_width . ce_config
   asks (cc_split_location . ce_config) >>= \case
-    Vertical   -> vim_command "vsplit"
-    Horizontal -> vim_command "split"
-    OnLeft     -> vim_command "topleft vsplit"
-    OnRight    -> vim_command "botright vsplit"
-    OnTop      -> vim_command "topleft split"
-    OnBottom   -> vim_command "botright split"
+    Vertical   -> vim_command $ max_width <> " vsplit"
+    Horizontal -> vim_command $ max_height <> " split"
+    OnLeft     -> vim_command $ "topleft " <> max_width <> " vsplit"
+    OnRight    -> vim_command $ "botright " <> max_width <> " vsplit"
+    OnTop      -> vim_command $ "topleft " <> max_height <> " split"
+    OnBottom   -> vim_command $ "botright " <> max_height <> " split"
   split_win <- nvim_get_current_win
   nvim_win_set_buf split_win split_buf
 

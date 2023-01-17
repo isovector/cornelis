@@ -8,13 +8,14 @@ import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import           Neovim
 import           Neovim.API.Text
+import           Control.Monad ((<=<))
 
 
 ------------------------------------------------------------------------------
 -- | Attempt to get a variable from vim.
 getVar :: Text -> Neovim env (Maybe Object)
 getVar v
-  = catchNeovimException (fmap Just $ vim_get_var v)
+  = catchNeovimException (Just <$> vim_get_var v)
   $ const
   $ pure Nothing
 
@@ -33,6 +34,8 @@ getConfig
   = CornelisConfig
     <$> fmap (fromMaybe 31 . (objectToInt =<<))
         (getVar "cornelis_max_size")
-    <*> fmap (fromMaybe Horizontal . (readSplitLocation =<<) . fmap T.unpack . (objectToText =<<))
-        (getVarWithAlternatives ["cornelis_split_location", "cornelis_split_direction"])
+    <*> fmap (fromMaybe 31 . (objectToInt =<<))
+        (getVar "cornelis_max_width")
+    <*> (fromMaybe Horizontal . (>>= (readSplitLocation . T.unpack <=< objectToText)) <$>
+        getVarWithAlternatives ["cornelis_split_location", "cornelis_split_direction"])
 

@@ -310,10 +310,16 @@ successfully load subsequent files.
 
 ### Configuring Cornelis' Behavior
 
-The max size of the info window can be set via:
+The max height and width of the info window can be set via:
 
 ```viml
 let g:cornelis_max_size = 30
+```
+
+and
+
+```viml
+let g:cornelis_max_width = 40
 ```
 
 If you'd prefer your info window to appear somewhere else, you can set

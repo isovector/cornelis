@@ -103,6 +103,7 @@ readSplitLocation s = case fmap toLower s of
 
 data CornelisConfig = CornelisConfig
   { cc_max_height :: Int64
+  , cc_max_width :: Int64
   , cc_split_location :: SplitLocation
   }
   deriving (Show, Generic)

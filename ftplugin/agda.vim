@@ -41,7 +41,7 @@ setlocal formatoptions+=croql
 setlocal comments=sfl:{-,mb1:--,ex:-},:--
 setlocal commentstring=--\ %s
 
-setlocal iskeyword=@,!-~,^\,,^\(,^\),^\",^\',192-255
+setlocal iskeyword=@,!-~,^.,_,^\(,^\),^\",^\',192-255
 
 function InternalCornelisNotifyEditWrapper(bytes, buf, changedtick, srow, scol, boff, orow, ocol, olen, nrow, ncol, nlen)
   " Swallow errors when the plugin hasn't loaded yet.

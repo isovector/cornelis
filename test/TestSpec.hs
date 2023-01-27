@@ -116,9 +116,10 @@ spec = focus $ do
     questionToMeta b
 
   diffSpec "give" timeout "test/Hello.agda"
-        [ Swap "give = {! true !}" "give = true"
+        [ Swap "give = {! !}" "give = true"
         ] $ \w _ -> do
     goto w 37 11
+    pressKeys w "i true "
     give
 
   let elaborate_test rw changes row column =

@@ -21,21 +21,24 @@ import           Neovim.API.Text
 import Cornelis.Diff
 
 
-------------------------------------------------------------------------------
--- | Get the spanning interval of an interaction point. If we already have
--- highlighting information from vim, use the extmark for this goal, otherwise
--- using the interval that Agda knows about.
-getIpInterval :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv (AgdaInterval)
+getIpInterval :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv AgdaInterval
 getIpInterval b ip = do
-  Just vi <- getIpIntervalVim b ip
+  vi <- getIpIntervalVim b ip
   traverse (unvimify b) vi
 
-getIpIntervalVim :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv (Maybe VimInterval)
+getIpIntervalVim :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv VimInterval
 getIpIntervalVim b ip = do
   bn <- buffer_get_number b
   let ai = ip_interval' ip
   vi <- traverse (vimify b) ai
-  translateInterval bn vi
+  -- 'translateInterval' fails if the interval has a modification inside of it;
+  -- so we can cheat by turning our interval into two points, computing their
+  -- positions, and turning it back into an interval.
+  let vi_start = vi { iEnd = iStart vi }
+      vi_end   = vi { iStart = iEnd vi }
+  Just vi_start' <- translateInterval bn vi_start
+  Just vi_end' <- translateInterval bn vi_end
+  pure $ vi_start' { iEnd = iStart vi_end' }
 
 
 --------------------------------------------------------------------------------
@@ -124,7 +127,7 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
 -- | Get the contents of a goal.
 getGoalContents_maybe :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv (Maybe Text)
 getGoalContents_maybe b ip = do
-  Just int <- getIpIntervalVim b ip
+  int <- getIpIntervalVim b ip
   iv <- fmap T.strip $ getBufferInterval b int
   pure $ case iv of
     "?" -> Nothing

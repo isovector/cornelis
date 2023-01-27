@@ -337,7 +337,8 @@ doDebug _ str =
   case readMaybe str of
     Just DumpIPs ->
       withAgda $ withCurrentBuffer $ \b -> withBufferStuff b $ \bs -> do
-        traceMX "ips" $ bs_ips bs
+        ips' <- traverse (getIpInterval b) $ bs_ips bs
+        traceMX "ips" ips'
     Nothing ->
       vim_report_error $ T.pack $ "No matching debug command for " <> show str
 

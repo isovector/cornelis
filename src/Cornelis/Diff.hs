@@ -16,14 +16,14 @@ module Cornelis.Diff
   , Vallee(..)
   ) where
 
-import Data.IORef (atomicModifyIORef')
+import           Cornelis.Offsets
+import           Cornelis.Types
+import           Data.IORef (atomicModifyIORef')
 import qualified Data.Map as Map
-import Data.Tuple (swap)
-import DiffLoc (Replace(..), Colline(..), Vallee(..))
+import           Data.Tuple (swap)
+import           DiffLoc (Replace(..), Colline(..), Vallee(..))
 import qualified DiffLoc as D
-import Neovim
-import Cornelis.Offsets
-import Cornelis.Types
+import           Neovim
 
 -- | A general function for modifying Diffs, shared between the three functions below.
 modifyDiff :: BufferNum -> (Diff0 -> (Diff0, a)) -> Neovim CornelisEnv a

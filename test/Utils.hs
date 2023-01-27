@@ -26,29 +26,12 @@ import           System.IO.Temp (withSystemTempFile)
 import           Test.Hspec hiding (after, before)
 
 
--- data Diff a
---   = Insert a
---   | Delete a
---   | Modify a a
---   deriving (Eq, Ord, Show, Functor)
-
 isCopy :: Edit a -> Bool
 isCopy Copy{} = True
 isCopy _ = False
 
 diff :: Show a => Eq a => [a] -> [a] -> [Edit a]
 diff = ((filter (not . isCopy) . snd) .) . levenshtein @_ @_ @_ @Int
-  -- (snd .) . go
-  -- where
-  --   go ([]) as = (length as, fmap Insert as)
-  --   go bs [] = (length bs, fmap Delete bs)
-  --   go (b : bs) (a : as)
-  --     | b == a = go bs as
-  --     | otherwise = do
-  --         let x = traceShowId $ bimap (+1) (Delete b :) $ go bs (a : as)
-  --             y = traceShowId $ bimap (+1) (Insert a :) $ go (b : bs) as
-  --             z = traceShowId $ bimap (+1) (Modify b a :) $ go bs as
-  --         minimumBy (comparing fst) [z, x, y]
 
 
 differing :: Buffer -> Neovim env () -> Neovim env [Edit Text]
@@ -112,4 +95,10 @@ vimSpec name secs fp m = do
 
 goto :: Window -> Int -> Int -> Neovim env ()
 goto w row col = setWindowCursor w $ Pos (toOneIndexed row) (toOneIndexed col)
+
+pressKeys :: Window -> Text -> Neovim env ()
+pressKeys w t = do
+  vim_set_current_window w
+  vim_command $ "norm! " <> t
+
 

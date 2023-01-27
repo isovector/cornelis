@@ -34,7 +34,7 @@ foo? : Bool → Bool → Set
 foo? ?f = {! !}
 
 give : Bool
-give = {! true !}
+give = {! !}
 
 elaborate : Nat
 elaborate = {! 3 !}

@@ -338,7 +338,6 @@ doDebug _ str =
     Just DumpIPs ->
       withAgda $ withCurrentBuffer $ \b -> withBufferStuff b $ \bs -> do
         traceMX "ips" $ bs_ips bs
-        traceMX "ipexts" $ bs_ip_exts bs
     Nothing ->
       vim_report_error $ T.pack $ "No matching debug command for " <> show str
 

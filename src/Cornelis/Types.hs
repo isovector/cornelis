@@ -54,7 +54,6 @@ data Agda = Agda
 data BufferStuff = BufferStuff
   { bs_agda_proc  :: Agda
   , bs_ips        :: Map InteractionId (InteractionPoint Identity)
-  , bs_ip_exts    :: Map InteractionId Extmark
   , bs_goto_sites :: Map Extmark DefinitionSite
   , bs_goals      :: DisplayInfo
   , bs_info_win   :: InfoBuffer

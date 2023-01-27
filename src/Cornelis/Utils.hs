@@ -13,7 +13,6 @@ import           Control.Lens ((%~))
 import           Control.Monad.IO.Unlift (MonadUnliftIO(withRunInIO))
 import           Control.Monad.Reader (withReaderT)
 import           Control.Monad.State.Class
-import           Control.Monad.Trans.Resource (transResourceT)
 import           Cornelis.Types
 import qualified Data.Map as M
 import           Data.Maybe
@@ -77,4 +76,4 @@ withBufferStuff b f =
     Just bs -> f bs
 
 withLocalEnv :: env -> Neovim env a -> Neovim env' a
-withLocalEnv env (Neovim t) = Neovim . flip transResourceT t $ withReaderT (retypeConfig env)
+withLocalEnv env (Neovim t) = Neovim $ flip withReaderT t $ retypeConfig env

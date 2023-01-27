@@ -82,14 +82,11 @@ respond b ClearHighlighting = do
   -- delete what we know about goto positions and stored extmarks
   modifyBufferStuff b $ \bs -> bs
     & #bs_goto_sites .~ mempty
-    & #bs_ip_exts .~ mempty
   -- remove the extmarks and highlighting
   ns <- asks ce_namespace
   nvim_buf_clear_namespace b ns 0 (-1)
 respond b (HighlightingInfo _remove hl) = do
-  extmap <- highlightBuffer b hl
-  modifyBufferStuff b $ \bs -> bs
-    & #bs_ip_exts <>~ M.compose extmap (fmap ip_interval' $ bs_ips $ bs)
+  void $ highlightBuffer b hl
 respond _ (RunningInfo _ x) = reportInfo x
 respond _ (ClearRunningInfo) = reportInfo ""
 respond b (JumpToError _ pos) = do

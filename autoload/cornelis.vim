@@ -6,7 +6,7 @@ function! cornelis#prompt_input()
   endif
 endfunction
 
-function! cornelis#bind_input(key, result)
+function! cornelis#standard_bind_input(key, result)
     let l:cornelis_agda_prefix = get(g:, "cornelis_agda_prefix", "<localleader>")
     let str = "<buffer> " . l:cornelis_agda_prefix . substitute(a:key, "|", "<bar>", "g") . " " . a:result
     exec "silent inoremap" . str
@@ -26,3 +26,12 @@ function! cornelis#bind_input(key, result)
 
     call extend(g:agda_input[a:key[0:0]], {rest : [a:result, a:result]})
 endfunction
+
+function! cornelis#bind_input(key, result)
+  if exists("g:cornelis_bind_input_hook")
+    call nvim_call_function(g:cornelis_bind_input_hook, [a:key, a:result])
+  else
+    call cornelis#standard_bind_input(a:key, a:result)
+  endif
+endfunction
+

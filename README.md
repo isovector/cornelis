@@ -135,6 +135,23 @@ call cornelis#bind_input("nat", "ℕ")
 will add `<LocalLeader>nat` as an input remapping for `ℕ`.
 
 
+#### Custom Hooks
+
+If you'd prefer to manage agda-input entirely on your own (perhaps in a snippet
+system), you can set the following:
+
+```viml
+function! MyCustomHook(key, character)
+  " do something
+endfunction
+
+let g:cornelis_bind_input_hook = "MyCustomHook"
+```
+
+You can invoke `cornelis#standard_bind_input` with the same arguments if you'd
+like to run your hook in addition to the standard one.
+
+
 ### Text Objects
 
 Use the `iz`/`az` text objects to operate on text between `⟨` and `⟩`. Somewhat

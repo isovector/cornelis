@@ -95,13 +95,16 @@ getIndent b l = do
 getBufferLine :: Buffer -> LineNumber 'ZeroIndexed -> Neovim env Text
 getBufferLine b l = buffer_get_line b (fromZeroIndexed l)
 
-getBufferInterval :: Buffer -> Interval VimPos -> Neovim env Text
-getBufferInterval b (Interval (Pos sl sc) (Pos el ec)) = do
+getBufferInterval :: Buffer -> Interval AgdaPos -> Neovim env Text
+getBufferInterval b (Interval start end) = do
+    Pos sl _ <- vimify b start
+    Pos el _ <- vimify b end
+
     -- nvim_buf_get_lines is exclusive in its end line, thus the plus 1
     ls <- fmap toList $ nvim_buf_get_lines b (from0 sl) (from0 el + 1) False
     pure $ T.unlines $
-      ls & _last %~ T.take (fromIntegral $ from0 ec)
-         & _head %~ T.drop (fromIntegral $ from0 sc)
+      ls & _last %~ T.take (from1 (p_col end))
+         & _head %~ T.drop (from1 (p_col start))
   where
     from0 = fromZeroIndexed
     from1 = fromZeroIndexed . zeroIndex  -- add 1 to a one-indexed arg before passing it to take/drop

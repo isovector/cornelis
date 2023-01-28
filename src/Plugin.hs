@@ -337,6 +337,8 @@ doDebug _ str =
   case readMaybe str of
     Just DumpIPs ->
       withAgda $ withCurrentBuffer $ \b -> withBufferStuff b $ \bs -> do
+        d <- gets cs_diff
+        traceMX "d" d
         ips' <- traverse (getIpInterval b) $ bs_ips bs
         traceMX "ips" ips'
     Nothing ->

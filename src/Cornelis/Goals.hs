@@ -107,7 +107,7 @@ getGoalAtPos b p = do
       int <- getIpInterval b ip
       pure $ case containsPoint int p of
         False -> mempty
-        True -> pure $ ip { ip_intervalM = Identity int }
+        True -> pure ip -- { ip_intervalM = Identity int }
 
 
 ------------------------------------------------------------------------------
@@ -127,7 +127,7 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
 -- | Get the contents of a goal.
 getGoalContents_maybe :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv (Maybe Text)
 getGoalContents_maybe b ip = do
-  int <- getIpIntervalVim b ip
+  int <- getIpInterval b ip
   iv <- fmap T.strip $ getBufferInterval b int
   pure $ case iv of
     "?" -> Nothing

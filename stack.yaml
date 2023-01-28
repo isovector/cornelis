@@ -6,8 +6,10 @@ packages:
 - .
 
 extra-deps:
-- diff-loc-0.1.0.0
+- ../diff-loc
 - levenshtein-0.2.1.0
+- ../nvim-hs
+
 
 nix:
   packages: [zlib]

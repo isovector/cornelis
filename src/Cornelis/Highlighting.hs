@@ -133,8 +133,8 @@ setHighlight b i hl = do
   bn <- buffer_get_number b
   mi' <- translateInterval bn i
   case mi' of
-    Just i' -> setHighlight' b i' hl
-    Nothing -> pure Nothing
+    Just (True, i') -> setHighlight' b i' hl
+    _ -> pure Nothing
 
 setHighlight'
     :: Buffer

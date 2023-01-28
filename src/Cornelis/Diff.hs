@@ -60,11 +60,11 @@ recordUpdate buf r = modifyDiff buf $ \d -> (D.addDiff r d, ())
 -- | Given an interval coming from Agda (a pair of start and end positions),
 -- find the corresponding interval in the current buffer.
 -- If an edit touches the interval, return Nothing.
-translateInterval :: BufferNum -> Interval VimPos -> Neovim CornelisEnv (Maybe (Interval VimPos))
+translateInterval :: BufferNum -> Interval VimPos -> Neovim CornelisEnv (Maybe (Bool, Interval VimPos))
 translateInterval buf sp = modifyDiff buf $ \d -> (d, translate d)
   where
-    translate :: Diff0 -> Maybe (Interval VimPos)
-    translate d = fmap toInterval . D.mapDiff d =<< fromInterval sp
+    translate :: Diff0 -> Maybe (Bool, Interval VimPos)
+    translate d = fmap toInterval . D.mapDiff d <$> fromInterval sp
 
 -- | Convert a Cornelis interval (pair of positions) to a diff-loc interval
 -- (start position and a vector towards the end position). This is Nothing

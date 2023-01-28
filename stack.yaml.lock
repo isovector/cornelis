@@ -5,13 +5,6 @@
 
 packages:
 - completed:
-    hackage: diff-loc-0.1.0.0@sha256:235a8e974da0a40f390186ff406200d99d3f3513a70eb24f28bca21ed0bacccf,1097
-    pantry-tree:
-      size: 756
-      sha256: 96f1b6135db04bac3491cc40d168c4fa62bd6591e0bffd2976f305d244fd06ba
-  original:
-    hackage: diff-loc-0.1.0.0
-- completed:
     hackage: levenshtein-0.2.1.0@sha256:3378358365f26dec549289f741338cc44470aef3f9de85e662b2646fe6b4fb47,2123
     pantry-tree:
       size: 527

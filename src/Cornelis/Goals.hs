@@ -36,8 +36,8 @@ getIpIntervalVim b ip = do
   -- positions, and turning it back into an interval.
   let vi_start = vi { iEnd = iStart vi }
       vi_end   = vi { iStart = iEnd vi }
-  Just vi_start' <- translateInterval bn vi_start
-  Just vi_end' <- translateInterval bn vi_end
+  Just (_, vi_start') <- translateInterval bn vi_start
+  Just (_, vi_end') <- translateInterval bn vi_end
   pure $ vi_start' { iEnd = iStart vi_end' }
 
 

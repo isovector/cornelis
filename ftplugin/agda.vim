@@ -1,3 +1,11 @@
+setlocal formatoptions-=t
+setlocal formatoptions+=croql
+
+setlocal comments=sfl:{-,mb1:--,ex:-},:--
+setlocal commentstring=--\ %s
+
+setlocal iskeyword=@,!-~,^.,_,^\(,^\),^\",^\',192-255
+
 if exists("b:cornelis_ftplugin")
   finish
 endif
@@ -34,14 +42,6 @@ call textobj#user#plugin('cornelis', {
 \     'select-i': 'ih',
 \   },
 \ })
-
-setlocal formatoptions-=t
-setlocal formatoptions+=croql
-
-setlocal comments=sfl:{-,mb1:--,ex:-},:--
-setlocal commentstring=--\ %s
-
-setlocal iskeyword=@,!-~,^.,_,^\(,^\),^\",^\',192-255
 
 function InternalCornelisNotifyEditWrapper(bytes, buf, changedtick, srow, scol, boff, orow, ocol, olen, nrow, ncol, nlen)
   " Swallow errors when the plugin hasn't loaded yet.

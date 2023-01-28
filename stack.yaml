@@ -8,6 +8,9 @@ packages:
 extra-deps:
 - diff-loc-0.1.0.0
 - levenshtein-0.2.1.0
+- git: https://github.com/isovector/nvim-hs.git
+  commit: 41aa5159f58e66a7f12f9f9b47e0d0980b817d6f
+
 
 nix:
   packages: [zlib]

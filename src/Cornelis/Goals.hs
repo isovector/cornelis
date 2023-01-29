@@ -19,18 +19,18 @@ import           Data.Traversable (for)
 import           Neovim
 import           Neovim.API.Text
 import Cornelis.Diff
+import Cornelis.Debug
 
 
-getIpInterval :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv AgdaInterval
+getIpInterval :: Buffer -> IP-> Neovim CornelisEnv AgdaInterval
 getIpInterval b ip = do
-  vi <- getIpIntervalVim b ip
+  vi <- getIpIntervalVim b (snd <$> ip)
   traverse (unvimify b) vi
 
-getIpIntervalVim :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv VimInterval
+getIpIntervalVim :: Buffer -> InteractionPoint Identity VimInterval -> Neovim CornelisEnv VimInterval
 getIpIntervalVim b ip = do
   bn <- buffer_get_number b
-  let ai = ip_interval' ip
-  vi <- traverse (vimify b) ai
+  let vi = ip_interval' ip
   -- 'translateInterval' fails if the interval has a modification inside of it;
   -- so we can cheat by turning our interval into two points, computing their
   -- positions, and turning it back into an interval.
@@ -89,7 +89,7 @@ nextGoal =
 ------------------------------------------------------------------------------
 -- | Uses highlighting extmarks to determine what a hole is; since the user
 -- might have typed inside of a {! !} goal since they last saved.
-getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe (InteractionPoint Identity))
+getGoalAtCursor :: Neovim CornelisEnv (Buffer, Maybe IP)
 getGoalAtCursor = do
   w <- nvim_get_current_win
   b <- window_get_buffer w
@@ -100,7 +100,7 @@ getGoalAtCursor = do
 getGoalAtPos
     :: Buffer
     -> AgdaPos
-    -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
+    -> Neovim CornelisEnv (Maybe IP)
 getGoalAtPos b p = do
   fmap (getFirst . fold) $ withBufferStuff b $ \bs -> do
     for (bs_ips bs) $ \ip -> do
@@ -114,7 +114,7 @@ getGoalAtPos b p = do
 -- | Run a continuation on a goal at the current position in the current
 -- buffer, if it exists.
 withGoalAtCursor
-    :: (Buffer -> InteractionPoint Identity -> Neovim CornelisEnv a)
+    :: (Buffer -> IP -> Neovim CornelisEnv a)
     -> Neovim CornelisEnv (Maybe a)
 withGoalAtCursor f = getGoalAtCursor >>= \case
    (_, Nothing) -> do
@@ -125,7 +125,7 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
 
 ------------------------------------------------------------------------------
 -- | Get the contents of a goal.
-getGoalContents_maybe :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv (Maybe Text)
+getGoalContents_maybe :: Buffer -> IP -> Neovim CornelisEnv (Maybe Text)
 getGoalContents_maybe b ip = do
   int <- getIpInterval b ip
   iv <- fmap T.strip $ getBufferInterval b int
@@ -137,7 +137,7 @@ getGoalContents_maybe b ip = do
 
 ------------------------------------------------------------------------------
 -- | Like 'getGoalContents_maybe'.
-getGoalContents :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv Text
+getGoalContents :: Buffer -> IP -> Neovim CornelisEnv Text
 getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 
 

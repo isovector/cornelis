@@ -87,7 +87,7 @@ questionToMeta :: Buffer -> Neovim CornelisEnv ()
 questionToMeta b = withBufferStuff b $ \bs -> do
   let ips = toList $ bs_ips bs
 
-  res <- fmap fold $ for (sortOn (Down . iStart . ip_interval') ips) $ \ip -> do
+  res <- fmap fold $ for (sortOn (Down . iStart . ip_interval'') ips) $ \ip -> do
     int <- getIpInterval b ip
     getGoalContents_maybe b ip >>= \case
       -- We only don't have a goal contents if we are a ? goal
@@ -96,7 +96,12 @@ questionToMeta b = withBufferStuff b $ \bs -> do
         let int' = int { iEnd = (iStart int) `addCol` Offset 5 }
         void $ highlightInterval b int' Todo
         modifyBufferStuff b $
-          #bs_ips %~ M.insert (ip_id ip) (ip & #ip_intervalM . #_Identity .~ int')
+          #bs_ips %~ M.insert (ip_id ip) (ip & #ip_intervalM . #_Identity .~ (int', undefined))
+        -- TODO: remove undefined.
+        -- This is currently useless anyway because we reload afterwards anyway.
+        -- we would need to somehow vimify int' wrt the buffer AT THE TIME OF THE LAST LOAD
+        -- AND ALSO everything afterwards gets shifted so doing the right thing
+        -- without just reloading might be nontrivial.
 
         pure $ Any True
       Just _ -> pure $ Any False
@@ -142,7 +147,7 @@ solveOne _ ms = withNormalizationMode ms $ \mode ->
       Cmd_solveOne
         mode
         (ip_id ip)
-        (mkAbsPathRnage fp $ ip_interval' ip)
+        (mkAbsPathRnage fp $ ip_interval'' ip)
         ""
 
 autoOne :: CommandArguments -> Neovim CornelisEnv ()
@@ -153,7 +158,7 @@ autoOne _ = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   flip runIOTCM agda $
     Cmd_autoOne
       (ip_id ip)
-      (mkAbsPathRnage fp $ ip_interval' ip)
+      (mkAbsPathRnage fp $ ip_interval'' ip)
       (T.unpack t)
 
 withNormalizationMode :: Maybe String -> (Rewrite -> Neovim e ()) -> Neovim e ()
@@ -182,7 +187,7 @@ typeContext _ ms = withNormalizationMode ms $ \mode ->
       Cmd_goal_type_context
         mode
         (ip_id goal)
-        (mkAbsPathRnage fp $ ip_interval' goal)
+        (mkAbsPathRnage fp $ ip_interval'' goal)
         ""
 
 typeContextInfer :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
@@ -195,7 +200,7 @@ typeContextInfer _ ms = withNormalizationMode ms $ \mode ->
       $ Cmd_goal_type_context_infer
           mode
           (ip_id ip)
-          (mkAbsPathRnage fp $ ip_interval' ip)
+          (mkAbsPathRnage fp $ ip_interval'' ip)
       $ T.unpack contents
 
 doRefine :: CommandArguments -> Neovim CornelisEnv ()
@@ -244,7 +249,7 @@ elaborate mode = withAgda $ void $ withGoalAtCursor $ \b ip -> do
     $ Cmd_elaborate_give
         mode
         (ip_id ip)
-        (mkAbsPathRnage fp $ ip_interval' ip)
+        (mkAbsPathRnage fp $ ip_interval'' ip)
     $ T.unpack t
 
 
@@ -275,7 +280,7 @@ doNormalize _ ms = withComputeMode ms $ \mode ->
               $ Cmd_compute
                   mode
                   (ip_id ip)
-                  (mkAbsPathRnage fp $ ip_interval' ip)
+                  (mkAbsPathRnage fp $ ip_interval'' ip)
               $ T.unpack t
 
 helperFunc :: Rewrite -> Text -> Neovim CornelisEnv ()
@@ -287,7 +292,7 @@ helperFunc mode expr = do
       $ Cmd_helper_function
           mode
           (ip_id ip)
-          (mkAbsPathRnage fp $ ip_interval' ip)
+          (mkAbsPathRnage fp $ ip_interval'' ip)
       $ T.unpack expr
 
 doHelperFunc :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
@@ -310,7 +315,7 @@ caseSplit thing = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   flip runIOTCM agda
     $ Cmd_make_case
         (ip_id ip)
-        (mkAbsPathRnage fp $ ip_interval' ip)
+        (mkAbsPathRnage fp $ ip_interval'' ip)
     $ T.unpack thing
 
 doQuestionToMeta :: CommandArguments -> Neovim CornelisEnv ()

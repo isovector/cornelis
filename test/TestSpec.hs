@@ -162,3 +162,11 @@ spec = focus $ do
     goto w 43 16
     incNextDigitSeq
 
+  vimSpec "should infer type of local variable" timeout "test/Hello.agda" $ \w b -> do
+    withBufferStuff b $ \bs -> do
+        goto w 46 14
+        inferType AsIs
+        liftIO $ threadDelay 5e5
+        res <- buffer_get_lines (iw_buffer $ bs_info_win bs) vimFirstLine vimLastLine False
+        liftIO $ V.toList res `shouldContain` ["Inferred Type: Bool"]
+

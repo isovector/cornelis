@@ -42,3 +42,5 @@ elaborate = {! 3 !}
 sub₀and-super⁹ : Nat
 sub₀and-super⁹ = 15
 
+infer : Bool → Bool → Bool
+infer x = {! x !}

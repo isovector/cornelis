@@ -23,7 +23,7 @@ module Cornelis.Types
 import Control.Concurrent.Chan.Unagi (InChan)
 import Control.Monad.State.Class
 import Cornelis.Debug
-import Cornelis.Offsets (Pos(..), Interval(..), AgdaIndex, AgdaPos, AgdaInterval, VimIndex, LineNumber, Indexing(..))
+import Cornelis.Offsets (Pos(..), Interval(..), AgdaIndex, AgdaPos, AgdaInterval, VimIndex, VimInterval, LineNumber, Indexing(..))
 import Cornelis.Types.Agda (InteractionId)
 import Data.Aeson hiding (Error)
 import Data.Char (toLower)
@@ -53,7 +53,7 @@ data Agda = Agda
 
 data BufferStuff = BufferStuff
   { bs_agda_proc  :: Agda
-  , bs_ips        :: Map InteractionId (InteractionPoint Identity)
+  , bs_ips        :: Map InteractionId IP
   , bs_goto_sites :: Map Extmark DefinitionSite
   , bs_goals      :: DisplayInfo
   , bs_info_win   :: InfoBuffer
@@ -141,8 +141,8 @@ data Response
     , status_showImplicits :: Bool
     }
   | JumpToError FilePath AgdaIndex
-  | InteractionPoints [InteractionPoint Maybe]
-  | GiveAction Text (InteractionPoint (Const ()))
+  | InteractionPoints [InteractionPoint Maybe AgdaInterval]
+  | GiveAction Text (InteractionPoint (Const ()) AgdaInterval)
   | MakeCase MakeCase
   | SolveAll [Solution]
   | Unknown Text Value
@@ -175,7 +175,7 @@ instance FromJSON Highlight where
       <*> fmap (!! 1) (obj .: "range")
 
 data MakeCase
-  = RegularCase MakeCaseVariant [Text] (InteractionPoint Identity)
+  = RegularCase MakeCaseVariant [Text] (InteractionPoint Identity AgdaInterval)
   deriving (Eq, Ord, Show, Generic)
 
 data MakeCaseVariant = Function | ExtendedLambda
@@ -193,19 +193,27 @@ data Solution = Solution
   }
   deriving (Eq, Ord, Show)
 
-data InteractionPoint f = InteractionPoint
+data InteractionPoint f i = InteractionPoint
   { ip_id :: InteractionId
-  , ip_intervalM :: f AgdaInterval
+  , ip_intervalM :: f i
   } deriving Generic
 
-deriving instance Eq (f AgdaInterval) => Eq (InteractionPoint f)
-deriving instance Ord (f AgdaInterval) => Ord (InteractionPoint f)
-deriving instance Show (f AgdaInterval) => Show (InteractionPoint f)
+deriving instance Eq (f i) => Eq (InteractionPoint f i)
+deriving instance Ord (f i) => Ord (InteractionPoint f i)
+deriving instance Show (f i) => Show (InteractionPoint f i)
+deriving instance Functor f => Functor (InteractionPoint f)
+deriving instance Foldable f => Foldable (InteractionPoint f)
+deriving instance Traversable f => Traversable (InteractionPoint f)
 
-ip_interval' :: InteractionPoint Identity -> AgdaInterval
+type IP = InteractionPoint Identity (AgdaInterval, VimInterval)
+
+ip_interval' :: InteractionPoint Identity i -> i
 ip_interval' (InteractionPoint _ (Identity i)) = i
 
-sequenceInteractionPoint :: Applicative f => InteractionPoint f -> f (InteractionPoint Identity)
+ip_interval'' :: IP -> AgdaInterval
+ip_interval'' = fst . ip_interval'
+
+sequenceInteractionPoint :: Applicative f => InteractionPoint f i -> f (InteractionPoint Identity i)
 sequenceInteractionPoint (InteractionPoint n f) = InteractionPoint <$> pure n <*> fmap Identity f
 
 
@@ -227,15 +235,15 @@ instance FromJSON AgdaPos' where
   parseJSON = withObject "Position" $ \obj -> do
     AgdaPos <$> (Pos <$> obj .: "line" <*> obj .: "col")
 
-instance FromJSON (InteractionPoint Maybe) where
+instance FromJSON (InteractionPoint Maybe AgdaInterval) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> fmap listToMaybe (obj .: "range")
 
-instance FromJSON (InteractionPoint Identity) where
+instance FromJSON (InteractionPoint Identity AgdaInterval) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> fmap head (obj .: "range")
 
-instance FromJSON (InteractionPoint (Const ())) where
+instance FromJSON (InteractionPoint (Const ()) AgdaInterval) where
   parseJSON = withObject "InteractionPoint" $ \obj -> do
     InteractionPoint <$> obj .: "id" <*> pure (Const ())
 
@@ -285,13 +293,13 @@ instance FromJSON Message where
 
 data DisplayInfo
   = AllGoalsWarnings
-      { di_all_visible :: [GoalInfo (InteractionPoint Identity)]
+      { di_all_visible :: [GoalInfo (InteractionPoint Identity AgdaInterval)]
       , di_all_invisible :: [GoalInfo NamedPoint]
       , di_errors :: [Message]
       , di_warnings :: [Message]
       }
   | GoalSpecific
-      { di_ips :: InteractionPoint Identity
+      { di_ips :: InteractionPoint Identity AgdaInterval
       , di_in_scope :: [InScope]
       , di_type :: Type
       , di_type_aux :: Maybe Type

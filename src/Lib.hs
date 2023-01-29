@@ -32,11 +32,14 @@ import           Neovim.API.Text
 import           Neovim.Plugin (CommandOption(CmdComplete))
 import           Plugin
 
+-- TODO: we need to translate intervals to the present before vimifying
+outdatedVimifyInterval :: Buffer -> AgdaInterval -> Neovim CornelisEnv (AgdaInterval, VimInterval)
+outdatedVimifyInterval b i = (i ,) <$> traverse (vimify b) i
 
 getInteractionPoint
     :: Buffer
     -> InteractionId
-    -> Neovim CornelisEnv (Maybe (InteractionPoint Identity))
+    -> Neovim CornelisEnv (Maybe IP)
 getInteractionPoint b i = gets $ preview $ #cs_buffers . ix b . #bs_ips . ix i
 
 
@@ -54,7 +57,7 @@ respond b (DisplayInfo dp) = do
   goalWindow b dp
 -- Update the buffer's interaction points map
 respond b (InteractionPoints ips) = do
-  let ips' = mapMaybe sequenceInteractionPoint ips
+  ips' <- traverse (traverse (outdatedVimifyInterval b)) (mapMaybe sequenceInteractionPoint ips)
   modifyBufferStuff b $ #bs_ips .~ (M.fromList $ fmap (ip_id &&& id) ips')
 -- Replace a function clause
 respond b (MakeCase mkcase) = do
@@ -102,7 +105,7 @@ respond _ (Unknown k _) = reportError k
 
 doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
 doMakeCase b (RegularCase Function clauses ip) = do
-  int' <- getIpInterval b ip
+  int' <- getIpInterval b =<< traverse (outdatedVimifyInterval b) ip
   let int = int' & #iStart . #p_col .~ toOneIndexed @Int 1
   ins <- getIndent b (zeroIndex (p_line (iStart int)))
   replaceInterval b int
@@ -117,7 +120,7 @@ doMakeCase b (RegularCase ExtendedLambda clauses ip) = do
       reportError
         "Unable to extend a lambda without having a window that contains the modified buffer. This is a limitation in cornelis."
     Just w -> do
-      int' <- getIpInterval b ip
+      int' <- getIpInterval b =<< traverse (outdatedVimifyInterval b) ip
       Interval start end
         <- getLambdaClause w b (int' & #iStart . #p_col %~ (.+ Offset (- 1)))
            -- Subtract one so we are outside of a {! !} goal and the i} movement

@@ -19,6 +19,7 @@ import qualified Data.Text as T
 import           Data.Traversable (for)
 import           Neovim
 import           Neovim.API.Text
+import           Neovim.User.Input (input)
 
 
 ------------------------------------------------------------------------------
@@ -115,6 +116,37 @@ withGoalAtCursor f = getGoalAtCursor >>= \case
      reportInfo "No goal at cursor"
      pure Nothing
    (b, Just ip) -> fmap Just $ f b ip
+
+------------------------------------------------------------------------------
+-- | Run the first continuation on the goal at the current position,
+-- otherwise run the second continuation.
+--
+-- If there is a non-empty hole, provide its content to the first continuation.
+-- If the hole is empty, prompt for input and provide that.
+--
+-- If there is no goal, prompt the user for input and run the second continuation.
+withGoalContentsOrPrompt
+    :: String
+    -- ^ Text to print when prompting the user for input
+    -> (InteractionPoint Identity -> String -> Neovim CornelisEnv a)
+    -- ^ Continuation to run on goal, with hole contents
+    -> (String -> Neovim CornelisEnv a)
+    -- ^ Continuation to run on user input if there's no goal here
+    -> Neovim CornelisEnv a
+withGoalContentsOrPrompt prompt_str on_goal on_no_goal = getGoalAtCursor >>= \case
+    (_, Nothing) ->
+        -- If there's no goal here, run `on_no_goal` on user input.
+        prompt >>= on_no_goal
+    (b, Just ip) -> do
+        content <- getGoalContents b ip
+        -- If there is a goal under the cursor, but it's contents
+        -- are empty, prompt the user for input.  Otherwise, unpack
+        -- the hole contents are provide that.
+        if T.null content
+            then prompt >>= on_goal ip
+            else on_goal ip (T.unpack content)
+    where
+        prompt = input prompt_str Nothing Nothing
 
 
 ------------------------------------------------------------------------------

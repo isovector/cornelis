@@ -120,6 +120,8 @@ prettyGoals (HelperFunction sig) =
     , mempty
     , annotate Comment $ parens "copied to \" register"
     ] id
+prettyGoals (InferredType ty) =
+  annotate Title "Inferred Type:" <+> prettyType ty
 prettyGoals (WhyInScope msg) = pretty msg
 prettyGoals (NormalForm expr) = pretty expr
 prettyGoals (DisplayError err) = annotate Error $ pretty err

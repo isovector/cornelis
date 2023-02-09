@@ -172,6 +172,7 @@ getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
 replaceQuestion :: Text -> Text
 replaceQuestion = T.unwords . fmap go . T.words
   where
+    go "(?" = "({! !}"
     go "?" = "{! !}"
     go x   =
       case T.dropWhileEnd (== ')') x of

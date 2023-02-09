@@ -95,6 +95,7 @@ dropPrefix pref msg
 runIOTCM :: Interaction -> Agda -> Neovim env ()
 runIOTCM i agda = do
   iotcm <- buildIOTCM i $ a_buffer agda
+  -- liftIO $ appendFile "/tmp/agda.spy" $ show iotcm
   liftIO $ writeChan (a_req agda) (show iotcm)
 
 

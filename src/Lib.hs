@@ -93,13 +93,19 @@ respond b (HighlightingInfo _remove hl) = do
 respond _ (RunningInfo _ x) = reportInfo x
 respond _ (ClearRunningInfo) = reportInfo ""
 respond b (JumpToError _ pos) = do
-  buf_lines <- nvim_buf_get_lines b 0 (-1) True
-  let li = getLineIntervals buf_lines
-  case lookupPoint li pos of
-    Nothing -> reportError "invalid error report from Agda"
-    Just (Pos l c) -> do
-      ws <- fmap listToMaybe $ windowsForBuffer b
-      for_ ws $ flip window_set_cursor (fromOneIndexed (oneIndex l), fromZeroIndexed c)
+  -- HACK(sandy): See #113. Agda reports error positions in sent messages
+  -- relative to the *bytes* attached to the sent interval. But we can't easily
+  -- get this when we send intervals. So instead, we just don't jump backwards
+  -- if the absolute position is small, because this is indicative that it is
+  -- actually a relative position.
+  when (fromOneIndexed @Int pos >= 50) $ do
+    buf_lines <- nvim_buf_get_lines b 0 (-1) True
+    let li = getLineIntervals buf_lines
+    case lookupPoint li pos of
+      Nothing -> reportError "invalid error report from Agda"
+      Just (Pos l c) -> do
+        ws <- fmap listToMaybe $ windowsForBuffer b
+        for_ ws $ flip window_set_cursor (fromOneIndexed (oneIndex l), fromZeroIndexed c)
 respond _ Status{} = pure ()
 respond _ (Unknown k _) = reportError k
 

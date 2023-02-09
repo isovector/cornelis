@@ -18,6 +18,17 @@ packages:
       sha256: 3e434189fe6cb6eaf1a995f913fb9884c05f0e57b4e3a449eb455c42a4992232
   original:
     hackage: levenshtein-0.2.1.0
+- completed:
+    name: nvim-hs
+    version: 2.3.2.1
+    git: https://github.com/isovector/nvim-hs.git
+    pantry-tree:
+      size: 4352
+      sha256: 6ccc9cd15e7ccf3c29df6e0821f1ea25d714fed24f6254cacb730e10d368477b
+    commit: 41aa5159f58e66a7f12f9f9b47e0d0980b817d6f
+  original:
+    git: https://github.com/isovector/nvim-hs.git
+    commit: 41aa5159f58e66a7f12f9f9b47e0d0980b817d6f
 snapshots:
 - completed:
     size: 649315

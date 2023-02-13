@@ -11,6 +11,11 @@
     agda.inputs.flake-utils.follows = "flake-utils";
     agda.inputs.nixpkgs.follows = "nixpkgs";
     agda-stdlib = { url = "github:agda/agda-stdlib/experimental"; flake = false; };
+
+    # TODO: Remove when `nvim-hs` hits version >= 2.3.2.2 in `nixpkgs`.
+    # https://search.nixos.org/packages?channel=unstable&query=nvim-hs
+    nvim-hs-source.url = "github:neovimhaskell/nvim-hs/eaf826d4156b0281ef7ce9dec35ba720b5c45f09";
+    nvim-hs-source.flake = false;
   };
 
   outputs = { self, nixpkgs, ... }@inputs:
@@ -31,7 +36,14 @@
           haskell = prev.haskell // {
             packageOverrides = final.lib.composeExtensions
               prev.haskell.packageOverrides
-              (hfinal: _: { ${name} = hfinal.callCabal2nix name ./. { }; });
+              (hfinal: hprev: {
+                # TODO: Remove when `nvim-hs` hits version >= 2.3.2.2 in `nixpkgs`.
+                # https://search.nixos.org/packages?channel=unstable&query=nvim-hs
+                nvim-hs = final.haskell.lib.overrideSrc hprev.nvim-hs {
+                  src = inputs.nvim-hs-source;
+                };
+                ${name} = hfinal.callCabal2nix name ./. { };
+              });
           };
 
           ${name} = final.haskell.packages.${defaultGhcVersion}.${name};

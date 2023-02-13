@@ -88,13 +88,31 @@
         "type": "github"
       }
     },
+    "nvim-hs-source": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1675633002,
+        "narHash": "sha256-+oloouRfR0vexob6z7U9t+pHqt2qCE810JiGKb3m6NQ=",
+        "owner": "neovimhaskell",
+        "repo": "nvim-hs",
+        "rev": "eaf826d4156b0281ef7ce9dec35ba720b5c45f09",
+        "type": "github"
+      },
+      "original": {
+        "owner": "neovimhaskell",
+        "repo": "nvim-hs",
+        "rev": "eaf826d4156b0281ef7ce9dec35ba720b5c45f09",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "agda": "agda",
         "agda-stdlib": "agda-stdlib",
         "flake-compat": "flake-compat",
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "nvim-hs-source": "nvim-hs-source"
       }
     }
   },

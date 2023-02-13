@@ -7,31 +7,31 @@ packages:
 - completed:
     hackage: diff-loc-0.1.0.0@sha256:235a8e974da0a40f390186ff406200d99d3f3513a70eb24f28bca21ed0bacccf,1097
     pantry-tree:
-      size: 756
       sha256: 96f1b6135db04bac3491cc40d168c4fa62bd6591e0bffd2976f305d244fd06ba
+      size: 756
   original:
     hackage: diff-loc-0.1.0.0
 - completed:
     hackage: levenshtein-0.2.1.0@sha256:3378358365f26dec549289f741338cc44470aef3f9de85e662b2646fe6b4fb47,2123
     pantry-tree:
-      size: 527
       sha256: 3e434189fe6cb6eaf1a995f913fb9884c05f0e57b4e3a449eb455c42a4992232
+      size: 527
   original:
     hackage: levenshtein-0.2.1.0
 - completed:
+    commit: eaf826d4156b0281ef7ce9dec35ba720b5c45f09
+    git: https://github.com/neovimhaskell/nvim-hs.git
     name: nvim-hs
-    version: 2.3.2.1
-    git: https://github.com/isovector/nvim-hs.git
     pantry-tree:
+      sha256: 260209ca4637599dd8695f217ecf5cb3899e0c538f8a158b797ae09c0966e068
       size: 4352
-      sha256: 6ccc9cd15e7ccf3c29df6e0821f1ea25d714fed24f6254cacb730e10d368477b
-    commit: 41aa5159f58e66a7f12f9f9b47e0d0980b817d6f
+    version: 2.3.2.2
   original:
-    git: https://github.com/isovector/nvim-hs.git
-    commit: 41aa5159f58e66a7f12f9f9b47e0d0980b817d6f
+    commit: eaf826d4156b0281ef7ce9dec35ba720b5c45f09
+    git: https://github.com/neovimhaskell/nvim-hs.git
 snapshots:
 - completed:
+    sha256: 4905c93319aa94aa53da8f41d614d7bacdbfe6c63a8c6132d32e6e62f24a9af4
     size: 649315
     url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/6.yaml
-    sha256: 4905c93319aa94aa53da8f41d614d7bacdbfe6c63a8c6132d32e6e62f24a9af4
   original: lts-20.6

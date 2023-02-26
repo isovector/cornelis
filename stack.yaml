@@ -1,6 +1,6 @@
 # GHC 9.2.5
 # Update `defaultGHCVersion` in `./flake.nix` when updating to resolver with different GHC version.
-resolver: lts-20.06
+resolver: lts-20.11
 
 packages:
 - .
@@ -8,8 +8,10 @@ packages:
 extra-deps:
 - diff-loc-0.1.0.0
 - levenshtein-0.2.1.0
-- git: https://github.com/isovector/nvim-hs.git
-  commit: 41aa5159f58e66a7f12f9f9b47e0d0980b817d6f
+
+# TODO: Remove when updating to LTS that includes `nvim-hs` version >= 2.3.2.2.
+- git: https://github.com/neovimhaskell/nvim-hs.git
+  commit: eaf826d4156b0281ef7ce9dec35ba720b5c45f09
 
 nix:
   packages: [zlib]

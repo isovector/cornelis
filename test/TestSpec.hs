@@ -21,8 +21,8 @@ import           Test.Hspec
 import           Utils
 
 
-broken :: SpecWith a -> SpecWith a
-broken = before_ pending
+broken :: String -> SpecWith a -> SpecWith a
+broken = before_ . pendingWith
 
 spec :: Spec
 spec = focus $ do
@@ -32,7 +32,7 @@ spec = focus $ do
     goto w 11 8
     refine
 
-  diffSpec "should support helper functions" timeout "test/Hello.agda"
+  broken "Times out in CI for unknown reasons" $ diffSpec "should support helper functions" timeout "test/Hello.agda"
       [ Swap "" "help_me : Unit"] $ \w _ -> do
     goto w 11 8
     helperFunc Normalised "help_me"

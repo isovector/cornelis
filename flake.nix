@@ -23,12 +23,9 @@
       name = "cornelis";
       # Update `./.github/workflows/nix.yml` if changed.
       # `ghc902` excluded due to build issues.
-      ghcVersions = map (v: "ghc${v}") [ "8107" "924" "944" ];
+      ghcVersions = map (v: "ghc${v}") [ "8107" "927" "944" ];
       # Ensure resolver in `./stack.yaml` is in sync ith `defaultGhcVersion`.
-      defaultGhcVersion = "ghc924";
-      # We use `ghc924` as default rather than `ghc925` (which would match current GHC version of
-      # resolver) since `ghc924` is default version in `nixpkgs` and so we get benefits of binary
-      # cache.
+      defaultGhcVersion = "ghc927";
     in
     {
       overlays = {

@@ -23,9 +23,9 @@
       name = "cornelis";
       # Update `./.github/workflows/nix.yml` if changed.
       # `ghc902` excluded due to build issues.
-      ghcVersions = map (v: "ghc${v}") [ "8107" "927" "944" ];
+      ghcVersions = map (v: "ghc${v}") [ "8107" "928" "945" /* "962" */ ];
       # Ensure resolver in `./stack.yaml` is in sync ith `defaultGhcVersion`.
-      defaultGhcVersion = "ghc927";
+      defaultGhcVersion = "ghc928";
     in
     {
       overlays = {

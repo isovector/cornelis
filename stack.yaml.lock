@@ -5,33 +5,15 @@
 
 packages:
 - completed:
-    hackage: diff-loc-0.1.0.0@sha256:235a8e974da0a40f390186ff406200d99d3f3513a70eb24f28bca21ed0bacccf,1097
-    pantry-tree:
-      sha256: 96f1b6135db04bac3491cc40d168c4fa62bd6591e0bffd2976f305d244fd06ba
-      size: 756
-  original:
-    hackage: diff-loc-0.1.0.0
-- completed:
     hackage: levenshtein-0.2.1.0@sha256:3378358365f26dec549289f741338cc44470aef3f9de85e662b2646fe6b4fb47,2123
     pantry-tree:
       sha256: 3e434189fe6cb6eaf1a995f913fb9884c05f0e57b4e3a449eb455c42a4992232
       size: 527
   original:
     hackage: levenshtein-0.2.1.0
-- completed:
-    commit: eaf826d4156b0281ef7ce9dec35ba720b5c45f09
-    git: https://github.com/neovimhaskell/nvim-hs.git
-    name: nvim-hs
-    pantry-tree:
-      sha256: 260209ca4637599dd8695f217ecf5cb3899e0c538f8a158b797ae09c0966e068
-      size: 4352
-    version: 2.3.2.2
-  original:
-    commit: eaf826d4156b0281ef7ce9dec35ba720b5c45f09
-    git: https://github.com/neovimhaskell/nvim-hs.git
 snapshots:
 - completed:
-    sha256: adbc602422dde10cc330175da7de8609e70afc41449a7e2d6e8b1827aa0e5008
-    size: 649342
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/11.yaml
-  original: lts-20.11
+    sha256: 2fc12a405ab6f7eac73eb11a0ca5ccca0e956bd2848db780c140b7406ff9ebb5
+    size: 640035
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/21/9.yaml
+  original: lts-21.9

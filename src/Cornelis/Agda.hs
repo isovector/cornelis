@@ -6,6 +6,7 @@ module Cornelis.Agda where
 
 import           Control.Concurrent.Chan.Unagi (newChan, readChan, writeChan)
 import           Control.Lens
+import           Control.Monad (forever, replicateM_, when)
 import           Control.Monad.IO.Class
 import           Control.Monad.State
 import           Cornelis.Debug (reportExceptions)

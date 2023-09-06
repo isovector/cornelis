@@ -60,7 +60,7 @@ jobs:
       # and also reduces how much we need to cache with the `cache` action.
       - name: Install Nix
         if: runner.os != 'Windows'
-        uses: cachix/install-nix-action@v20
+        uses: cachix/install-nix-action@v21
         with:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}

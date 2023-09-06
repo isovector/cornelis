@@ -7,15 +7,10 @@
     flake-compat = { url = "github:edolstra/flake-compat"; flake = false; };
 
     # See https://github.com/isovector/cornelis#agda-version
-    agda.url = "github:agda/agda/8d4416a462719bffbf21617b9f2fa00234e185ac";
+    agda.url = "github:agda/agda/v2.6.3.20230805";
     agda.inputs.flake-utils.follows = "flake-utils";
     agda.inputs.nixpkgs.follows = "nixpkgs";
     agda-stdlib-source = { url = "github:agda/agda-stdlib/v1.7.2"; flake = false; };
-
-    # TODO: Remove when `nvim-hs` hits version >= 2.3.2.2 in `nixpkgs`.
-    # https://search.nixos.org/packages?channel=unstable&query=nvim-hs
-    nvim-hs-source.url = "github:neovimhaskell/nvim-hs/eaf826d4156b0281ef7ce9dec35ba720b5c45f09";
-    nvim-hs-source.flake = false;
   };
 
   outputs = { self, nixpkgs, ... }@inputs:
@@ -23,9 +18,9 @@
       name = "cornelis";
       # Update `./.github/workflows/nix.yml` if changed.
       # `ghc902` excluded due to build issues.
-      ghcVersions = map (v: "ghc${v}") [ "8107" "928" "945" /* "962" */ ];
-      # Ensure resolver in `./stack.yaml` is in sync ith `defaultGhcVersion`.
-      defaultGhcVersion = "ghc928";
+      ghcVersions = map (v: "ghc${v}") [ "8107" "928" "946" "962" ];
+      # Ensure resolver in `./stack.yaml` is in sync with `defaultGhcVersion`.
+      defaultGhcVersion = "ghc946";
     in
     {
       overlays = {
@@ -34,11 +29,6 @@
             packageOverrides = final.lib.composeExtensions
               prev.haskell.packageOverrides
               (hfinal: hprev: {
-                # TODO: Remove when `nvim-hs` hits version >= 2.3.2.2 in `nixpkgs`.
-                # https://search.nixos.org/packages?channel=unstable&query=nvim-hs
-                nvim-hs = final.haskell.lib.overrideSrc hprev.nvim-hs {
-                  src = inputs.nvim-hs-source;
-                };
                 ${name} = hfinal.callCabal2nix name ./. { };
               });
           };

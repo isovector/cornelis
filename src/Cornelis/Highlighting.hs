@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedLabels   #-}
 {-# LANGUAGE OverloadedStrings  #-}
@@ -160,7 +161,7 @@ setHighlight' b (Interval (Pos sl sc) (Pos el ec)) hl = do
           )
         )
       ]
-      
+
 
 highlightInterval
     :: Buffer
@@ -193,9 +194,10 @@ parseExtmark b
     }
 parseExtmark _ _ = pure Nothing
 
-
+#if __GLASGOW_HASKELL__ <= 904
 hoistMaybe :: Applicative m => Maybe a -> MaybeT m a
 hoistMaybe = MaybeT . pure
+#endif
 
 
 getExtmarks :: Buffer -> AgdaPos -> Neovim CornelisEnv [ExtmarkStuff]

@@ -10,7 +10,7 @@
     agda.url = "github:agda/agda/v2.6.3.20230805";
     agda.inputs.flake-utils.follows = "flake-utils";
     agda.inputs.nixpkgs.follows = "nixpkgs";
-    agda-stdlib-source = { url = "github:agda/agda-stdlib/v1.7.2"; flake = false; };
+    agda-stdlib-source = { url = "github:agda/agda-stdlib"; flake = false; };
   };
 
   outputs = { self, nixpkgs, ... }@inputs:
@@ -56,7 +56,7 @@
         };
         agda = pkgs.agda.withPackages (p: nixpkgs.lib.singleton (
           p.standard-library.overrideAttrs (_: {
-            version = "1.7.2";
+            version = "HEAD";
             src = inputs.agda-stdlib-source;
           })
         ));

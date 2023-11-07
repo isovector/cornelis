@@ -16,8 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Linux disabled since it runs out of memory
-        os: [ 'macos-12' ] #, 'ubuntu-22.04']
+        os: [ 'macos-12' , 'ubuntu-22.04']
 
     name: Nix Agda
     runs-on: ${{ matrix.os }}

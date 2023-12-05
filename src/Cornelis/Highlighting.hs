@@ -17,7 +17,6 @@ import           Cornelis.Types
 import           Cornelis.Utils
 import           Cornelis.Vim (unvimify, vimify)
 import           Data.Coerce (coerce)
-import           Data.Functor ((<&>))
 import           Data.IntervalMap.FingerTree (IntervalMap)
 import qualified Data.IntervalMap.FingerTree as IM
 import qualified Data.Map as M
@@ -143,24 +142,22 @@ setHighlight' b (Interval (Pos sl sc) (Pos el ec)) hl = do
     $ fmap (Just . coerce)
     $ nvim_buf_set_extmark b ns (from0 sl) (from0 sc)
     $ M.fromList
-    $ catMaybes
-    $ [ Just
-          ( "end_line"
-          , ObjectInt $ from0 el
-          )
-      , Just
-          ( "end_col"
-          , ObjectInt $ from0 ec
-          )
-      , hl <&> (\hl' ->
-          ( "hl_group"
-          , ObjectString
-            $ encodeUtf8
-            $ T.pack
-            $ show hl'
-          )
+    $ [ ( "end_line"
+        , ObjectInt $ from0 el
         )
-      ]
+      , ( "end_col"
+        , ObjectInt $ from0 ec
+        )
+      ] ++
+      concatMap (\hl' ->
+          [ ( "hl_group"
+            , ObjectString $ encodeUtf8 $ T.pack $ show hl'
+            )
+          , ( "priority"
+            , ObjectInt $ priority hl'
+            )
+          ])
+          hl
 
 
 highlightInterval

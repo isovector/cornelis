@@ -64,6 +64,17 @@ data HighlightGroup
   | CornelisPragma -- ^ The argument to a pragma, e.g. @{-# OPTIONS /--foo/ -#}@
   deriving (Eq, Ord, Show, Read, Enum, Bounded)
 
+-- | Priority of the HighlightGroup. See `:h vim.highlight.priorities` for more information.
+--
+-- 100 is the default syntax highlighting priority, while 150 is reserved for diagnostics.
+priority :: HighlightGroup -> Int64
+priority CornelisError              = 150
+priority CornelisErrorWarning       = 150
+priority CornelisWarn               = 150
+priority CornelisUnsolvedMeta       = 150
+priority CornelisUnsolvedConstraint = 150
+priority _                          = 100
+
 atomToHlGroup :: Text -> Maybe HighlightGroup
 atomToHlGroup atom = M.lookup atom allHlGroups where
     stripCornelis = fromJust . T.stripPrefix "Cornelis"

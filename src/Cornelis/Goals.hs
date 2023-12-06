@@ -65,8 +65,8 @@ prevGoal =
     case pos > goal of
       False -> Nothing
       True -> Just ( p_line goal .-. p_line pos
-                     , p_col goal .-. p_col pos  -- TODO: This formula looks fishy
-                     )
+                   , p_col goal .-. p_col pos  -- TODO: This formula looks fishy
+                   )
 
 
 ------------------------------------------------------------------------------

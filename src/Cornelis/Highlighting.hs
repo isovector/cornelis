@@ -20,7 +20,7 @@ import           Data.Coerce (coerce)
 import           Data.IntervalMap.FingerTree (IntervalMap)
 import qualified Data.IntervalMap.FingerTree as IM
 import qualified Data.Map as M
-import           Data.Maybe (listToMaybe, catMaybes)
+import           Data.Maybe (listToMaybe, catMaybes, mapMaybe)
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import           Data.Traversable (for)
@@ -89,7 +89,7 @@ addHighlight b lis hl = do
   case Interval
            <$> lookupPoint lis (hl_start hl)
            <*> lookupPoint lis (hl_end hl) of
-    Just (int@(Interval start end)) -> do
+    Just int@(Interval start end) -> do
       ext <- setHighlight b int $ parseHighlightGroup hl
 
       fmap (, ext) $ case isHole hl of
@@ -113,10 +113,10 @@ addHighlight b lis hl = do
     -- TODO: Investigate whether is is possible/feasible to
     -- attach multiple HL groups to buffer locations.
     parseHighlightGroup :: Highlight -> Maybe HighlightGroup
-    parseHighlightGroup = listToMaybe . catMaybes . map atomToHlGroup . hl_atoms
+    parseHighlightGroup = listToMaybe . mapMaybe atomToHlGroup . hl_atoms
 
     isHole :: Highlight -> Bool
-    isHole = any (== "hole") . hl_atoms
+    isHole = elem "hole" . hl_atoms
 
 setHighlight
     :: Buffer

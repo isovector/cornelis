@@ -1,6 +1,5 @@
 {-# LANGUAGE NumDecimals       #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns      #-}
 
 module Utils
   ( module Utils
@@ -67,7 +66,7 @@ intervention b d m = do
 
 withVim :: Seconds -> (Window -> Buffer -> Neovim () ()) -> IO ()
 withVim secs m = do
-  let withNeovimEmbedded f a = testWithEmbeddedNeovim f secs () a
+  let withNeovimEmbedded f = testWithEmbeddedNeovim f secs ()
   withNeovimEmbedded Nothing $ do
     b <- nvim_create_buf False False
     w <- vim_get_current_window
@@ -93,11 +92,11 @@ vimSpec
     -> (Window -> Buffer -> Neovim CornelisEnv ())
     -> Spec
 vimSpec name secs fp m = do
-  let withNeovimEmbedded f a = testWithEmbeddedNeovim f secs () a
+  let withNeovimEmbedded f = testWithEmbeddedNeovim f secs ()
   it name $ do
     withSystemTempFile "test.agda" $ \fp' h -> do
       hPutStr h $ "module " <> takeBaseName fp' <> " where\n"
-      hPutStr h =<< fmap (unlines . tail . lines) (readFile fp)
+      hPutStr h . unlines . tail . lines =<< readFile fp
       hFlush h
       withNeovimEmbedded Nothing $ do
         env <- cornelisInit

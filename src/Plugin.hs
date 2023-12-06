@@ -2,7 +2,6 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns      #-}
 
 module Plugin where
 
@@ -75,7 +74,7 @@ doLoad :: CommandArguments -> Neovim CornelisEnv ()
 doLoad = const load
 
 atomicSwapIORef :: IORef a -> a -> IO a
-atomicSwapIORef r x = atomicModifyIORef r (\y -> (x , y))
+atomicSwapIORef r x = atomicModifyIORef r (x,)
 
 load :: Neovim CornelisEnv ()
 load = withAgda $ withCurrentBuffer $ \b -> do
@@ -95,11 +94,11 @@ questionToMeta b = withBufferStuff b $ \bs -> do
 
   res <- fmap fold $ for (sortOn (Down . iStart . ip_interval') ips) $ \ip -> do
     int <- getIpInterval b ip
-    getGoalContents_maybe b ip >>= \case
+    getGoalContentsMaybe b ip >>= \case
       -- We only don't have a goal contents if we are a ? goal
       Nothing -> do
         replaceInterval b int "{! !}"
-        let int' = int { iEnd = (iStart int) `addCol` Offset 5 }
+        let int' = int { iEnd = iStart int `addCol` Offset 5 }
         void $ highlightInterval b int' CornelisHole
         modifyBufferStuff b $
           #bs_ips %~ M.insert (ip_id ip) (ip & #ip_intervalM . #_Identity .~ int')
@@ -260,7 +259,7 @@ inferType :: Rewrite -> Neovim CornelisEnv ()
 inferType mode = withAgda $ do
     cmd <- withGoalContentsOrPrompt "Infer type of what?"
         (\goal -> pure . Cmd_infer mode (ip_id goal) NoRange)
-        (\input -> pure $ Cmd_infer_toplevel mode input)
+        (pure . Cmd_infer_toplevel mode)
     runInteraction cmd
 
 

@@ -3,14 +3,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE ViewPatterns      #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Lib where
 
 import           Control.Arrow ((&&&))
 import           Control.Concurrent.Chan.Unagi
 import           Control.Lens
-import           Control.Monad (forever)
-import           Control.Monad (when)
+import           Control.Monad ( forever, when )
 import           Control.Monad.State.Class (gets)
 import           Cornelis.Config (getConfig)
 import           Cornelis.Debug (reportExceptions)
@@ -55,7 +55,7 @@ respond b (DisplayInfo dp) = do
 -- Update the buffer's interaction points map
 respond b (InteractionPoints ips) = do
   let ips' = mapMaybe sequenceInteractionPoint ips
-  modifyBufferStuff b $ #bs_ips .~ (M.fromList $ fmap (ip_id &&& id) ips')
+  modifyBufferStuff b $ #bs_ips .~ M.fromList (fmap (ip_id &&& id) ips')
 -- Replace a function clause
 respond b (MakeCase mkcase) = do
   doMakeCase b mkcase
@@ -89,9 +89,9 @@ respond b ClearHighlighting = do
 respond b (HighlightingInfo _remove hl) = do
   extmap <- highlightBuffer b hl
   modifyBufferStuff b $ \bs -> bs
-    & #bs_ip_exts <>~ M.compose extmap (fmap ip_interval' $ bs_ips $ bs)
+    & #bs_ip_exts <>~ M.compose extmap (fmap ip_interval' $ bs_ips bs)
 respond _ (RunningInfo _ x) = reportInfo x
-respond _ (ClearRunningInfo) = reportInfo ""
+respond _ ClearRunningInfo = reportInfo ""
 respond b (JumpToError _ pos) = do
   -- HACK(sandy): See #113. Agda reports error positions in sent messages
   -- relative to the *bytes* attached to the sent interval. But we can't easily
@@ -109,6 +109,7 @@ respond b (JumpToError _ pos) = do
 respond _ Status{} = pure ()
 respond _ (Unknown k _) = reportError k
 
+{-# HLINT ignore doMakeCase "Functor law" #-}
 doMakeCase :: Buffer -> MakeCase -> Neovim CornelisEnv ()
 doMakeCase b (RegularCase Function clauses ip) = do
   int' <- getIpInterval b ip

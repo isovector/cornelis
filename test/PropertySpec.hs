@@ -46,7 +46,7 @@ spec = parallel $ do
       $ counterexample (show pn)
       $ counterexample (show $ strs !! rowidx)
       $ withVim (Seconds 1) $ \w b -> do
-          buffer_set_lines b 0 (-1) False $ V.fromList $ fmap T.pack $ strs
+          buffer_set_lines b 0 (-1) False $ V.fromList $ fmap T.pack strs
           setWindowCursor w pn
           ObjectInt row' <- vim_call_function "line" $ V.fromList [ObjectString "."]
           ObjectInt col' <- vim_call_function "virtcol" $ V.fromList [ObjectString "."]

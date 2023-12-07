@@ -9,6 +9,8 @@
 {-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use camelCase" #-}
 
 module Cornelis.Types
   ( module Cornelis.Types
@@ -207,7 +209,7 @@ ip_interval' :: InteractionPoint Identity -> AgdaInterval
 ip_interval' (InteractionPoint _ (Identity i)) = i
 
 sequenceInteractionPoint :: Applicative f => InteractionPoint f -> f (InteractionPoint Identity)
-sequenceInteractionPoint (InteractionPoint n f) = InteractionPoint <$> pure n <*> fmap Identity f
+sequenceInteractionPoint (InteractionPoint n f) = pure (InteractionPoint n) <*> fmap Identity f
 
 
 data NamedPoint = NamedPoint
@@ -307,13 +309,13 @@ data DisplayInfo
   | UnknownDisplayInfo Value
   deriving (Eq, Ord, Show, Generic)
 
-data TypeAux = TypeAux
+newtype TypeAux = TypeAux
   { ta_expr :: Type
   }
 
 instance FromJSON TypeAux where
   parseJSON = withObject "TypeAux" $ \obj ->
-    (TypeAux . Type) <$> obj .: "expr"
+    TypeAux . Type <$> obj .: "expr"
 
 instance FromJSON DisplayInfo where
   parseJSON v = flip (withObject "DisplayInfo") v $ \obj ->

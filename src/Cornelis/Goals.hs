@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Cornelis.Goals where
@@ -65,9 +64,9 @@ prevGoal =
   findGoal $ \pos goal ->
     case pos > goal of
       False -> Nothing
-      True -> Just $ ( p_line goal .-. p_line pos
-                     , p_col goal .-. p_col pos  -- TODO: This formula looks fishy
-                     )
+      True -> Just ( p_line goal .-. p_line pos
+                   , p_col goal .-. p_col pos  -- TODO: This formula looks fishy
+                   )
 
 
 ------------------------------------------------------------------------------
@@ -150,20 +149,20 @@ withGoalContentsOrPrompt prompt_str on_goal on_no_goal = getGoalAtCursor >>= \ca
 
 ------------------------------------------------------------------------------
 -- | Get the contents of a goal.
-getGoalContents_maybe :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv (Maybe Text)
-getGoalContents_maybe b ip = do
+getGoalContentsMaybe :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv (Maybe Text)
+getGoalContentsMaybe b ip = do
   int <- getIpInterval b ip
   iv <- fmap T.strip $ getBufferInterval b int
   pure $ case iv of
     "?" -> Nothing
          -- Chop off {!, !} and trim any spaces.
-    _ -> Just $ T.strip $ T.dropEnd 2 $ T.drop 2 $ iv
+    _ -> Just $ T.strip $ T.dropEnd 2 $ T.drop 2 iv
 
 
 ------------------------------------------------------------------------------
 -- | Like 'getGoalContents_maybe'.
 getGoalContents :: Buffer -> InteractionPoint Identity -> Neovim CornelisEnv Text
-getGoalContents b ip = fromMaybe "" <$> getGoalContents_maybe b ip
+getGoalContents b ip = fromMaybe "" <$> getGoalContentsMaybe b ip
 
 
 ------------------------------------------------------------------------------

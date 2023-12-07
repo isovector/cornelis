@@ -49,7 +49,7 @@ modifyDiff buf f = do
 
 -- | Reset the diff to an empty diff.
 resetDiff :: BufferNum -> Neovim CornelisEnv ()
-resetDiff buf = modifyDiff buf $ \_ -> (D.emptyDiff, ())
+resetDiff buf = modifyDiff buf $ const (D.emptyDiff, ())
 
 -- | Add a buffer update (insertion or deletion) to the diff.
 -- The buffer update event coming from Vim is structured exactly how the diff-loc

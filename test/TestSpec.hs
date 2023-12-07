@@ -1,5 +1,4 @@
 {-# LANGUAGE NumDecimals       #-}
-{-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module TestSpec where

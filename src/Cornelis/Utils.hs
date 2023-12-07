@@ -1,7 +1,6 @@
 {-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns      #-}
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -49,7 +48,7 @@ savingCurrentWindow m = do
 
 windowsForBuffer :: Buffer -> Neovim env [Window]
 windowsForBuffer b = do
-  wins <- fmap V.toList $ vim_get_windows
+  wins <- fmap V.toList vim_get_windows
   fmap catMaybes $ for wins $ \w -> do
     wb <- window_get_buffer w
     pure $ case wb == b of
@@ -58,7 +57,7 @@ windowsForBuffer b = do
 
 visibleBuffers :: Neovim env [(Window, Buffer)]
 visibleBuffers = do
-  wins <- fmap V.toList $ vim_get_windows
+  wins <- fmap V.toList vim_get_windows
   for wins $ \w -> fmap (w, ) $ window_get_buffer w
 
 criticalFailure :: Text -> Neovim env a

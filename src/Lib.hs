@@ -10,7 +10,7 @@ module Lib where
 import           Control.Arrow ((&&&))
 import           Control.Concurrent.Chan.Unagi
 import           Control.Lens
-import           Control.Monad ( forever, when )
+import           Control.Monad (forever, when)
 import           Control.Monad.State.Class (gets)
 import           Cornelis.Config (getConfig)
 import           Cornelis.Debug (reportExceptions)

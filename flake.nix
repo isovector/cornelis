@@ -5,12 +5,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     flake-compat = { url = "github:edolstra/flake-compat"; flake = false; };
-
-    # See https://github.com/isovector/cornelis#agda-version
-    agda.url = "github:agda/agda/v2.6.4";
-    agda.inputs.flake-utils.follows = "flake-utils";
-    agda.inputs.nixpkgs.follows = "nixpkgs";
-    agda-stdlib-source = { url = "github:agda/agda-stdlib/v1.7.3"; flake = false; };
   };
 
   outputs = { self, nixpkgs, ... }@inputs:
@@ -18,9 +12,9 @@
       name = "cornelis";
       # Update `./.github/workflows/nix.yml` if changed.
       # `ghc902` excluded due to build issues.
-      ghcVersions = map (v: "ghc${v}") [ "8107" "928" "947" "963" ];
+      ghcVersions = map (v: "ghc${v}") [ "810" "92" "94" "96" ];
       # Ensure resolver in `./stack.yaml` is in sync with `defaultGhcVersion`.
-      defaultGhcVersion = "ghc947";
+      defaultGhcVersion = "ghc94";
     in
     {
       overlays = {
@@ -52,14 +46,9 @@
       let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ self.overlays.${name} inputs.agda.overlay ];
+          overlays = [ self.overlays.${name} ];
         };
-        agda = pkgs.agda.withPackages (p: nixpkgs.lib.singleton (
-          p.standard-library.overrideAttrs (_: {
-            version = "1.7.3";
-            src = inputs.agda-stdlib-source;
-          })
-        ));
+        agda = pkgs.agda.withPackages (p: [ p.standard-library ]);
       in
       {
         packages = {

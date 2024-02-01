@@ -30,7 +30,7 @@
           ${name} = final.haskell.packages.${defaultGhcVersion}.${name};
 
           vimPlugins = prev.vimPlugins.extend (pfinal: _: {
-            ${name} = final.vimUtils.buildVimPluginFrom2Nix {
+            ${name} = final.vimUtils.buildVimPlugin {
               pname = name;
               inherit (final.${name}) version;
               src = ./.;

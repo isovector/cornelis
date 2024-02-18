@@ -107,6 +107,8 @@ data CornelisConfig = CornelisConfig
   { cc_max_height :: Int64
   , cc_max_width :: Int64
   , cc_split_location :: SplitLocation
+  , cc_sync_load :: Bool
+  -- ^ should the "load the buffer" command be synchronous?
   }
   deriving (Show, Generic)
 

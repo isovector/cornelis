@@ -51,6 +51,19 @@
         agda = pkgs.agda.withPackages (p: [ p.standard-library ]);
       in
       {
+        devShells.default = let
+          hsPkgs = pkgs.haskell.packages.${defaultGhcVersion};
+          buildInputs = [
+            hsPkgs.ghc
+            hsPkgs.haskell-language-server
+            pkgs.cabal-install
+            pkgs.hpack
+            pkgs.zlib
+          ];
+        in pkgs.mkShell {
+          buildInputs = buildInputs;
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
+        };
         packages = {
           inherit agda;
           ${name} = pkgs.${name};

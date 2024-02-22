@@ -31,6 +31,10 @@ objectToText :: Object -> Maybe Text
 objectToText (ObjectString w) = Just $ decodeUtf8 w
 objectToText _ = Nothing
 
+objectToBool :: Object -> Maybe Bool
+objectToBool (ObjectBool b) = Just b
+objectToBool _ = Nothing
+
 neovimAsync :: (MonadUnliftIO m) => m a -> m (Async a)
 neovimAsync m =
   withRunInIO $ \lower ->

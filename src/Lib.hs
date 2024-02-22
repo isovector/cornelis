@@ -196,13 +196,19 @@ cornelis = do
   let rw_complete = CmdComplete "custom,InternalCornelisRewriteModeCompletion"
       cm_complete = CmdComplete "custom,InternalCornelisComputeModeCompletion"
       debug_complete = CmdComplete "custom,InternalCornelisDebugCommandCompletion"
+  let
+    loadSyncness =
+      CmdSync $
+        if cc_sync_load $ ce_config env
+          then Sync
+          else Async
 
   wrapPlugin $ Plugin
     { environment = env
     , exports =
         [ $(command "CornelisRestart"          'doRestart)        [CmdSync Async]
         , $(command "CornelisAbort"            'doAbort)          [CmdSync Async]
-        , $(command "CornelisLoad"             'doLoad)           [CmdSync Async]
+        , $(command "CornelisLoad"             'doLoad)           [loadSyncness]
         , $(command "CornelisGoals"            'doAllGoals)       [CmdSync Async]
         , $(command "CornelisSolve"            'solveOne)         [CmdSync Async, rw_complete]
         , $(command "CornelisAuto"             'autoOne)          [CmdSync Async]

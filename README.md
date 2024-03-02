@@ -33,17 +33,18 @@ exposed via vim commands.  Most commands have an equivalent in [agda-mode].
 
 | Vim command | Description | Equivalent agda-mode keybinding |
 | :--- | :--- | :--- |
-| `:CornelisLoad`           | Load and type-check buffer | <kbd>C-c</kbd><kbd>C-l</kbd> |
-| `:CornelisGoals`          | Show all goals        | <kbd>C-c</kbd><kbd>C-?</kbd> |
-| `:CornelisRestart`        | Kill and restart the `agda` process | <kbd>C-c</kbd><kbd>C-x</kbd><kbd>C-r</kbd> |
-| `:CornelisAbort`          | Abort running command | <kbd>C-c</kbd><kbd>C-x</kbd><kbd>C-a</kbd> |
-| `:CornelisSolve <RW>`     | Solve constraints     | <kbd>C-c</kbd><kbd>C-s</kbd> |
-| `:CornelisGoToDefinition` | Jump to definition of name at cursor | <kbd>M-.</kbd> or middle mouse button |
-| `:CornelisPrevGoal`       | Jump to previous goal | <kbd>C-c</kbd><kbd>C-b</kbd> |
-| `:CornelisNextGoal`       | Jump to next goal     | <kbd>C-c</kbd><kbd>C-f</kbd> |
-| `:CornelisQuestionToMeta` | Expand `?`-holes to `{! !}` | _(none)_ |
-| `:CornelisInc`            | Like `<C-A>` but also targets sub- and superscripts | _(none)_ |
-| `:CornelisDec`            | Like `<C-X>` but also targets sub- and superscripts | _(none)_ |
+| `:CornelisLoad`             | Load and type-check buffer | <kbd>C-c</kbd><kbd>C-l</kbd> |
+| `:CornelisGoals`            | Show all goals        | <kbd>C-c</kbd><kbd>C-?</kbd> |
+| `:CornelisRestart`          | Kill and restart the `agda` process | <kbd>C-c</kbd><kbd>C-x</kbd><kbd>C-r</kbd> |
+| `:CornelisAbort`            | Abort running command | <kbd>C-c</kbd><kbd>C-x</kbd><kbd>C-a</kbd> |
+| `:CornelisSolve <RW>`       | Solve constraints     | <kbd>C-c</kbd><kbd>C-s</kbd> |
+| `:CornelisGoToDefinition`   | Jump to definition of name at cursor | <kbd>M-.</kbd> or middle mouse button |
+| `:CornelisPrevGoal`         | Jump to previous goal | <kbd>C-c</kbd><kbd>C-b</kbd> |
+| `:CornelisNextGoal`         | Jump to next goal     | <kbd>C-c</kbd><kbd>C-f</kbd> |
+| `:CornelisQuestionToMeta`   | Expand `?`-holes to `{! !}` | _(none)_ |
+| `:CornelisInc`              | Like `<C-A>` but also targets sub- and superscripts | _(none)_ |
+| `:CornelisDec`              | Like `<C-X>` but also targets sub- and superscripts | _(none)_ |
+| `:CornelisCloseInfoWindows` | Close (all) info windows cornelis has opened | _(none)_ |
 
 ### Commands in context of a goal
 
@@ -287,6 +288,7 @@ for it! This is enough to get you started:
 
 ```viml
 au BufRead,BufNewFile *.agda call AgdaFiletype()
+au QuitPre *.agda :CornelisCloseInfoWindows
 function! AgdaFiletype()
     nnoremap <buffer> <leader>l :CornelisLoad<CR>
     nnoremap <buffer> <leader>r :CornelisRefine<CR>

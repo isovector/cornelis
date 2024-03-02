@@ -13,7 +13,7 @@ import           Cornelis.Agda (withCurrentBuffer, runIOTCM, withAgda, getAgda)
 import           Cornelis.Diff (resetDiff, recordUpdate, Replace(..), Colline(..), Vallee(..))
 import           Cornelis.Goals
 import           Cornelis.Highlighting (getExtmarks, highlightInterval, updateLineIntervals)
-import           Cornelis.InfoWin (showInfoWindow)
+import           Cornelis.InfoWin (showInfoWindow, closeInfoWindows)
 import           Cornelis.Offsets
 import           Cornelis.Pretty (prettyGoals, HighlightGroup (CornelisHole))
 import           Cornelis.Types
@@ -378,3 +378,6 @@ notifyEdit _ buf _ sr sc _ er ec _ fr fc _ = do
   where
     pos l c = Colline (toZeroIndexed l) (toZeroIndexed c)
     range l c = Vallee (Offset l) (Offset c)
+
+doCloseInfoWindows :: CommandArguments -> Neovim CornelisEnv ()
+doCloseInfoWindows = const closeInfoWindows

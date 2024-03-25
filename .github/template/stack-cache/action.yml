@@ -31,7 +31,7 @@ runs:
         fi
 
     - name: Cache ${{ env.global_stack_dir }}
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ env.global_stack_dir }}
         key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}${{ env.unique_suffix }}
@@ -41,7 +41,7 @@ runs:
           ${{ runner.os }}-stack-global-
 
     - name: Cache ${{ inputs.stack-work-dir }}
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ inputs.stack-work-dir }}
         key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}${{ env.unique_suffix }}

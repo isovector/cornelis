@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Cache Stack dirs (Linux/macOS)
         if: runner.os != 'Windows'
@@ -41,7 +41,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Cache Stack dirs (Linux/macOS)
         if: runner.os != 'Windows'
@@ -60,7 +60,7 @@ jobs:
       # and also reduces how much we need to cache with the `cache` action.
       - name: Install Nix
         if: runner.os != 'Windows'
-        uses: cachix/install-nix-action@v22
+        uses: cachix/install-nix-action@v26
         with:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
@@ -86,7 +86,7 @@ jobs:
 
       # Tests can be flaky so we retry them a few times.
       - name: Run tests
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 20
           max_attempts: 3

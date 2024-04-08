@@ -23,7 +23,10 @@
             packageOverrides = final.lib.composeExtensions
               prev.haskell.packageOverrides
               (hfinal: hprev: {
-                ${name} = hfinal.callCabal2nix name ./. { };
+                # Put binaries into separate output "bin" to reduce closure size.
+                # https://nixos.org/manual/nixpkgs/stable/#haskell-packaging-helpers
+                ${name} = final.haskell.lib.enableSeparateBinOutput
+                  (hfinal.callCabal2nix name ./. { });
               });
           };
 

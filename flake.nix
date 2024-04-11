@@ -58,7 +58,7 @@
         };
         agda = pkgs.agda.withPackages (p: [ p.standard-library ]);
       in
-      {
+      rec {
         packages = {
           inherit agda;
           ${name} = pkgs.${name};
@@ -70,6 +70,14 @@
           (v: { name = "${name}-${v}"; value = pkgs.haskell.packages.${v}.${name}; })
           ghcVersions
         );
+        defaultPackage = packages.default;
+        app = {
+          cornelis = inputs.flake-utils.lib.mkApp {
+            inherit name; drv = packages.default;
+          };
+          default = app.cornelis;
+        };
+        defaultApp = app.default;
       }
     );
 }

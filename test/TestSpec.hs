@@ -24,7 +24,7 @@ broken :: String -> SpecWith a -> SpecWith a
 broken = before_ . pendingWith
 
 spec :: Spec
-spec = focus $ do
+spec = focus $ parallel $ do
   let timeout = Seconds 60
 
   executableSpec "agda"

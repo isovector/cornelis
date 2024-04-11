@@ -1,14 +1,27 @@
 {
   path,
   lib,
+  makeWrapper,
+  symlinkJoin,
 
   haskellPackages,
   pkg-config,
+  stack,
   zlib,
   icu,
 }:
 let
+  stack-nix = symlinkJoin {
+    name = "stack-nix";
+    paths = [ (lib.getBin stack) ];
+    nativeBuildInputs = [ makeWrapper ];
+    postBuild = ''
+      wrapProgram $out/bin/stack \
+        --append-flags "--nix --no-nix-pure"
+    '';
+  };
   buildInputs = [
+    stack-nix
     haskellPackages.cabal-install
     pkg-config
     zlib.dev

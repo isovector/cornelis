@@ -22,11 +22,16 @@
           haskell = prev.haskell // {
             packageOverrides = final.lib.composeExtensions
               prev.haskell.packageOverrides
-              (hfinal: hprev: {
+              (hfinal: hprev: let
+                inherit (final.haskell.lib.compose) enableSeparateBinOutput addTestToolDepends;
+                inherit (final.lib) pipe;
+              in {
                 # Put binaries into separate output "bin" to reduce closure size.
                 # https://nixos.org/manual/nixpkgs/stable/#haskell-packaging-helpers
-                ${name} = final.haskell.lib.enableSeparateBinOutput
-                  (hfinal.callCabal2nix name ./. { });
+                ${name} = pipe (hfinal.callCabal2nix name ./. { }) [
+                  enableSeparateBinOutput
+                  (addTestToolDepends [ final.agda final.neovim ])
+                ];
               });
           };
 

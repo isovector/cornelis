@@ -66,10 +66,12 @@ intervention b d m = do
   d' <- differing b m
   liftIO $ d' `shouldBe` d
 
+withNeovimEmbedded :: Seconds -> Neovim () a -> IO ()
+withNeovimEmbedded secs = runInEmbeddedNeovim' def{cancelAfter = secs}
+
 withVim :: Seconds -> (Window -> Buffer -> Neovim () ()) -> IO ()
 withVim secs m = do
-  let withNeovimEmbedded f = testWithEmbeddedNeovim f secs ()
-  withNeovimEmbedded Nothing $ do
+  withNeovimEmbedded secs $ do
     b <- nvim_create_buf False False
     w <- vim_get_current_window
     nvim_win_set_buf w b
@@ -94,13 +96,12 @@ vimSpec
     -> (Window -> Buffer -> Neovim CornelisEnv ())
     -> Spec
 vimSpec name secs fp m = do
-  let withNeovimEmbedded f = testWithEmbeddedNeovim f secs ()
   it name $ do
     withSystemTempFile "test.agda" $ \fp' h -> do
       hPutStr h $ "module " <> takeBaseName fp' <> " where\n"
       hPutStr h . unlines . tail . lines =<< readFile fp
       hFlush h
-      withNeovimEmbedded Nothing $ do
+      withNeovimEmbedded secs $ do
         env <- cornelisInit
         withLocalEnv env $ do
           vim_command $ "edit " <> T.pack fp'

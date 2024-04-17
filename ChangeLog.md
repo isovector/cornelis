@@ -1,6 +1,8 @@
 # Changelog for cornelis
 
-## Unreleased changes
+## v0.2.0.0 - 2024-04-17
+
+The first official release, after years in the oven.
 
 ### Features
 
@@ -15,3 +17,8 @@
 - Text objects for working inside of holes, implicits and justifications
 - Jump to next/previous hole
 - Use `%` to jump between unicode matchpairs
+
+
+
+## Unreleased changes
+

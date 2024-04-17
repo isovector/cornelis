@@ -1,5 +1,5 @@
 name:                cornelis
-version:             0.1.0.0
+version:             0.2.0.0
 github:              "isovector/cornelis"
 license:             BSD3
 author:              "Sandy Maguire"
@@ -27,27 +27,27 @@ dependencies:
 - async
 - process
 - mtl
-- lens
-- generic-lens
+- lens >= 4.19.2
+- generic-lens >= 2.1.0.0
 - transformers
 - filepath
 - directory
-- aeson
-- unliftio-core
-- unagi-chan
-- resourcet
+- aeson >= 1.5.6.0
+- unliftio-core >= 0.2.0.1
+- unagi-chan >= 0.4.1.3
+- resourcet >= 1.2.4.3
 - text
 - bytestring
-- fingertree
-- prettyprinter
+- fingertree >= 0.1.4.2
+- prettyprinter >= 1.7.1 && < 2
 - vector
 - random
-- megaparsec
-- diff-loc
+- megaparsec >= 9.0.1 && < 10
+- diff-loc >= 0.1.0.0
 
-- hspec
-- QuickCheck
-- levenshtein
+- hspec >= 2.7.10
+- QuickCheck >= 2.14.2
+- levenshtein >= 0.1.3.0
 
 default-extensions:
   - BangPatterns

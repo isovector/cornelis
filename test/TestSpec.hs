@@ -8,7 +8,7 @@ import           Control.Monad (void)
 import           Cornelis.Subscripts (decNextDigitSeq, incNextDigitSeq)
 import           Cornelis.Types
 import           Cornelis.Types.Agda (Rewrite (..))
-import           Cornelis.Utils (withBufferStuff)
+import           Cornelis.Utils (withBufferStuff, withLocalEnv)
 import           Cornelis.Vim
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -18,6 +18,7 @@ import           Neovim.Test
 import           Plugin
 import           Test.Hspec
 import           Utils
+import           Lib (cornelisInit)
 
 
 broken :: String -> SpecWith a -> SpecWith a
@@ -26,6 +27,15 @@ broken = before_ . pendingWith
 spec :: Spec
 spec = focus $ do
   let timeout = Seconds 60
+
+  it "should load read-only file" $ do
+    withVim timeout $ \w b -> do
+      env <- cornelisInit
+      withLocalEnv env $ do
+        vim_command "view test/Readonly.agda"
+        liftIO $ threadDelay 1e6
+        load
+
   diffSpec "should refine" timeout "test/Hello.agda"
       [ Swap "unit = ?" "unit = one"] $ \w _ -> do
     goto w 11 8

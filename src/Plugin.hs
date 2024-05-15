@@ -81,7 +81,7 @@ load = withAgda $ withCurrentBuffer $ \b -> do
   agda <- getAgda b
   ready <- liftIO $ readIORef $ a_ready agda
   if ready then do
-    vim_command "noautocmd w"
+    vim_command "silent! noautocmd w"
     name <- buffer_get_name $ a_buffer agda
     flip runIOTCM agda $ Cmd_load name []
     buffer_get_number b >>= resetDiff

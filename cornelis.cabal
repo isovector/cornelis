@@ -18,6 +18,9 @@ build-type:     Simple
 extra-source-files:
     README.md
     ChangeLog.md
+data-files:
+    test/Hello.agda
+    test/Readonly.agda
 
 source-repository head
   type: git

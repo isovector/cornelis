@@ -1,5 +1,9 @@
 # Changelog for cornelis
 
+## v0.2.0.1 - 2024-05-17
+
+Updated metadata for Hackage.
+
 ## v0.2.0.0 - 2024-04-17
 
 The first official release, after years in the oven.

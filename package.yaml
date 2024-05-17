@@ -130,3 +130,7 @@ tests:
     - filepath
     # build-dependencies:
     # - hspec-discover
+
+data-files:
+  # Include Agda files needed for tests
+  - test/*.agda

@@ -150,13 +150,13 @@ solveOne _ ms = withNormalizationMode ms $ \mode ->
         (mkAbsPathRnage fp $ ip_interval' ip)
         ""
 
-autoOne :: CommandArguments -> Neovim CornelisEnv ()
-autoOne _ = withAgda $ void $ withGoalAtCursor $ \b ip -> do
+mimer :: CommandArguments -> Neovim CornelisEnv ()
+mimer _ = withAgda $ void $ withGoalAtCursor $ \b ip -> do
   agda <- getAgda b
   t <- getGoalContents b ip
   fp <- buffer_get_name b
   flip runIOTCM agda $
-    Cmd_autoOne
+    Cmd_mimer
       (ip_id ip)
       (mkAbsPathRnage fp $ ip_interval' ip)
       (T.unpack t)

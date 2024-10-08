@@ -136,8 +136,8 @@ data Interaction' range
   | Cmd_solveOne Rewrite InteractionId range String
 
     -- | Solve (all goals / the goal at point) by using Auto.
-  | Cmd_mimer            InteractionId range String
-  | Cmd_mimerAll
+  | Cmd_autoOne Rewrite InteractionId range String
+  | Cmd_autoAll Rewrite
 
     -- | Parse the given expression (as if it were defined at the
     -- top-level of the current module) and infer its type.

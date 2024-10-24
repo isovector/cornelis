@@ -150,16 +150,18 @@ solveOne _ ms = withNormalizationMode ms $ \mode ->
         (mkAbsPathRnage fp $ ip_interval' ip)
         ""
 
-autoOne :: CommandArguments -> Neovim CornelisEnv ()
-autoOne _ = withAgda $ void $ withGoalAtCursor $ \b ip -> do
-  agda <- getAgda b
-  t <- getGoalContents b ip
-  fp <- buffer_get_name b
-  flip runIOTCM agda $
-    Cmd_autoOne
-      (ip_id ip)
-      (mkAbsPathRnage fp $ ip_interval' ip)
-      (T.unpack t)
+autoOne :: CommandArguments -> Maybe String -> Neovim CornelisEnv ()
+autoOne _ ms = withNormalizationMode ms $ \mode ->
+  withAgda $ void $ withGoalAtCursor $ \b ip -> do
+    agda <- getAgda b
+    t <- getGoalContents b ip
+    fp <- buffer_get_name b
+    flip runIOTCM agda $
+      Cmd_autoOne
+        mode
+        (ip_id ip)
+        (mkAbsPathRnage fp $ ip_interval' ip)
+        (T.unpack t)
 
 withNormalizationMode :: Maybe String -> (Rewrite -> Neovim e ()) -> Neovim e ()
 withNormalizationMode Nothing f = normalizationMode >>= f

@@ -310,6 +310,7 @@ data DisplayInfo
       , di_type :: Type
       , di_type_aux :: Maybe Type
       , di_boundary :: Maybe [Text]
+      , di_boundary_aux :: Maybe [Text]
       , di_output_forms :: Maybe [Text]
       }
   | HelperFunction Text
@@ -322,13 +323,16 @@ data DisplayInfo
   | UnknownDisplayInfo Value
   deriving (Eq, Ord, Show, Generic)
 
-newtype TypeAux = TypeAux
-  { ta_expr :: Type
+data TypeAux = TypeAux
+  { ta_expr :: Maybe Type
+  , ta_boundary :: Maybe [Text]
   }
 
 instance FromJSON TypeAux where
   parseJSON = withObject "TypeAux" $ \obj ->
-    TypeAux . Type <$> obj .: "expr"
+    TypeAux
+      <$> fmap (fmap Type) (obj .:? "expr")
+      <*> obj .:? "boundary"
 
 instance FromJSON DisplayInfo where
   parseJSON v = flip (withObject "DisplayInfo") v $ \obj ->
@@ -354,13 +358,15 @@ instance FromJSON DisplayInfo where
           (info .: "kind") >>= \case
             "HelperFunction" ->
               HelperFunction <$> info .: "signature"
-            "GoalType" ->
+            "GoalType" -> do
+              typeAux <- info .:? "typeAux"
               GoalSpecific
                 <$> obj .: "interactionPoint"
                 <*> info .: "entries"
                 <*> info .: "type"
-                <*> (fmap (fmap ta_expr) (info .: "typeAux") <|> pure Nothing)
+                <*> pure (typeAux >>= ta_expr)
                 <*> info .:? "boundary"
+                <*> pure (typeAux >>= ta_boundary)
                 <*> info .:? "outputForms"
             "NormalForm" -> NormalForm <$> info .: "expr"
             "InferredType" ->

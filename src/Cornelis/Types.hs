@@ -23,6 +23,7 @@ module Cornelis.Types
   ) where
 
 import Control.Concurrent.Chan.Unagi (InChan)
+import Control.Concurrent.Async (Async)
 import Control.Monad.State.Class
 import Cornelis.Debug
 import Cornelis.Offsets (Pos(..), Interval(..), AgdaIndex, AgdaPos, AgdaInterval, VimIndex, LineNumber, Indexing(..))
@@ -50,11 +51,13 @@ data Agda = Agda
   , a_ready  :: IORef Bool
   , a_req    :: InChan String
   , a_hdl    :: ProcessHandle
+  , a_workers :: [Async ()]
   }
   deriving Generic
 
 data BufferStuff = BufferStuff
   { bs_agda_proc  :: Agda
+  , bs_buffer_num :: BufferNum
   , bs_ips        :: Map InteractionId (InteractionPoint Identity)
   , bs_ip_exts    :: Map InteractionId Extmark
   , bs_goto_sites :: Map Extmark DefinitionSite
@@ -156,10 +159,17 @@ data Response
     }
   | JumpToError FilePath AgdaIndex
   | InteractionPoints [InteractionPoint Maybe]
-  | GiveAction Text (InteractionPoint (Const ()))
+  | GiveAction Agda29GiveResult (InteractionPoint (Const ()))
   | MakeCase MakeCase
   | SolveAll [Solution]
   | Unknown Text Value
+  deriving (Eq, Ord, Show)
+
+-- Since Agda 2.9, Cornelis's range-less Give command may return `paren`;
+-- older Agda versions return `str`, which remains a valid 2.9 fallback.
+data Agda29GiveResult
+  = GiveStr Text
+  | GiveParen29 Bool
   deriving (Eq, Ord, Show)
 
 data DefinitionSite = DefinitionSite
@@ -396,7 +406,9 @@ instance FromJSON Response where
         SolveAll <$> obj .: "solutions"
       "GiveAction" ->
         (obj .: "giveResult") >>= \result ->
-          GiveAction <$> result .: "str" <*> obj .: "interactionPoint"
+          GiveAction
+            <$> ((GiveStr <$> result .: "str") <|> (GiveParen29 <$> result .: "paren"))
+            <*> obj .: "interactionPoint"
       "DisplayInfo" ->
         DisplayInfo <$> obj .: "info"
       "JumpToError" ->

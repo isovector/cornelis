@@ -373,6 +373,10 @@ and
 let g:cornelis_max_width = 40
 ```
 
+The height limit applies while the info window is in a horizontal split, and
+the width limit applies while it is in a vertical split. This follows the
+window's current orientation if it is moved after being opened.
+
 If you'd prefer your info window to appear somewhere else, you can set
 `g:cornelis_split_location` (previously `g:cornelis_split_direction`), e.g.
 

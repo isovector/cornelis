@@ -9,6 +9,7 @@ import           Control.Monad.State.Class (gets)
 import           Cornelis.Agda (getAgda, withAgda)
 import           Cornelis.InfoWin (closeInfoWindows)
 import           Cornelis.Offsets (toOneIndexed)
+import           Cornelis.Pretty (prettyGoals)
 import           Cornelis.Subscripts (decNextDigitSeq, incNextDigitSeq)
 import           Cornelis.Types
 import           Cornelis.Types.Agda (Rewrite (..))
@@ -24,6 +25,8 @@ import           Neovim (liftIO)
 import           Neovim.API.Text
 import           Neovim.Test
 import           Plugin
+import           Prettyprinter (defaultLayoutOptions, layoutPretty, unAnnotate)
+import           Prettyprinter.Render.Text (renderStrict)
 import           System.Process (getProcessExitCode)
 import           Test.Hspec
 import           Utils
@@ -54,6 +57,23 @@ spec = focus $ do
       `shouldSatisfy` isGiveResult (GiveParen29 False)
     giveText29 "f x" (GiveParen29 True) `shouldBe` "(f x)"
     giveText29 "f x" (GiveParen29 False) `shouldBe` "f x"
+
+  it "omits empty boundary sections from goal information" $ do
+    let goalInfo typeAux = BL.pack $ concat
+          [ "{\"kind\":\"DisplayInfo\",\"info\":{\"kind\":\"GoalSpecific\","
+          , "\"interactionPoint\":{\"id\":0,\"range\":[{"
+          , "\"start\":{\"line\":1,\"col\":1},"
+          , "\"end\":{\"line\":1,\"col\":1}}]},"
+          , "\"goalInfo\":{\"kind\":\"GoalType\",\"entries\":[],\"type\":\"Set\""
+          , typeAux
+          , "}}}"
+          ]
+        renderGoal (Right (DisplayInfo info)) =
+          renderStrict $ layoutPretty defaultLayoutOptions $ unAnnotate $ prettyGoals info
+        renderGoal result = error $ show result
+    renderGoal (eitherDecode $ goalInfo "") `shouldBe` "Goal: Set"
+    renderGoal (eitherDecode $ goalInfo ",\"typeAux\":{\"boundary\":[]}")
+      `shouldBe` "Goal: Set"
 
   it "keeps a moved info window owned by another Cornelis instance" $ do
     withVim timeout $ \_ b -> do

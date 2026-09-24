@@ -156,7 +156,7 @@ prettyGoals (AllGoalsWarnings vis invis errs warns) =
           <+> maybe mempty (brackets . ("at" <+>) . prettyInterval) (np_interval $ gi_ip gi)
     ]
 prettyGoals (GoalSpecific _ scoped ty mhave mboundary mboundaryActual mconstraints) =
-  vcat $ intersperse (stimes @_ @Int 60 "—") $
+  vcat $ intersperse (stimes @_ @Int 60 "—") $ filter (not . isEmpty) $
     [ section "Boundary" (fromMaybe [] mboundary) pretty
     ] <>
     [ section "Boundary (actual)" boundaryActual pretty

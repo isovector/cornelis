@@ -38,15 +38,18 @@ debugJson = asks $ cc_debug . ce_config
 -- TODO(sandy): This leaks the process when the buffer is closed.
 spawnAgda :: Buffer -> Neovim CornelisEnv Agda
 spawnAgda buffer = do
+  agdaBinary <- asks $ T.unpack . cc_agda_binary . ce_config
   (m_in, m_out, _, hdl) <-
     liftIO $ createProcess $
-      (proc "agda" ["--interaction-json"])
+      (proc agdaBinary ["--interaction-json"])
         { std_in = CreatePipe , std_out = CreatePipe }
   (c_in, c_out) <- liftIO newChan
   ready <- liftIO $ newIORef True
   case (m_in, m_out) of
     (Just hin, Just hout) -> do
       liftIO $ do
+        hSetEncoding hin utf8
+        hSetEncoding hout utf8
         hSetBuffering hin NoBuffering
         hSetBuffering hout NoBuffering
 

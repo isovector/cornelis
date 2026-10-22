@@ -42,4 +42,5 @@ getConfig
     <*> (fromMaybe HeadNormal . (>>= (readRewrite . T.unpack <=< objectToText)) <$>
         getVar "cornelis_rewrite_mode")
     <*> (fromMaybe False . (objectToBool =<<) <$> getVar "cornelis_debug")
+    <*> (fromMaybe "agda" . (objectToText =<<) <$> getVar "cornelis_agda_binary")
 

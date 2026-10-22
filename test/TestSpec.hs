@@ -8,9 +8,11 @@ import           Control.Monad (void)
 import           Cornelis.Subscripts (decNextDigitSeq, incNextDigitSeq)
 import           Cornelis.Types
 import           Cornelis.Types.Agda (Rewrite (..))
-import           Cornelis.Utils (withBufferStuff, withLocalEnv)
+import           Cornelis.Utils (objectToText, withBufferStuff, withLocalEnv)
 import           Cornelis.Vim
+import qualified Data.ByteString as BS
 import qualified Data.Text as T
+import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.Vector as V
 import           Neovim (liftIO)
 import           Neovim.API.Text
@@ -19,6 +21,10 @@ import           Plugin
 import           Test.Hspec
 import           Utils
 import           Lib (cornelisInit)
+import           System.Directory (getPermissions, setPermissions)
+import           System.FilePath ((</>))
+import           System.Info (os)
+import           System.IO.Temp (withSystemTempDirectory)
 
 
 broken :: String -> SpecWith a -> SpecWith a
@@ -27,6 +33,33 @@ broken = before_ . pendingWith
 spec :: Spec
 spec = focus $ do
   let timeout = Seconds 60
+
+  it "uses the configured Agda binary and UTF-8 JSON over its pipes" $
+    if os == "mingw32" then
+      pendingWith "The synthetic shell process fixture is POSIX-only"
+    else withSystemTempDirectory "cornelis-agda-fixture" $ \dir -> do
+      let agdaPath = dir </> "agda"
+          requestPath = dir </> "request.json"
+          fixture = unlines
+            [ "#!/bin/sh"
+            , "printf 'JSON> '"
+            , "IFS= read -r request"
+            , "printf '%s' \"$request\" > \"" <> requestPath <> "\""
+            , "printf '%s\\n' '{\"kind\":\"synthetic-λ-ℕ\"}'"
+            ]
+      writeFile agdaPath fixture
+      permissions <- getPermissions agdaPath
+      setPermissions agdaPath permissions { executable = True }
+      withVim timeout $ \_ _ -> do
+        vim_set_var "cornelis_agda_binary" $ ObjectString $ encodeUtf8 $ T.pack agdaPath
+        env <- cornelisInit
+        withLocalEnv env $ do
+          whyInScope "ℕ"
+          liftIO $ threadDelay 5e5
+          errorMessage <- vim_get_var "errmsg"
+          request <- liftIO $ BS.readFile requestPath
+          liftIO $ objectToText errorMessage `shouldBe` Just "synthetic-λ-ℕ"
+          liftIO $ BS.isInfixOf (encodeUtf8 "ℕ") request `shouldBe` True
 
   it "should load read-only file" $ do
     withVim timeout $ \w b -> do

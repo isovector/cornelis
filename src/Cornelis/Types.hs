@@ -117,6 +117,7 @@ data CornelisConfig = CornelisConfig
   , cc_split_location :: SplitLocation
   , cc_rewrite_mode :: Rewrite
   , cc_debug :: Bool
+  , cc_agda_binary :: Text
   }
   deriving (Show, Generic)
 

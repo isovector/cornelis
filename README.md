@@ -361,6 +361,17 @@ successfully load subsequent files.
 
 ### Configuring Cornelis' Behavior
 
+Choose the Agda executable with `g:cornelis_agda_binary` if you need to use a
+specific installation. It defaults to `agda` on `PATH`:
+
+```viml
+let g:cornelis_agda_binary = '/path/to/agda'
+```
+
+```lua
+vim.g.cornelis_agda_binary = '/path/to/agda'
+```
+
 The max height and width of the info window can be set via:
 
 ```viml
